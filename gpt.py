@@ -15,24 +15,24 @@ import openai
 
 from ocr import pdf_to_arabic_text  # assumes ocr.py lives alongside gpt.py
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 1) Read OpenAI API key from environment
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 openai.api_key = os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
     print("❌ Missing OpenAI API key. Please set the OPENAI_API_KEY environment variable.")
     sys.exit(1)
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 2) GPT model and token limits
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 GPT_MODEL            = "gpt-3.5-turbo-16k"
 MAX_CONTEXT          = 16_384      # 16 384 tokens total context
 MODEL_MAX_COMPLETION = 12_000      # ≈ max reply tokens for gpt-3.5-turbo-16k
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 3) Load prompt files (prompt_1.txt, prompt_2.txt must exist in the same folder)
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def load_prompts():
     with open("prompt_1.txt", "r", encoding="utf-8") as f1:
         p1 = f1.read()
@@ -53,9 +53,9 @@ def load_prompts():
 
 pass1_instructions, pass2_instructions = load_prompts()
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 4) Token counting helper
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def count_tokens_for_messages(messages: list[dict], model: str) -> int:
     encoding = tiktoken.encoding_for_model(model)
     total = 0
@@ -66,18 +66,18 @@ def count_tokens_for_messages(messages: list[dict], model: str) -> int:
     total += 2
     return total
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 5) Split for Pass 1 (first 4000 Arabic tokens)
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def split_for_pass1(arabic_text: str) -> str:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
     tokens = enc.encode(arabic_text)
     slice_tokens = tokens[:4000]
     return enc.decode(slice_tokens)
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 6) Smart split at newline/punctuation
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[str]:
     enc = tiktoken.encoding_for_model(model)
     tokens = enc.encode(arabic_text)
@@ -110,9 +110,9 @@ def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[st
 
     return chunks
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 7) Split for Pass 2 (5000 tokens + 100 overlap)
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def split_for_pass2(arabic_text: str) -> list[str]:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
     tokens = enc.encode(arabic_text)
@@ -137,18 +137,18 @@ def split_for_pass2(arabic_text: str) -> list[str]:
 
     return chunks
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 8) Build messages for Pass 1
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def build_messages_for_pass1(arabic_chunk: str) -> list[dict]:
     return [
         {"role": "system", "content": "You are an expert in Moroccan legislation text structuring."},
         {"role": "user",   "content": pass1_instructions + "\n" + arabic_chunk + "\n<--- END ARABIC FIRST CHUNK."}
     ]
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 9) Build messages for Pass 2
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def build_messages_for_pass2(arabic_chunk: str, inherited: str = "") -> list[dict]:
     user_content = inherited + arabic_chunk
     return [
@@ -156,9 +156,9 @@ def build_messages_for_pass2(arabic_chunk: str, inherited: str = "") -> list[dic
         {"role": "user",   "content": pass2_instructions + "\n" + user_content + "\n<--- END ARABIC SECOND CHUNK."}
     ]
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 10) Call GPT (clamp max_tokens to model’s true limit)
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def call_gpt_on_chunk(messages: list[dict]) -> str:
     used   = count_tokens_for_messages(messages, GPT_MODEL)
     remain = MAX_CONTEXT - used
@@ -176,9 +176,9 @@ def call_gpt_on_chunk(messages: list[dict]) -> str:
     )
     return resp.choices[0].message.content.strip()
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 11) Merge a chunk’s section‐array into the full tree
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def merge_chunk_structure(full_tree: list, chunk_array: list):
     """
     full_tree: list of nodes with keys {type, number, title, text, children}
@@ -194,9 +194,9 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
             if node.get("children"):
                 merge_chunk_structure(match["children"], node["children"])
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 12) Main processing: OCR (if PDF) or read .txt, Pass 1, Pass 2, merge, save JSON
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def process_single_arabic(txt_path: str, output_dir: str) -> None:
     base     = os.path.basename(txt_path).rsplit(".", 1)[0]
     out_json = os.path.join(output_dir, f"{base}.json")
@@ -288,9 +288,9 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
         json.dump(full_obj, fout, ensure_ascii=False, indent=2)
     print(f"[+] Finished and saved JSON: {out_json}")
 
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # 13) Entrypoint: --input (PDF or .txt), --output_dir
-# -------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(
         description="OCR (if PDF) and parse Moroccan legislation into a nested section tree (JSON)."
@@ -314,7 +314,7 @@ def main():
     if input_path.lower().endswith(".pdf"):
         print(f"[*] OCRing PDF: {input_path}")
         base     = os.path.basename(input_path).rsplit(".", 1)[0]
-        txt_base = f"{base}.txt"
+        txt_base = f\"{base}.txt\"
         txt_path = os.path.join(output_dir, txt_base)
 
         arabic_text = pdf_to_arabic_text(input_path)
