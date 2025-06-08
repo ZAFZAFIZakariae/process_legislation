@@ -29,11 +29,12 @@ if not openai.api_key:
 GPT_MODEL            = "gpt-3.5-turbo-16k"
 MAX_CONTEXT          = 16_384      # 16 384 tokens total context
 MODEL_MAX_COMPLETION = 12_000      # ≈ max reply tokens for gpt-3.5-turbo-16k
+window_size          = MAX_CONTEXT - 500
 
 
 def adjust_for_model(name: str) -> None:
     """Update global token limits based on the chosen model."""
-    global GPT_MODEL, MAX_CONTEXT, MODEL_MAX_COMPLETION
+    global GPT_MODEL, MAX_CONTEXT, MODEL_MAX_COMPLETION, window_size
     GPT_MODEL = name
 
     if name == "gpt-3.5-turbo":
@@ -52,6 +53,8 @@ def adjust_for_model(name: str) -> None:
         # Fallback to defaults
         MAX_CONTEXT = 16_384
         MODEL_MAX_COMPLETION = 12_000
+
+    window_size = MAX_CONTEXT - 500
 
 # ------------------------------------------------------------------------------
 # 3) Load prompt files (prompt_1.txt, prompt_2.txt must exist in the same folder)
@@ -139,7 +142,7 @@ def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[st
     return chunks
 
 # ------------------------------------------------------------------------------
-# 7) Split for Pass 2 (5000 tokens + 100 overlap)
+# 7) Split for Pass 2 (window_size tokens + 100 overlap)
 # ------------------------------------------------------------------------------
 def split_for_pass2(arabic_text: str) -> list[str]:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
@@ -150,18 +153,18 @@ def split_for_pass2(arabic_text: str) -> list[str]:
     total = len(tokens)
 
     while i < total:
-        window = tokens[i : min(i + 5000, total)]
+        window = tokens[i : min(i + window_size, total)]
         combined = prev_tail + window
         combined_text = enc.decode(combined)
 
-        subchunks = smart_token_split(combined_text, 5000, GPT_MODEL)
+        subchunks = smart_token_split(combined_text, window_size, GPT_MODEL)
         this_chunk = subchunks[0]
         chunks.append(this_chunk)
 
         sub_tokens = enc.encode(this_chunk)
         prev_tail = sub_tokens[-100:] if len(sub_tokens) >= 100 else sub_tokens
 
-        i += 5000
+        i += window_size
 
     return chunks
 
