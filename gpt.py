@@ -30,6 +30,29 @@ GPT_MODEL            = "gpt-3.5-turbo-16k"
 MAX_CONTEXT          = 16_384      # 16 384 tokens total context
 MODEL_MAX_COMPLETION = 12_000      # ≈ max reply tokens for gpt-3.5-turbo-16k
 
+
+def adjust_for_model(name: str) -> None:
+    """Update global token limits based on the chosen model."""
+    global GPT_MODEL, MAX_CONTEXT, MODEL_MAX_COMPLETION
+    GPT_MODEL = name
+
+    if name == "gpt-3.5-turbo":
+        MAX_CONTEXT = 4_096
+        MODEL_MAX_COMPLETION = 3_000
+    elif name == "gpt-3.5-turbo-16k":
+        MAX_CONTEXT = 16_384
+        MODEL_MAX_COMPLETION = 12_000
+    elif name.startswith("gpt-4-turbo") or name.startswith("gpt-4o"):
+        MAX_CONTEXT = 128_000
+        MODEL_MAX_COMPLETION = 4_000
+    elif name.startswith("gpt-4"):
+        MAX_CONTEXT = 8_192
+        MODEL_MAX_COMPLETION = 4_000
+    else:
+        # Fallback to defaults
+        MAX_CONTEXT = 16_384
+        MODEL_MAX_COMPLETION = 12_000
+
 # ------------------------------------------------------------------------------
 # 3) Load prompt files (prompt_1.txt, prompt_2.txt must exist in the same folder)
 # ------------------------------------------------------------------------------
@@ -305,7 +328,13 @@ def main():
         required=True,
         help="Directory where intermediate .txt (if PDF) and final JSON will be saved."
     )
+    parser.add_argument(
+        "--model",
+        default=GPT_MODEL,
+        help="OpenAI model name to use (default: %(default)s)",
+    )
     args = parser.parse_args()
+    adjust_for_model(args.model)
 
     input_path = args.input
     output_dir = args.output_dir
