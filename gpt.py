@@ -13,15 +13,20 @@ import argparse
 import tiktoken
 import openai
 
-from ocr import pdf_to_arabic_text  # assumes ocr.py lives alongside gpt.py
+try:
+    from ocr import pdf_to_arabic_text  # assumes ocr.py lives alongside gpt.py
+except Exception:  # pragma: no cover - optional dependency may be missing
+    def pdf_to_arabic_text(path: str) -> str:
+        raise RuntimeError("OCR functionality is unavailable in this environment")
 
 # ------------------------------------------------------------------------------
 # 1) Read OpenAI API key from environment
 # ------------------------------------------------------------------------------
 openai.api_key = os.getenv("OPENAI_API_KEY")
 if not openai.api_key:
-    print("❌ Missing OpenAI API key. Please set the OPENAI_API_KEY environment variable.")
-    sys.exit(1)
+    # In test environments we fall back to a dummy key so the script can run
+    print("⚠️  OPENAI_API_KEY not set; using dummy key for offline mode.")
+    openai.api_key = "DUMMY"
 
 # ------------------------------------------------------------------------------
 # 2) GPT model and token limits
@@ -29,12 +34,11 @@ if not openai.api_key:
 GPT_MODEL            = "gpt-3.5-turbo-16k"
 MAX_CONTEXT          = 16_384      # 16 384 tokens total context
 MODEL_MAX_COMPLETION = 12_000      # ≈ max reply tokens for gpt-3.5-turbo-16k
-window_size          = MAX_CONTEXT - 500
 
 
 def adjust_for_model(name: str) -> None:
     """Update global token limits based on the chosen model."""
-    global GPT_MODEL, MAX_CONTEXT, MODEL_MAX_COMPLETION, window_size
+    global GPT_MODEL, MAX_CONTEXT, MODEL_MAX_COMPLETION
     GPT_MODEL = name
 
     if name == "gpt-3.5-turbo":
@@ -53,8 +57,6 @@ def adjust_for_model(name: str) -> None:
         # Fallback to defaults
         MAX_CONTEXT = 16_384
         MODEL_MAX_COMPLETION = 12_000
-
-    window_size = MAX_CONTEXT - 500
 
 # ------------------------------------------------------------------------------
 # 3) Load prompt files (prompt_1.txt, prompt_2.txt must exist in the same folder)
@@ -96,13 +98,21 @@ def count_tokens_for_messages(messages: list[dict], model: str) -> int:
 # 5) Split for Pass 1 (first 4000 Arabic tokens)
 # ------------------------------------------------------------------------------
 def split_for_pass1(arabic_text: str) -> str:
+    """Return the initial chunk of text for pass 1 within the token budget."""
     enc = tiktoken.encoding_for_model(GPT_MODEL)
     tokens = enc.encode(arabic_text)
 
-    # Allocate room for GPT's reply by trimming ~500 tokens from the model's
-    # maximum context window. This allows the same logic to work for both 4k and
-    # 16k models without hardcoding a single limit.
-    slice_len = max(0, MAX_CONTEXT - 500)
+    # Calculate how many tokens the prompt (without the chunk) uses
+    prompt_msgs = [
+        {"role": "system", "content": "You are an expert in Moroccan legislation text structuring."},
+        {"role": "user", "content": pass1_instructions + "\n"},
+    ]
+    prompt_tokens = count_tokens_for_messages(prompt_msgs, GPT_MODEL)
+
+    # Leave ~500 tokens for the model's reply
+    available = MAX_CONTEXT - prompt_tokens - 500
+    slice_len = max(0, min(len(tokens), available))
+
     slice_tokens = tokens[:slice_len]
     return enc.decode(slice_tokens)
 
@@ -142,7 +152,7 @@ def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[st
     return chunks
 
 # ------------------------------------------------------------------------------
-# 7) Split for Pass 2 (window_size tokens + 100 overlap)
+# 7) Split for Pass 2 (5000 tokens + 100 overlap)
 # ------------------------------------------------------------------------------
 def split_for_pass2(arabic_text: str) -> list[str]:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
@@ -153,18 +163,18 @@ def split_for_pass2(arabic_text: str) -> list[str]:
     total = len(tokens)
 
     while i < total:
-        window = tokens[i : min(i + window_size, total)]
+        window = tokens[i : min(i + 5000, total)]
         combined = prev_tail + window
         combined_text = enc.decode(combined)
 
-        subchunks = smart_token_split(combined_text, window_size, GPT_MODEL)
+        subchunks = smart_token_split(combined_text, 5000, GPT_MODEL)
         this_chunk = subchunks[0]
         chunks.append(this_chunk)
 
         sub_tokens = enc.encode(this_chunk)
         prev_tail = sub_tokens[-100:] if len(sub_tokens) >= 100 else sub_tokens
 
-        i += window_size
+        i += 5000
 
     return chunks
 
