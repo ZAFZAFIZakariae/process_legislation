@@ -95,7 +95,12 @@ def count_tokens_for_messages(messages: list[dict], model: str) -> int:
 def split_for_pass1(arabic_text: str) -> str:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
     tokens = enc.encode(arabic_text)
-    slice_tokens = tokens[:4000]
+
+    # Allocate room for GPT's reply by trimming ~500 tokens from the model's
+    # maximum context window. This allows the same logic to work for both 4k and
+    # 16k models without hardcoding a single limit.
+    slice_len = max(0, MAX_CONTEXT - 500)
+    slice_tokens = tokens[:slice_len]
     return enc.decode(slice_tokens)
 
 # ------------------------------------------------------------------------------
