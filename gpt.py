@@ -279,10 +279,17 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
             print(f"[Debug] Skipping malformed node: {node}")
             continue
 
-        match = next((n for n in full_tree if n["number"] == node["number"]), None)
+        # Ensure the node always has a children list
+        node.setdefault("children", [])
+
+        match = next((n for n in full_tree if n.get("number") == node["number"]), None)
         if match is None:
+            # Append new nodes with an explicit children list
+            node.setdefault("children", [])
             full_tree.append(node)
         else:
+            # Existing nodes may not have the children key yet
+            match.setdefault("children", [])
             if node.get("text"):
                 match["text"] = node["text"]
             if node.get("children"):
@@ -419,7 +426,7 @@ def main():
     if input_path.lower().endswith(".pdf"):
         print(f"[*] OCRing PDF: {input_path}")
         base     = os.path.basename(input_path).rsplit(".", 1)[0]
-        txt_base = f"{base}.txt"
+        txt_base = f"{base}.txt}"
         txt_path = os.path.join(output_dir, txt_base)
 
         arabic_text = pdf_to_arabic_text(input_path)
