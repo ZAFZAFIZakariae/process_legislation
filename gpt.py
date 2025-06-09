@@ -239,9 +239,11 @@ def call_gpt_on_chunk(messages: list[dict]) -> str:
         model=GPT_MODEL,
         messages=messages,
         temperature=0.0,
-        max_tokens=max_completion
+        max_tokens=max_completion,
+        response_format={"type": "json_object"},
     )
-    return resp.choices[0].message.content.strip()
+    content = resp.choices[0].message.content
+    return content.strip() if isinstance(content, str) else content
 
 # ------------------------------------------------------------------------------
 # 11) Merge a chunk’s section‐array into the full tree
@@ -286,7 +288,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     raw_full = ""
     try:
         raw_full = call_gpt_on_chunk(msgs1)
-        full_obj = json.loads(raw_full)
+        full_obj = json.loads(raw_full) if isinstance(raw_full, str) else raw_full
     except Exception as e:
         dbg = os.path.join(output_dir, "debug_pass1.txt")
         with open(dbg, "w", encoding="utf-8") as ff:
@@ -324,9 +326,10 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
             print(raw_articles)  # debug print
 
             try:
-                chunk_array = json.loads(raw_articles)
-                if not isinstance(chunk_array, list):
+                chunk_data = json.loads(raw_articles) if isinstance(raw_articles, str) else raw_articles
+                if not isinstance(chunk_data, list):
                     raise ValueError("Not a JSON array")
+                chunk_array = chunk_data
             except Exception:
                 print(f"⚠️  Chunk #{idx} returned invalid JSON; treating as []")
                 chunk_array = []
