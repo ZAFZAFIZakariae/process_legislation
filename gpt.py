@@ -152,29 +152,38 @@ def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[st
     return chunks
 
 # ------------------------------------------------------------------------------
-# 7) Split for Pass 2 (5000 tokens + 100 overlap)
+# 7) Split for Pass 2 (model aware chunk size with 100 token overlap)
 # ------------------------------------------------------------------------------
+def compute_pass2_chunk_limit() -> int:
+    """Return token limit per Pass 2 chunk for the current model."""
+    dummy_messages = build_messages_for_pass2("", "")
+    overhead = count_tokens_for_messages(dummy_messages, GPT_MODEL)
+    available = MAX_CONTEXT - overhead - 500  # keep ~500 tokens for reply
+    return max(100, min(5000, available))
+
+
 def split_for_pass2(arabic_text: str) -> list[str]:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
     tokens = enc.encode(arabic_text)
+    chunk_limit = compute_pass2_chunk_limit()
     chunks = []
     i = 0
     prev_tail = []
     total = len(tokens)
 
     while i < total:
-        window = tokens[i : min(i + 5000, total)]
+        window = tokens[i : min(i + chunk_limit, total)]
         combined = prev_tail + window
         combined_text = enc.decode(combined)
 
-        subchunks = smart_token_split(combined_text, 5000, GPT_MODEL)
+        subchunks = smart_token_split(combined_text, chunk_limit, GPT_MODEL)
         this_chunk = subchunks[0]
         chunks.append(this_chunk)
 
         sub_tokens = enc.encode(this_chunk)
         prev_tail = sub_tokens[-100:] if len(sub_tokens) >= 100 else sub_tokens
 
-        i += 5000
+        i += chunk_limit
 
     return chunks
 
