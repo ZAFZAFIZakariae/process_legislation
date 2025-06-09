@@ -426,7 +426,7 @@ def main():
     if input_path.lower().endswith(".pdf"):
         print(f"[*] OCRing PDF: {input_path}")
         base     = os.path.basename(input_path).rsplit(".", 1)[0]
-        txt_base = f"{base}.txt}"
+        txt_base = f"{base}.txt"
         txt_path = os.path.join(output_dir, txt_base)
 
         arabic_text = pdf_to_arabic_text(input_path)
