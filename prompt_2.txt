@@ -1,30 +1,26 @@
 ====SUBSEQUENT_CHUNK====
-You are an expert Moroccan‐legislation parser. We have already extracted metadata and the top‐level section skeleton in Pass 1.
+You are continuing the extraction of a Moroccan legal document.
+Pass 1 has produced the metadata and an empty section skeleton.
+For this chunk you must return an array of section objects describing any
+headings and the text that falls under them.
 
-For this chunk, output exactly one raw JSON only, no markdown fences (no extra text) representing all headings (“المادة N” or “الفصل N”) and their body text. If this chunk contains no headings, output `[]`.
-
-Each array element must be an object with exactly these keys:
-[
-  {
-    "type":     "",       // "Section" or "Subsection" or "Subsubsection", based on depth
-    "number":   "",       // e.g. "1", "1.2", "1.2.3"
-    "title":    "",       // heading text after “– ” if present, else ""
-    "text":     "",       // all lines under this heading until next heading
-    "children": [ … ]     // nested headings (same format recursively)
-  }
-]
+Output raw JSON only, no markdown or commentary.
+Each object must contain:
+  "type"     – "Section", "Subsection", "Subsubsection", etc.
+  "number"   – hierarchical number such as "1", "1.2", "1.2.3".
+  "title"    – heading text after any dash or punctuation, or "".
+  "text"     – lines belonging to that heading until the next heading of the
+                same or higher level.
+  "children" – array of nested objects with the same shape.
 
 Rules:
-1. If the first line starts with
-   `Inherited context: type=<Type>, number=<Num>, title="<Title>"`
-   then this chunk continues under that parent. Include any text before the first new heading in that parent’s `"text"`. Otherwise start fresh.
-2. A line beginning with **“المادة N”** or **“الفصل N”** → a new node.
-   • If parent’s `"number"` is “X”, then “القسم 1” or “المادة 1” under it becomes `"number": "X.1"`.
-   • If parent’s `"number"` is “X.1”, then “الفصل 2” under it becomes `"number": "X.1.2"`.
-   • Top‐level headings (no parent) get `"number": "N"`.
-   • If the heading line contains “– Subtitle,” split into `"number":"N"` and `"title":"Subtitle"`. Otherwise `"title":""`.
-3. `"text"`: collect all subsequent lines (including blank lines) until the next heading at the same or higher level or end of chunk. Join with “\n”.
-4. `"children"`: place any deeper headings inside this array. If none, `"children": []`.
-5. If chunk has no headings and no inherited text, return `[]`.
+1. If the chunk begins with a line `Inherited context: type=<T>, number=<N>, title="<Title>"`
+   then treat the rest of the chunk as belonging under that parent. Prepend any
+   free text before the first new heading to that parent's "text".
+2. Recognise headings that start with words such as "الباب", "القسم", "الفصل", "المادة",
+   or lines where a number is followed by a dash or bracket. Determine the level
+   by comparing the numbering with the current parent.
+3. Keep the original line breaks inside "text". If no headings are present and
+   there is no inherited context, return an empty array `[]`.
 
 <--- START ARABIC SECOND CHUNK:
