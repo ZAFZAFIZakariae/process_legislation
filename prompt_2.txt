@@ -5,6 +5,8 @@ For this chunk you must return an array of section objects describing any
 headings and the text that falls under them.
 
 Output raw JSON only, no markdown or commentary.
+Respond ONLY with a valid JSON array of section objects (e.g., [{"type":...}]).
+Do not include any other text, markdown, or explanations.
 Each object must contain:
   "type"     – "Section", "Subsection", "Subsubsection", etc.
   "number"   – hierarchical number such as "1", "1.2", "1.2.3".
