@@ -1,93 +1,60 @@
 ====FIRST_CHUNK====
-You are an expert Moroccan‐legislation parser.
-Below is a JSON schema; fill in only the fields (and nested “children”) that actually appear in this first slice of text.
-All `"text": ""` and `"children": []` remain empty for now; Pass 2 will fill in body text and deeper subsections.
+You are an assistant specialised in structuring Moroccan legislation.
+The user will supply the first portion of text extracted from an Arabic PDF.
+Your task is to extract every piece of metadata that appears and to build an empty
+outline of the document.
 
-Reply with exactly one JSON object and no extra text. Use temperature=0.0.
+Return one JSON object only, matching the schema below. Keep fields that do not
+appear as empty strings or empty arrays. Do not add markdown fences or
+explanatory text. Use temperature 0.
 
 {
   "metadata": {
-    "document_type":           "",     // e.g. "Dahir", "Law", "Decree", "Decision"
-    "document_number":         "",     // exact text (e.g. "1.11.91")
-    "official_title":          "",     // full first‐page title
-    "short_title":             "",     // concise subject (drop numbering)
+    "document_type":           "",
+    "document_number":         "",
+    "official_title":          "",
+    "short_title":             "",
     "issuer": {
-      "authority":             "",     // "King", "Parliament", or "Minister"
-      "minister_or_department":""      // if authority=="Minister"
+      "authority":             "",
+      "minister_or_department":""
     },
     "dates": {
-      "issuance_gregorian":      "",    // "YYYY-MM-DD"
-      "issuance_hijri":          "",    // e.g. "27 شعبان 1432"
+      "issuance_gregorian":      "",
+      "issuance_hijri":          "",
       "publication_gazette_number": "",
       "publication_date_gregorian":  "",
       "publication_date_hijri":      ""
     },
-    "references": [             // each ref = { type, reference_number, reference_title }
-      { "type": "", "reference_number": "", "reference_title": "" }
-    ],
-    "status":                 "", // "In force", "Amended", "Repealed"
-    "version_history": [       // if “Amended by … on …” appears
-      { "version_number": "", "amendment_date": "", "amending_document": "" }
-    ],
-    "keywords": [ "" ]          // free‐text tags; if unsure, leave [""]
+    "references": [ { "type": "", "reference_number": "", "reference_title": "" } ],
+    "status":           "",
+    "version_history": [ { "version_number": "", "amendment_date": "", "amending_document": "" } ],
+    "keywords": [ "" ]
   },
 
-  "structure": [
-    // A list of Section objects. Each object must have exactly these keys:
-    // {
-    //   "type":    "Section" | "Subsection" | "Subsubsection" | …,
-    //   "number":  "",        // e.g. "", "1", "1.2", "1.2.3", etc.
-    //   "title":   "",        // heading text (if any)
-    //   "text":    "",        // always "" for Pass 1
-    //   "children": [         // nested subsections, initially []
-    //     // repeated structure
-    //   ]
-    // }
-  ],
+  "structure": [ ],
 
   "tables_and_schedules": [
     {
-      "table_label":       "",    // header row joined by " | " or ""
-      "table_description": "",    // line(s) immediately above table or ""
-      "rows": [
-        { "columns": [ "", "" , … ] }
-      ]
+      "table_label":       "",
+      "table_description": "",
+      "rows": [ { "columns": [ "", "" ] } ]
     }
   ],
 
-  "annexes": [
-    {
-      "annex_title": "",
-      "annex_text":  ""
-    }
-  ],
+  "annexes": [ { "annex_title": "", "annex_text": "" } ],
 
   "footer": {
-    "signatures": [
-      { "signatory_name": "", "signatory_title": "" }
-    ],
+    "signatures": [ { "signatory_name": "", "signatory_title": "" } ],
     "notes": ""
   }
 }
 
-Instructions (Pass 1):
-1. **Metadata**: Fill exactly those fields you see in this slice. If missing, use "" or [] as appropriate.
-2. **Structure**: Build a nested tree of sections/subsections. Each node has `type`, `number`, `title`, `text`, and `children`.
-   - **باب …** → a top‐level Section:
-     • `type`: "Section"
-     • `number`: "" (treat “باب الأول” or “باب ثانٍ” as part of `title`)
-     • `title`: whatever follows “باب ” (e.g. “أحكام عامة”)
-     • `text`: ""
-     • `children`: []
-   - **القسم N** or **الفصل N** under a Section → a Subsection or deeper:
-     • If this is the first “القسم N” or “الفصل N” under Section “X”, set `number`: "X.N", `type`: "Subsection", `title`: remainder of that line, `text`: "", `children`: []
-     • If another “القسم M” or “الفصل M” appears under Subsection “X.N”, set `type`: "Subsubsection", `number`: "X.N.M", etc.
-     • Continue deeper nesting if more “القسم” or “الفصل” appear.
-     • If no “القسم” or “الفصل” appear, `children` remains [].
-3. **Tables and Schedules**: If you see a table in this chunk, fill `table_label`, `table_description`, and `rows`. Otherwise `"tables_and_schedules": []`.
-4. **Annexes**: If you see a top‐level “الملحق …” or “Annex …,” set `annex_title` and `annex_text`. Otherwise `"annexes": []`.
-5. **Footer**:
-   - `signatures`: lines at the very end containing “الملك محمد السادس” or “Signed by …” → `{ "signatory_name": <…>, "signatory_title": <…> }`. If none, `[]`.
-   - `notes`: any final line like “Published in Official Gazette on …” or “This decision is enforceable …”. If none, ""
+Instructions:
+1. Detect the document type from keywords such as "ظهير شريف", "قانون", "مرسوم", "قرار".
+2. Capture any numbering or dates exactly as written.
+3. For the outline, recognise headings like "الباب", "القسم", "الفصل", and "المادة".
+   Treat "الباب" as a top level Section with number "". Number nested headings sequentially (e.g. "1", "1.2", "1.2.3").
+   Leave "text" and "children" empty for now.
+4. Tables, annexes and footer lines may appear even in this first chunk; include them if present.
 
 <--- START ARABIC FIRST CHUNK:
