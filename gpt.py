@@ -348,9 +348,12 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
 
             try:
                 chunk_data = json.loads(raw_articles) if isinstance(raw_articles, str) else raw_articles
-                if not isinstance(chunk_data, list):
+                if isinstance(chunk_data, dict):
+                    chunk_array = [chunk_data]
+                elif isinstance(chunk_data, list):
+                    chunk_array = chunk_data
+                else:
                     raise ValueError("Not a JSON array")
-                chunk_array = chunk_data
             except Exception:
                 print(f"⚠️  Chunk #{idx} returned invalid JSON; attempting repair")
                 repaired = repair_chunk_json(raw_articles)
