@@ -275,6 +275,10 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
     chunk_array: same structure for one chunk
     """
     for node in chunk_array:
+        if not isinstance(node, dict) or "number" not in node:
+            print(f"[Debug] Skipping malformed node: {node}")
+            continue
+
         match = next((n for n in full_tree if n["number"] == node["number"]), None)
         if match is None:
             full_tree.append(node)
