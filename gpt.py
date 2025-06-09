@@ -160,9 +160,19 @@ def compute_pass2_chunk_limit() -> int:
     """Return token limit per Pass 2 chunk for the current model."""
     dummy_messages = build_messages_for_pass2("", "")
     overhead = count_tokens_for_messages(dummy_messages, GPT_MODEL)
-    # Reserve ~1k tokens for small-context models so GPT has room to respond.
-    reply_reserve = 1000 if MAX_CONTEXT <= 4_096 else 500
+    # Reserve a larger completion budget for small-context models because the
+    # JSON output can easily exceed 1000 tokens.  Using too large a chunk causes
+    # the model to truncate its reply, which results in invalid JSON and lost
+    # sections.  By limiting the chunk size we leave more room for the reply and
+    # obtain complete JSON.
+    reply_reserve = 1500 if MAX_CONTEXT <= 4_096 else 500
     available = MAX_CONTEXT - overhead - reply_reserve
+
+    # For 4k-context models, cap the chunk at ~2000 tokens to avoid replies
+    # exceeding the remaining budget.
+    if MAX_CONTEXT <= 4_096:
+        available = min(2000, available)
+
     return max(100, min(5000, available))
 
 
