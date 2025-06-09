@@ -109,8 +109,10 @@ def split_for_pass1(arabic_text: str) -> str:
     ]
     prompt_tokens = count_tokens_for_messages(prompt_msgs, GPT_MODEL)
 
-    # Leave ~500 tokens for the model's reply
-    available = MAX_CONTEXT - prompt_tokens - 500
+    # Small context models need a bigger safety margin so the response
+    # isn't truncated. Leave ~1k tokens for them, otherwise ~500.
+    reply_reserve = 1000 if MAX_CONTEXT <= 4_096 else 500
+    available = MAX_CONTEXT - prompt_tokens - reply_reserve
     slice_len = max(0, min(len(tokens), available))
 
     slice_tokens = tokens[:slice_len]
@@ -158,7 +160,9 @@ def compute_pass2_chunk_limit() -> int:
     """Return token limit per Pass 2 chunk for the current model."""
     dummy_messages = build_messages_for_pass2("", "")
     overhead = count_tokens_for_messages(dummy_messages, GPT_MODEL)
-    available = MAX_CONTEXT - overhead - 500  # keep ~500 tokens for reply
+    # Reserve ~1k tokens for small-context models so GPT has room to respond.
+    reply_reserve = 1000 if MAX_CONTEXT <= 4_096 else 500
+    available = MAX_CONTEXT - overhead - reply_reserve
     return max(100, min(5000, available))
 
 
@@ -166,6 +170,9 @@ def split_for_pass2(arabic_text: str) -> list[str]:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
     tokens = enc.encode(arabic_text)
     chunk_limit = compute_pass2_chunk_limit()
+    # Account for the ~100 token overlap between chunks when context is small
+    if MAX_CONTEXT <= 4_096:
+        chunk_limit = max(100, chunk_limit - 100)
     chunks = []
     i = 0
     prev_tail = []
