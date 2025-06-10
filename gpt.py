@@ -187,24 +187,28 @@ def split_for_pass2(arabic_text: str) -> list[str]:
     # Account for the ~100 token overlap between chunks when context is small
     if MAX_CONTEXT <= 4_096:
         chunk_limit = max(100, chunk_limit - 100)
+    overlap = 100 if MAX_CONTEXT <= 4_096 else 0
     chunks = []
     i = 0
     prev_tail = []
     total = len(tokens)
 
     while i < total:
-        window = tokens[i : min(i + chunk_limit, total)]
-        combined = prev_tail + window
-        combined_text = enc.decode(combined)
+        window = prev_tail + tokens[i : min(i + chunk_limit, total)]
+        combined_text = enc.decode(window)
 
         subchunks = smart_token_split(combined_text, chunk_limit, GPT_MODEL)
         this_chunk = subchunks[0]
+
+        chunk_tokens = enc.encode(this_chunk)
+        if prev_tail:
+            chunk_tokens = chunk_tokens[len(prev_tail):]
+            this_chunk = enc.decode(chunk_tokens)
+
         chunks.append(this_chunk)
 
-        sub_tokens = enc.encode(this_chunk)
-        prev_tail = sub_tokens[-100:] if len(sub_tokens) >= 100 else sub_tokens
-
-        i += chunk_limit
+        prev_tail = chunk_tokens[-overlap:] if overlap else []
+        i += len(chunk_tokens)
 
     return chunks
 
