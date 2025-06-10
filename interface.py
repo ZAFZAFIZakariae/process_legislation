@@ -4,8 +4,12 @@ import tempfile
 import pandas as pd
 import streamlit as st
 
-from ner import extract_entities
-from ocr import pdf_to_arabic_text
+try:
+    from .ner import extract_entities
+    from .ocr import pdf_to_arabic_text
+except Exception:  # Allow running without package context
+    from ner import extract_entities  # type: ignore
+    from ocr import pdf_to_arabic_text  # type: ignore
 
 
 def highlight_text(text: str, entities: list[dict]) -> str:
