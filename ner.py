@@ -6,13 +6,16 @@ from typing import Dict, Any
 
 import openai
 
-try:
-    from ocr import pdf_to_arabic_text
+try:  # Prefer relative import when available
+    from .ocr import pdf_to_arabic_text
 except Exception:
-    def pdf_to_arabic_text(path: str) -> str:
-        raise RuntimeError("OCR functionality is unavailable in this environment")
+    try:
+        from ocr import pdf_to_arabic_text  # type: ignore
+    except Exception:
+        def pdf_to_arabic_text(path: str) -> str:
+            raise RuntimeError("OCR functionality is unavailable in this environment")
 
-NER_PROMPT_FILE = "ner_prompt.txt"
+NER_PROMPT_FILE = os.path.join(os.path.dirname(__file__), "prompts", "ner_prompt.txt")
 DEFAULT_MODEL = "gpt-3.5-turbo-16k"
 
 openai.api_key = os.getenv("OPENAI_API_KEY", "DUMMY")
