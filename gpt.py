@@ -13,11 +13,14 @@ import argparse
 import tiktoken
 import openai
 
-try:
-    from ocr import pdf_to_arabic_text  # assumes ocr.py lives alongside gpt.py
+try:  # Prefer relative import when running as a module
+    from .ocr import pdf_to_arabic_text
 except Exception:  # pragma: no cover - optional dependency may be missing
-    def pdf_to_arabic_text(path: str) -> str:
-        raise RuntimeError("OCR functionality is unavailable in this environment")
+    try:
+        from ocr import pdf_to_arabic_text  # type: ignore
+    except Exception:
+        def pdf_to_arabic_text(path: str) -> str:
+            raise RuntimeError("OCR functionality is unavailable in this environment")
 
 # ----------------------------------------------------------------------
 # 1) Read OpenAI API key from environment
@@ -59,12 +62,13 @@ def adjust_for_model(name: str) -> None:
         MODEL_MAX_COMPLETION = 12_000
 
 # ----------------------------------------------------------------------
-# 3) Load prompt files (prompt_1.txt, prompt_2.txt must exist in the same folder)
+# 3) Load prompt files (prompt_1.txt, prompt_2.txt located in ./prompts)
 # ----------------------------------------------------------------------
-def load_prompts():
-    with open("prompt_1.txt", "r", encoding="utf-8") as f1:
+def load_prompts() -> tuple[str, str]:
+    base = os.path.join(os.path.dirname(__file__), "prompts")
+    with open(os.path.join(base, "prompt_1.txt"), "r", encoding="utf-8") as f1:
         p1 = f1.read()
-    with open("prompt_2.txt", "r", encoding="utf-8") as f2:
+    with open(os.path.join(base, "prompt_2.txt"), "r", encoding="utf-8") as f2:
         p2 = f2.read()
 
     if "====FIRST_CHUNK====" not in p1:
