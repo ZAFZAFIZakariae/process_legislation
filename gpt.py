@@ -174,9 +174,13 @@ def compute_pass2_chunk_limit() -> int:
     available = MAX_CONTEXT - overhead - reply_reserve
 
     # For 4k-context models, cap the chunk at ~2000 tokens to avoid replies
-    # exceeding the remaining budget.
+    # exceeding the remaining budget.  Large-context models (e.g. gpt‑4o) still
+    # have a completion limit of only ~4000 tokens, so sending very large chunks
+    # can lead to truncated JSON.  Cap those chunks at ~3000 tokens.
     if MAX_CONTEXT <= 4_096:
         available = min(2000, available)
+    elif MODEL_MAX_COMPLETION <= 4_000:
+        available = min(3000, available)
 
     return max(100, min(5000, available))
 
