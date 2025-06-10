@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import argparse
+import re
 
 import tiktoken
 import openai
@@ -154,6 +155,8 @@ def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[st
 
         chunk = enc.decode(tokens[idx:actual_end])
         chunks.append(chunk)
+
+        prev_tail = slice_tokens[-100:] if (actual_end - idx) >= 100 else slice_tokens
         idx = actual_end
 
     return chunks
@@ -279,6 +282,26 @@ def repair_chunk_json(raw: str) -> list | None:
     return None
 
 
+def extract_inherited(reply: str) -> tuple[str, str]:
+    """Return (inherited_line, json_part) if present, else ("", reply)."""
+    text = reply.lstrip()
+    if text.startswith("Inherited context:"):
+        line, _, rest = text.partition("\n")
+        return line.strip(), rest.lstrip()
+    return "", reply
+
+
+def parse_inherited_fields(line: str) -> dict | None:
+    match = re.match(r"Inherited context:\\s*type=([^,]+),\\s*number=([^,]+),\\s*title=\\\"([^\\\"]*)\\\"", line)
+    if match:
+        return {
+            "type": match.group(1).strip(),
+            "number": match.group(2).strip(),
+            "title": match.group(3).strip(),
+        }
+    return None
+
+
 # ----------------------------------------------------------------------
 # 12) Merge a chunk’s section‐array into the full tree
 # ----------------------------------------------------------------------
@@ -370,8 +393,18 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
             raw_articles = call_gpt_on_chunk(msgs2)
             print(raw_articles)  # debug print
 
+            inherit_line, json_part = ("", raw_articles)
+            if isinstance(raw_articles, str):
+                inherit_line, json_part = extract_inherited(raw_articles)
+                if inherit_line:
+                    inherited_info = parse_inherited_fields(inherit_line)
+                    inherited = inherit_line + "\n"
+                else:
+                    inherited = ""
+            chunk_content = json_part
+
             try:
-                chunk_data = json.loads(raw_articles) if isinstance(raw_articles, str) else raw_articles
+                chunk_data = json.loads(chunk_content) if isinstance(chunk_content, str) else chunk_content
                 if isinstance(chunk_data, dict):
                     chunk_array = [chunk_data]
                 elif isinstance(chunk_data, list):
@@ -386,8 +419,6 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
             merge_chunk_structure(structure_tree, chunk_array)
             print(f"[+] Merged {len(chunk_array)} nodes from chunk #{idx}")
 
-            inherited = ""
-
             enc       = tiktoken.encoding_for_model(GPT_MODEL)
             tok       = enc.encode(chunk)
             tail      = tok[-100:] if len(tok) >= 100 else tok
@@ -399,7 +430,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                 ff.write(raw_articles if isinstance(raw_articles, str) else str(e))
             print(f"❌ Pass 2 chunk #{idx} failed: {e}")
             print(f"→ Saved debug to: {dbg}")
-            return
+            continue
 
     # -------- Save final JSON --------
     full_obj["structure"] = structure_tree
