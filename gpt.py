@@ -37,6 +37,7 @@ if not openai.api_key:
 GPT_MODEL            = "gpt-3.5-turbo-16k"
 MAX_CONTEXT          = 16_384      # 16 384 tokens total context
 MODEL_MAX_COMPLETION = 12_000      # ≈ max reply tokens for gpt-3.5-turbo-16k
+PASS1_MAX_TOKENS    = 4_000        # cap initial chunk sent in pass 1
 
 
 def adjust_for_model(name: str) -> None:
@@ -99,7 +100,7 @@ def count_tokens_for_messages(messages: list[dict], model: str) -> int:
     return total
 
 # ----------------------------------------------------------------------
-# 5) Split for Pass 1 (first 4000 Arabic tokens)
+# 5) Split for Pass 1 (first PASS1_MAX_TOKENS Arabic tokens)
 # ----------------------------------------------------------------------
 def split_for_pass1(arabic_text: str) -> str:
     """Return the initial chunk of text for pass 1 within the token budget."""
@@ -117,7 +118,7 @@ def split_for_pass1(arabic_text: str) -> str:
     # isn't truncated. Leave ~1k tokens for them, otherwise ~500.
     reply_reserve = 1000 if MAX_CONTEXT <= 4_096 else 500
     available = MAX_CONTEXT - prompt_tokens - reply_reserve
-    slice_len = max(0, min(len(tokens), available))
+    slice_len = max(0, min(len(tokens), available, PASS1_MAX_TOKENS))
 
     slice_tokens = tokens[:slice_len]
     return enc.decode(slice_tokens)
