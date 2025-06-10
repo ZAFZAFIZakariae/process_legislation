@@ -8,7 +8,7 @@ Output raw JSON only, no markdown or commentary.
 Respond ONLY with a valid JSON array of section objects (e.g., [{"type":...}]).
 Do not include any other text, markdown, or explanations.
 Each object must contain:
-  "type"     – "Section", "Subsection", "Subsubsection", etc.
+  "type"     – the Arabic heading word exactly as written (for example "الباب", "القسم", "الفصل", "المادة").
   "number"   – hierarchical number such as "1", "1.2", "1.2.3".
   "title"    – heading text after any dash or punctuation, or "".
   "text"     – lines belonging to that heading until the next heading of the
@@ -23,6 +23,6 @@ Rules:
    or lines where a number is followed by a dash or bracket. Determine the level
    by comparing the numbering with the current parent.
 3. Keep the original line breaks inside "text". If no headings are present and
-   there is no inherited context, return an empty array `[]`.
+   there is no inherited context, return an empty array [].
 
 <--- START ARABIC SECOND CHUNK:
