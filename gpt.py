@@ -454,7 +454,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
         print(f"[*] Processing chunk #{idx} ({len(chunk)} chars)")
         msgs2 = build_messages_for_pass2(prev_tail + chunk, inherited)
         try:
-            raw_articles = call_gpt_on_chunk(msgs2, json_mode=True)
+            raw_articles = call_gpt_on_chunk(msgs2, json_mode=False)
             print(raw_articles)  # debug print
 
             inherit_line, json_part = ("", raw_articles)
