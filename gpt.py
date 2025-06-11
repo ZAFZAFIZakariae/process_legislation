@@ -38,7 +38,7 @@ if not openai.api_key:
 GPT_MODEL            = "gpt-3.5-turbo-16k"
 MAX_CONTEXT          = 16_384      # 16 384 tokens total context
 MODEL_MAX_COMPLETION = 12_000      # ≈ max reply tokens for gpt-3.5-turbo-16k
-PASS1_MAX_TOKENS    = 4_000        # cap initial chunk sent in pass 1
+PASS1_MAX_TOKENS    = 8_000        # cap initial chunk sent in pass 1
 
 
 def adjust_for_model(name: str) -> None:
@@ -158,7 +158,6 @@ def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[st
 
         prev_tail = slice_tokens[-100:] if (actual_end - idx) >= 100 else slice_tokens
         idx = actual_end
-
     return chunks
 
 # ----------------------------------------------------------------------
@@ -182,6 +181,8 @@ def compute_pass2_chunk_limit() -> int:
     # can lead to truncated JSON.  Cap those chunks at ~3000 tokens.
     if MAX_CONTEXT <= 4_096:
         available = min(2000, available)
+    elif GPT_MODEL == "gpt-3.5-turbo-16k":
+        available = min(3000, available)
     elif MODEL_MAX_COMPLETION <= 4_000:
         available = min(3000, available)
 
@@ -303,7 +304,7 @@ def parse_inherited_fields(line: str) -> dict | None:
 
 
 # ----------------------------------------------------------------------
-# 12) Merge a chunk’s section‐array into the full tree
+# 12) Merge a chunk’s section‑array into the full tree
 # ----------------------------------------------------------------------
 def merge_chunk_structure(full_tree: list, chunk_array: list):
     """
@@ -423,6 +424,9 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                 print(f"⚠️  Chunk #{idx} returned invalid JSON; attempting repair")
                 repaired = repair_chunk_json(raw_articles)
                 chunk_array = repaired if repaired is not None else []
+
+            if not chunk_array:
+                print(f"⚠️  Chunk #{idx} produced no sections.")
 
             merge_chunk_structure(structure_tree, chunk_array)
             print(f"[+] Merged {len(chunk_array)} nodes from chunk #{idx}")
