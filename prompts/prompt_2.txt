@@ -4,29 +4,23 @@ Pass 1 has produced the metadata and an empty section skeleton.
 For this chunk you must return an array of section objects describing any
 headings and the text that falls under them.
 
-Output raw JSON only, no markdown or commentary.
-Respond ONLY with a valid JSON array of section objects (e.g., [{"type": ...}]).
-Do not include any other text, markdown, or explanations.
-Each object must contain:
-  "type"     – the Arabic heading word exactly as written (for example "الباب", "القسم", "الفصل", "المادة").
-  "number"   – the official chapter or article number exactly as written in the text.
-  "title"    – heading text after any dash or punctuation, or "".
-  "text"     – lines belonging to that heading until the next heading of the
-                same or higher level. Preserve those lines verbatim and do not
-                leave this field empty.
-  "children" – array of nested objects with the same shape.
+Output pure JSON only — a valid JSON array of section objects (e.g., [{"type": ...}]).
+**Respond ONLY with valid JSON. Do not include any other text, markdown, commentary, or header lines (such as "Inherited context").**
+
+Each section object must have this exact shape:
+- "type"     – the Arabic heading word exactly as written (for example "الباب", "القسم", "الفصل", "المادة").
+- "number"   – the official chapter or article number exactly as written in the text.
+- "title"    – heading text after any dash or punctuation, or "" if no title.
+- "text"     – lines belonging to that heading until the next heading of the same or higher level. Preserve line breaks exactly. This field must not be empty.
+- "children" – array of nested section objects, with the same shape.
 
 Rules:
-1. If the chunk begins with a line `Inherited context: type=<T>, number=<N>, title="<Title>"`
-   then treat the rest of the chunk as belonging under that parent. Prepend any
-   free text before the first new heading to that parent's "text". Start your
-   reply with the same `Inherited context:` line followed by a newline before
-   the JSON array so the caller can merge the text correctly.
-2. Recognise headings that start with words such as "الباب", "القسم", "الفصل", "المادة",
-   or lines where a number is followed by a dash or bracket. Determine the level
-   by comparing the numbering with the current parent.
-3. Keep the original line breaks inside "text". If no headings are present and
-   there is no inherited context, return an empty array [].
-4. Keep the sections in the same order they appear in the input.
+1. If the chunk begins with a line `Inherited context: type=<T>, number=<N>, title="<Title>"` then treat the rest of the chunk as belonging under that parent. Prepend any free text before the first new heading to that parent's "text". **However, in your reply, output ONLY a pure JSON array of section objects — do not output the "Inherited context" line itself.**
+2. Recognize headings that start with words such as "الباب", "القسم", "الفصل", "المادة", or lines where a number is followed by a dash or bracket. Determine nesting level by comparing the numbering with the current parent.
+3. Keep the original line breaks exactly as they appear inside "text".
+4. If no headings are present and there is no inherited context, return an empty array [].
+5. Keep sections strictly in the same order they appear in the input.
+
+IMPORTANT: You must respond with a valid JSON array and nothing else.
 
 <--- START ARABIC SECOND CHUNK:
