@@ -293,7 +293,7 @@ def extract_inherited(reply: str) -> tuple[str, str]:
 
 
 def parse_inherited_fields(line: str) -> dict | None:
-    match = re.match(r"Inherited context:\\s*type=([^,]+),\\s*number=([^,]+),\\s*title=\\\"([^\\\"]*)\\\"", line)
+    match = re.match(r"Inherited context:\s*type=([^,]+),\s*number=([^,]+),\s*title=\"([^\"]*)\"", line)
     if match:
         return {
             "type": match.group(1).strip(),
@@ -301,6 +301,44 @@ def parse_inherited_fields(line: str) -> dict | None:
             "title": match.group(3).strip(),
         }
     return None
+
+
+def find_node(tree: list, typ: str, num: str) -> dict | None:
+    """Recursively search for a node matching type and number."""
+    for n in tree:
+        if n.get("type") == typ and n.get("number") == num:
+            return n
+        child = find_node(n.get("children", []), typ, num)
+        if child:
+            return child
+    return None
+
+
+def clean_number(node: dict) -> None:
+    """Remove heading words like 'الفصل' from the number field."""
+    if node.get("type") == "فصل" and isinstance(node.get("number"), str):
+        node["number"] = re.sub(r"^الفصل\s*", "", node["number"]).strip()
+
+
+def clean_text(text: str) -> str:
+    """Remove stray ASCII noise from article text."""
+    if not isinstance(text, str):
+        return ""
+    text = re.sub(r"[A-Za-z]+", "", text)
+    text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
+    return text.strip()
+
+
+def finalize_structure(tree: list) -> None:
+    """Clean numbers/text and ensure only articles contain text."""
+    for node in tree:
+        clean_number(node)
+        if node.get("type") != "فصل":
+            node["text"] = ""
+        else:
+            node["text"] = clean_text(node.get("text", ""))
+        if node.get("children"):
+            finalize_structure(node["children"])
 
 
 # ----------------------------------------------------------------------
@@ -319,24 +357,41 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
         # Ensure the node always has a children list
         node.setdefault("children", [])
 
-        match = next((n for n in full_tree if n.get("number") == node["number"]), None)
+        # Match on both type and number to avoid merging nodes from different
+        # levels that share the same numbering (e.g. "الباب الأول" vs
+        # "الفصل الأول").
+        match = next(
+            (
+                n
+                for n in full_tree
+                if n.get("type") == node.get("type")
+                and n.get("number") == node["number"]
+            ),
+            None,
+        )
         if match is None:
             # Append new nodes with an explicit children list
             node.setdefault("children", [])
+            # Only articles should carry text; wipe it from higher level nodes
+            if node.get("type") != "فصل":
+                node["text"] = ""
+            clean_number(node)
+            if node.get("type") == "فصل" and node.get("text"):
+                node["text"] = clean_text(node["text"])
             full_tree.append(node)
         else:
             # Existing nodes may not have the children key yet
             match.setdefault("children", [])
-            if node.get("text"):
+            if node.get("text") and match.get("type") == "فصل":
+                new = clean_text(node["text"])
                 if match.get("text"):
                     existing = match["text"]
-                    new = node["text"]
                     if existing and not existing.endswith("\n") and not new.startswith("\n"):
                         match["text"] = existing + "\n" + new
                     else:
                         match["text"] = existing + new
                 else:
-                    match["text"] = node["text"]
+                    match["text"] = new
             if node.get("children"):
                 merge_chunk_structure(match["children"], node["children"])
 
@@ -428,7 +483,21 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
             if not chunk_array:
                 print(f"⚠️  Chunk #{idx} produced no sections.")
 
-            merge_chunk_structure(structure_tree, chunk_array)
+            target_tree = structure_tree
+            if inherit_line and inherited_info:
+                parent = find_node(structure_tree, inherited_info["type"], inherited_info["number"])
+                if parent is None:
+                    parent = {
+                        "type": inherited_info["type"],
+                        "number": inherited_info["number"],
+                        "title": inherited_info.get("title", ""),
+                        "text": "" if inherited_info["type"] != "فصل" else "",
+                        "children": [],
+                    }
+                    structure_tree.append(parent)
+                target_tree = parent.get("children", [])
+
+            merge_chunk_structure(target_tree, chunk_array)
             print(f"[+] Merged {len(chunk_array)} nodes from chunk #{idx}")
 
             enc       = tiktoken.encoding_for_model(GPT_MODEL)
@@ -445,6 +514,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
             continue
 
     # -------- Save final JSON --------
+    finalize_structure(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
         json.dump(full_obj, fout, ensure_ascii=False, indent=2)
