@@ -4,7 +4,7 @@ The user will supply the first portion of text extracted from an Arabic PDF.
 Your task is to extract every piece of metadata that appears and to build an empty
 outline of the document.
 
-Return one JSON object only, matching the schema below. Keep fields that do not
+Return one pure JSON object only, matching the schema below. Keep fields that do not
 appear as empty strings or empty arrays. Do not add markdown fences or
 explanatory text. Use temperature 0.
 Include every listed field in the exact order shown, even if the value is empty.
