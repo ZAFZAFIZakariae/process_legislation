@@ -192,10 +192,9 @@ def split_for_pass2(arabic_text: str) -> list[str]:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
     tokens = enc.encode(arabic_text)
     chunk_limit = compute_pass2_chunk_limit()
-    # Account for the ~100 token overlap between chunks when context is small
-    if MAX_CONTEXT <= 4_096:
-        chunk_limit = max(100, chunk_limit - 100)
-    overlap = 100 if MAX_CONTEXT <= 4_096 else 0
+    # Always keep a small overlap so headings are not split across chunks
+    overlap = 100
+    chunk_limit = max(100, chunk_limit - overlap)
     chunks = []
     i = 0
     prev_tail = []
