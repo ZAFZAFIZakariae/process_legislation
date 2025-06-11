@@ -299,7 +299,7 @@ def extract_inherited(reply: str) -> tuple[str, str]:
 
 
 def parse_inherited_fields(line: str) -> dict | None:
-    match = re.match(r"Inherited context:\s*type=([^,]+),\s*number=([^,]+),\s*title=\"([^\"]*)\"", line)
+    match = re.match(r"Inherited context:\\s*type=([^,]+),\\s*number=([^,]+),\\s*title=\\\"([^\\\"]*)\\\"", line)
     if match:
         return {
             "type": match.group(1).strip(),
@@ -314,8 +314,8 @@ def remove_code_fences(text: str) -> str:
     if not isinstance(text, str):
         return text
     text = text.strip()
-    text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'```\s*$', '', text)
+    text = re.sub(r'^```(?:json)?\\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'```\\s*$', '', text)
     return text.strip()
 
 
@@ -333,7 +333,7 @@ def find_node(tree: list, typ: str, num: str) -> dict | None:
 def clean_number(node: dict) -> None:
     """Remove heading words like 'الفصل' or 'المادة' from the number field."""
     if node.get("type") in ARTICLE_TYPES and isinstance(node.get("number"), str):
-        node["number"] = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", node["number"]).strip()
+        node["number"] = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\\s*", "", node["number"]).strip()
 
 
 def clean_text(text: str) -> str:
@@ -341,7 +341,7 @@ def clean_text(text: str) -> str:
     if not isinstance(text, str):
         return ""
     text = re.sub(r"[A-Za-z]+", "", text)
-    text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
+    text = re.sub(r"\\n\\s*\\d+\\s*\\n", "\\n", text)
     return text.strip()
 
 
@@ -401,8 +401,8 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
                 new = clean_text(node["text"])
                 if match.get("text"):
                     existing = match["text"]
-                    if existing and not existing.endswith("\n") and not new.startswith("\n"):
-                        match["text"] = existing + "\n" + new
+                    if existing and not existing.endswith("\\n") and not new.startswith("\\n"):
+                        match["text"] = existing + "\\n" + new
                     else:
                         match["text"] = existing + new
                 else:
@@ -417,7 +417,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     base     = os.path.basename(txt_path).rsplit(".", 1)[0]
     out_json = os.path.join(output_dir, f"{base}.json")
 
-    print(f"\n[*] Processing: {txt_path}")
+    print(f"\\n[*] Processing: {txt_path}")
     with open(txt_path, "r", encoding="utf-8") as f:
         arabic_text = f.read()
 
