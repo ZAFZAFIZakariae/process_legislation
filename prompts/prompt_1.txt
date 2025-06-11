@@ -57,7 +57,7 @@ Instructions:
 2. Capture the complete official title exactly as it appears (including dates and decree numbers) and place it in "official_title". Put the usual short name such as "الدستور" in "short_title".
 3. Record all references in detail under "references" with their type, number and title when present.
 4. Extract the preamble text. It usually follows the royal decree lines and precedes the first chapter heading. Store the full text in the top-level "preamble" field.
-5. For the outline, recognise headings like "الباب", "القسم", "الفصل", and "المادة". Treat "الباب" as a top level Section with number "". Number nested headings sequentially (e.g. "1", "1.2", "1.2.3"). Leave "text" and "children" empty for now.
+5. For the outline, recognise headings like "الباب", "القسم", "الفصل", and "المادة". Treat "الباب" as a top level Section with number "". Use the official numbering from the text for the "number" field (for example the digits that appear after "الفصل"). Do not create hierarchical numbers yourself. Leave "text" and "children" empty for now.
 6. Tables, annexes and footer lines may appear even in this first chunk; include them if present.
 
 <--- START ARABIC FIRST CHUNK:
