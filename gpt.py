@@ -87,6 +87,9 @@ def load_prompts() -> tuple[str, str]:
 
 pass1_instructions, pass2_instructions = load_prompts()
 
+# Recognized article-type labels (with and without the definite article)
+ARTICLE_TYPES = {"فصل", "الفصل", "مادة", "المادة"}
+
 # ----------------------------------------------------------------------
 # 4) Token counting helper
 # ----------------------------------------------------------------------
@@ -296,7 +299,7 @@ def extract_inherited(reply: str) -> tuple[str, str]:
 
 
 def parse_inherited_fields(line: str) -> dict | None:
-    match = re.match(r"Inherited context:\\s*type=([^,]+),\\s*number=([^,]+),\\s*title=\\\"([^\\\"]*)\\\"", line)
+    match = re.match(r"Inherited context:\s*type=([^,]+),\s*number=([^,]+),\s*title=\"([^\"]*)\"", line)
     if match:
         return {
             "type": match.group(1).strip(),
@@ -304,6 +307,16 @@ def parse_inherited_fields(line: str) -> dict | None:
             "title": match.group(3).strip(),
         }
     return None
+
+
+def remove_code_fences(text: str) -> str:
+    """Strip leading/trailing markdown code fences from GPT replies."""
+    if not isinstance(text, str):
+        return text
+    text = text.strip()
+    text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'```\s*$', '', text)
+    return text.strip()
 
 
 def find_node(tree: list, typ: str, num: str) -> dict | None:
@@ -318,9 +331,9 @@ def find_node(tree: list, typ: str, num: str) -> dict | None:
 
 
 def clean_number(node: dict) -> None:
-    """Remove heading words like 'الفصل' from the number field."""
-    if node.get("type") == "فصل" and isinstance(node.get("number"), str):
-        node["number"] = re.sub(r"^الفصل\\s*", "", node["number"]).strip()
+    """Remove heading words like 'الفصل' or 'المادة' from the number field."""
+    if node.get("type") in ARTICLE_TYPES and isinstance(node.get("number"), str):
+        node["number"] = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", node["number"]).strip()
 
 
 def clean_text(text: str) -> str:
@@ -328,7 +341,7 @@ def clean_text(text: str) -> str:
     if not isinstance(text, str):
         return ""
     text = re.sub(r"[A-Za-z]+", "", text)
-    text = re.sub(r"\\n\\s*\\d+\\s*\\n", "\\n", text)
+    text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
     return text.strip()
 
 
@@ -336,7 +349,7 @@ def finalize_structure(tree: list) -> None:
     """Clean numbers/text and ensure only articles contain text."""
     for node in tree:
         clean_number(node)
-        if node.get("type") != "فصل":
+        if node.get("type") not in ARTICLE_TYPES:
             node["text"] = ""
         else:
             node["text"] = clean_text(node.get("text", ""))
@@ -375,21 +388,21 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
             # Append new nodes with an explicit children list
             node.setdefault("children", [])
             # Only articles should carry text; wipe it from higher level nodes
-            if node.get("type") != "فصل":
+            if node.get("type") not in ARTICLE_TYPES:
                 node["text"] = ""
             clean_number(node)
-            if node.get("type") == "فصل" and node.get("text"):
+            if node.get("type") in ARTICLE_TYPES and node.get("text"):
                 node["text"] = clean_text(node["text"])
             full_tree.append(node)
         else:
             # Existing nodes may not have the children key yet
             match.setdefault("children", [])
-            if node.get("text") and match.get("type") == "فصل":
+            if node.get("text") and match.get("type") in ARTICLE_TYPES:
                 new = clean_text(node["text"])
                 if match.get("text"):
                     existing = match["text"]
-                    if existing and not existing.endswith("\\n") and not new.startswith("\\n"):
-                        match["text"] = existing + "\\n" + new
+                    if existing and not existing.endswith("\n") and not new.startswith("\n"):
+                        match["text"] = existing + "\n" + new
                     else:
                         match["text"] = existing + new
                 else:
@@ -404,7 +417,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     base     = os.path.basename(txt_path).rsplit(".", 1)[0]
     out_json = os.path.join(output_dir, f"{base}.json")
 
-    print(f"\\n[*] Processing: {txt_path}")
+    print(f"\n[*] Processing: {txt_path}")
     with open(txt_path, "r", encoding="utf-8") as f:
         arabic_text = f.read()
 
@@ -453,6 +466,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     for idx, chunk in enumerate(pass2_chunks, 1):
         print(f"[*] Processing chunk #{idx} ({len(chunk)} chars)")
         msgs2 = build_messages_for_pass2(prev_tail + chunk, inherited)
+        raw_articles = ""
         try:
             raw_articles = call_gpt_on_chunk(msgs2, json_mode=False)
             print(raw_articles)  # debug print
@@ -462,10 +476,12 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                 inherit_line, json_part = extract_inherited(raw_articles)
                 if inherit_line:
                     inherited_info = parse_inherited_fields(inherit_line)
-                    inherited = inherit_line + "\\n"
+                    inherited = inherit_line + "\n"
                 else:
                     inherited = ""
             chunk_content = json_part
+            if isinstance(chunk_content, str):
+                chunk_content = remove_code_fences(chunk_content)
 
             try:
                 chunk_data = json.loads(chunk_content) if isinstance(chunk_content, str) else chunk_content
@@ -491,7 +507,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                         "type": inherited_info["type"],
                         "number": inherited_info["number"],
                         "title": inherited_info.get("title", ""),
-                        "text": "" if inherited_info["type"] != "فصل" else "",
+                        "text": "" if inherited_info["type"] not in ARTICLE_TYPES else "",
                         "children": [],
                     }
                     structure_tree.append(parent)
@@ -552,7 +568,7 @@ def main():
     if input_path.lower().endswith(".pdf"):
         print(f"[*] OCRing PDF: {input_path}")
         base     = os.path.basename(input_path).rsplit(".", 1)[0]
-        txt_base = f"{base}.txt"
+        txt_base = f"{base}.txt}"
         txt_path = os.path.join(output_dir, txt_base)
 
         arabic_text = pdf_to_arabic_text(input_path)
