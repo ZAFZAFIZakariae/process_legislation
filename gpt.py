@@ -243,7 +243,7 @@ def build_messages_for_pass2(arabic_chunk: str, inherited: str = "") -> list[dic
 # ----------------------------------------------------------------------
 # 10) Call GPT (clamp max_tokens to model’s true limit)
 # ----------------------------------------------------------------------
-def call_gpt_on_chunk(messages: list[dict]) -> str:
+def call_gpt_on_chunk(messages: list[dict], json_mode: bool = True) -> str:
     used   = count_tokens_for_messages(messages, GPT_MODEL)
     remain = MAX_CONTEXT - used
     if remain <= 0:
@@ -252,13 +252,16 @@ def call_gpt_on_chunk(messages: list[dict]) -> str:
     # Allow up to MODEL_MAX_COMPLETION (approx ~12 000) or whatever remains, whichever is smaller
     max_completion = min(remain, MODEL_MAX_COMPLETION)
 
-    resp = openai.chat.completions.create(
-        model=GPT_MODEL,
-        messages=messages,
-        temperature=0.0,
-        max_tokens=max_completion,
-        response_format={"type": "json_object"},
-    )
+    params = {
+        "model": GPT_MODEL,
+        "messages": messages,
+        "temperature": 0.0,
+        "max_tokens": max_completion,
+    }
+    if json_mode:
+        params["response_format"] = {"type": "json_object"}
+
+    resp = openai.chat.completions.create(**params)
     content = resp.choices[0].message.content
     return content.strip() if isinstance(content, str) else content
 
@@ -272,7 +275,7 @@ def repair_chunk_json(raw: str) -> list | None:
         {"role": "user", "content": "Return a JSON object {\"result\": [...]}. If the array can't be recovered, use an empty array.\n" + str(raw)},
     ]
     try:
-        fixed = call_gpt_on_chunk(repair_messages)
+        fixed = call_gpt_on_chunk(repair_messages, json_mode=True)
         obj = json.loads(fixed) if isinstance(fixed, str) else fixed
         if isinstance(obj, list):
             return obj
@@ -293,7 +296,7 @@ def extract_inherited(reply: str) -> tuple[str, str]:
 
 
 def parse_inherited_fields(line: str) -> dict | None:
-    match = re.match(r"Inherited context:\s*type=([^,]+),\s*number=([^,]+),\s*title=\"([^\"]*)\"", line)
+    match = re.match(r"Inherited context:\\s*type=([^,]+),\\s*number=([^,]+),\\s*title=\\\"([^\\\"]*)\\\"", line)
     if match:
         return {
             "type": match.group(1).strip(),
@@ -317,7 +320,7 @@ def find_node(tree: list, typ: str, num: str) -> dict | None:
 def clean_number(node: dict) -> None:
     """Remove heading words like 'الفصل' from the number field."""
     if node.get("type") == "فصل" and isinstance(node.get("number"), str):
-        node["number"] = re.sub(r"^الفصل\s*", "", node["number"]).strip()
+        node["number"] = re.sub(r"^الفصل\\s*", "", node["number"]).strip()
 
 
 def clean_text(text: str) -> str:
@@ -325,7 +328,7 @@ def clean_text(text: str) -> str:
     if not isinstance(text, str):
         return ""
     text = re.sub(r"[A-Za-z]+", "", text)
-    text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
+    text = re.sub(r"\\n\\s*\\d+\\s*\\n", "\\n", text)
     return text.strip()
 
 
@@ -339,7 +342,6 @@ def finalize_structure(tree: list) -> None:
             node["text"] = clean_text(node.get("text", ""))
         if node.get("children"):
             finalize_structure(node["children"])
-
 
 # ----------------------------------------------------------------------
 # 12) Merge a chunk’s section‑array into the full tree
@@ -386,8 +388,8 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
                 new = clean_text(node["text"])
                 if match.get("text"):
                     existing = match["text"]
-                    if existing and not existing.endswith("\n") and not new.startswith("\n"):
-                        match["text"] = existing + "\n" + new
+                    if existing and not existing.endswith("\\n") and not new.startswith("\\n"):
+                        match["text"] = existing + "\\n" + new
                     else:
                         match["text"] = existing + new
                 else:
@@ -402,7 +404,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     base     = os.path.basename(txt_path).rsplit(".", 1)[0]
     out_json = os.path.join(output_dir, f"{base}.json")
 
-    print(f"\n[*] Processing: {txt_path}")
+    print(f"\\n[*] Processing: {txt_path}")
     with open(txt_path, "r", encoding="utf-8") as f:
         arabic_text = f.read()
 
@@ -419,7 +421,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
 
     raw_full = ""
     try:
-        raw_full = call_gpt_on_chunk(msgs1)
+        raw_full = call_gpt_on_chunk(msgs1, json_mode=True)
         full_obj = json.loads(raw_full) if isinstance(raw_full, str) else raw_full
     except Exception as e:
         dbg = os.path.join(output_dir, "debug_pass1.txt")
@@ -433,28 +435,26 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
         structure_tree = full_obj["structure"]
         if not isinstance(structure_tree, list):
             raise KeyError
-    except KeyError:
-        print("❌ Pass 1 JSON missing 'structure' or not a list.")
+        # Remove stray text from nodes that should never have it
+        finalize_structure(structure_tree)
+    except Exception:
+        dbg = os.path.join(output_dir, "debug_pass1_structure.txt")
+        with open(dbg, "w", encoding="utf-8") as ff:
+            ff.write(raw_full)
+        print("❌ Pass 1 returned unexpected JSON structure.")
+        print(f"→ Saved debug to: {dbg}")
         return
 
     # -------- PASS 2 --------
-    print("[*] Pass 2: extracting body text & nested subsections from all chunks…")
-    chunks2 = split_for_pass2(arabic_text)
-    print(f"[*]  Split into {len(chunks2)} chunk(s) for Pass 2.")
-
-    prev_tail = ""   # last ~100 tokens of previous chunk
-    inherited = ""   # “Inherited context” line if any
-
-    for idx, chunk in enumerate(chunks2, start=1):
-        user_input = inherited + prev_tail + chunk
-        msgs2      = build_messages_for_pass2(user_input, "")
-
-        used2 = count_tokens_for_messages(msgs2, GPT_MODEL)
-        print(f"[Debug] Pass 2 chunk #{idx} prompt uses {used2} tokens; remaining = {MAX_CONTEXT - used2}")
-
-        raw_articles = ""
+    print("[*] Pass 2: extracting articles text in chunks…")
+    pass2_chunks = split_for_pass2(arabic_text)
+    inherited = ""
+    prev_tail = ""
+    for idx, chunk in enumerate(pass2_chunks, 1):
+        print(f"[*] Processing chunk #{idx} ({len(chunk)} chars)")
+        msgs2 = build_messages_for_pass2(prev_tail + chunk, inherited)
         try:
-            raw_articles = call_gpt_on_chunk(msgs2)
+            raw_articles = call_gpt_on_chunk(msgs2, json_mode=False)
             print(raw_articles)  # debug print
 
             inherit_line, json_part = ("", raw_articles)
@@ -462,7 +462,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                 inherit_line, json_part = extract_inherited(raw_articles)
                 if inherit_line:
                     inherited_info = parse_inherited_fields(inherit_line)
-                    inherited = inherit_line + "\n"
+                    inherited = inherit_line + "\\n"
                 else:
                     inherited = ""
             chunk_content = json_part
