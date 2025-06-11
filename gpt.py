@@ -327,7 +327,15 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
             # Existing nodes may not have the children key yet
             match.setdefault("children", [])
             if node.get("text"):
-                match["text"] = node["text"]
+                if match.get("text"):
+                    existing = match["text"]
+                    new = node["text"]
+                    if existing and not existing.endswith("\n") and not new.startswith("\n"):
+                        match["text"] = existing + "\n" + new
+                    else:
+                        match["text"] = existing + new
+                else:
+                    match["text"] = node["text"]
             if node.get("children"):
                 merge_chunk_structure(match["children"], node["children"])
 
