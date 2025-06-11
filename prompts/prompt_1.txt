@@ -7,6 +7,7 @@ outline of the document.
 Return one JSON object only, matching the schema below. Keep fields that do not
 appear as empty strings or empty arrays. Do not add markdown fences or
 explanatory text. Use temperature 0.
+Include every listed field in the exact order shown, even if the value is empty.
 
 {
   "metadata": {
