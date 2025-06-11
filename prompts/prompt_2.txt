@@ -5,14 +5,15 @@ For this chunk you must return an array of section objects describing any
 headings and the text that falls under them.
 
 Output raw JSON only, no markdown or commentary.
-Respond ONLY with a valid JSON array of section objects (e.g., [{"type":...}]).
+Respond ONLY with a valid JSON array of section objects (e.g., [{"type": ...}]).
 Do not include any other text, markdown, or explanations.
 Each object must contain:
   "type"     – the Arabic heading word exactly as written (for example "الباب", "القسم", "الفصل", "المادة").
   "number"   – hierarchical number such as "1", "1.2", "1.2.3".
   "title"    – heading text after any dash or punctuation, or "".
   "text"     – lines belonging to that heading until the next heading of the
-                same or higher level.
+                same or higher level. Preserve those lines verbatim and do not
+                leave this field empty.
   "children" – array of nested objects with the same shape.
 
 Rules:
@@ -24,5 +25,6 @@ Rules:
    by comparing the numbering with the current parent.
 3. Keep the original line breaks inside "text". If no headings are present and
    there is no inherited context, return an empty array [].
+4. Keep the sections in the same order they appear in the input.
 
 <--- START ARABIC SECOND CHUNK:
