@@ -90,9 +90,25 @@ pass1_instructions, pass2_instructions = load_prompts()
 # Recognized article-type labels (with and without the definite article)
 ARTICLE_TYPES = {"فصل", "الفصل", "مادة", "المادة"}
 
+# Common header/footer lines to strip from OCR text
+HEADER_LINES = {"مديرية التشريع والدراسات", "وزارة العدل", "المملكة المغربية"}
+
 # ----------------------------------------------------------------------
-# 4) Token counting helper
+# 4) Utility helpers
 # ----------------------------------------------------------------------
+def clean_ocr_lines(text: str) -> str:
+    """Remove repeated headers, footers and page numbers from OCR text."""
+    cleaned: list[str] = []
+    for line in text.splitlines():
+        s = line.strip()
+        if s in HEADER_LINES:
+            continue
+        if re.match(r"^-?\s*\d+\s*-?$", s):
+            continue
+        cleaned.append(line)
+    return "\n".join(cleaned)
+
+
 def count_tokens_for_messages(messages: list[dict], model: str) -> int:
     encoding = tiktoken.encoding_for_model(model)
     total = 0
@@ -159,7 +175,6 @@ def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[st
         chunk = enc.decode(tokens[idx:actual_end])
         chunks.append(chunk)
 
-        prev_tail = slice_tokens[-100:] if (actual_end - idx) >= 100 else slice_tokens
         idx = actual_end
     return chunks
 
@@ -299,7 +314,7 @@ def extract_inherited(reply: str) -> tuple[str, str]:
 
 
 def parse_inherited_fields(line: str) -> dict | None:
-    match = re.match(r"Inherited context:\\s*type=([^,]+),\\s*number=([^,]+),\\s*title=\\\"([^\\\"]*)\\\"", line)
+    match = re.match(r"Inherited context:\s*type=([^,]+),\s*number=([^,]+),\s*title=\"([^\"]*)\"", line)
     if match:
         return {
             "type": match.group(1).strip(),
@@ -314,8 +329,8 @@ def remove_code_fences(text: str) -> str:
     if not isinstance(text, str):
         return text
     text = text.strip()
-    text = re.sub(r'^```(?:json)?\\s*', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'```\\s*$', '', text)
+    text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'```\s*$', '', text)
     return text.strip()
 
 
@@ -333,7 +348,7 @@ def find_node(tree: list, typ: str, num: str) -> dict | None:
 def clean_number(node: dict) -> None:
     """Remove heading words like 'الفصل' or 'المادة' from the number field."""
     if node.get("type") in ARTICLE_TYPES and isinstance(node.get("number"), str):
-        node["number"] = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\\s*", "", node["number"]).strip()
+        node["number"] = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", node["number"]).strip()
 
 
 def clean_text(text: str) -> str:
@@ -341,7 +356,9 @@ def clean_text(text: str) -> str:
     if not isinstance(text, str):
         return ""
     text = re.sub(r"[A-Za-z]+", "", text)
-    text = re.sub(r"\\n\\s*\\d+\\s*\\n", "\\n", text)
+    text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
+    text = re.sub(r"(?:مديرية التشريع والدراسات|وزارة العدل|المملكة المغربية)", "", text)
+    text = re.sub(r"^-?\s*\d+\s*-?$", "", text, flags=re.MULTILINE)
     return text.strip()
 
 
@@ -355,6 +372,28 @@ def finalize_structure(tree: list) -> None:
             node["text"] = clean_text(node.get("text", ""))
         if node.get("children"):
             finalize_structure(node["children"])
+
+
+def remove_empty_duplicate_articles(tree: list) -> None:
+    """Drop empty article nodes if a duplicate with text exists."""
+    seen: set[tuple[str, str]] = set()
+
+    def _walk(nodes: list):
+        i = 0
+        while i < len(nodes):
+            n = nodes[i]
+            key = (n.get("type"), n.get("number"))
+            if n.get("type") in ARTICLE_TYPES:
+                if n.get("text"):
+                    seen.add(key)
+                elif key in seen:
+                    nodes.pop(i)
+                    continue
+            if n.get("children"):
+                _walk(n["children"])
+            i += 1
+
+    _walk(tree)
 
 # ----------------------------------------------------------------------
 # 12) Merge a chunk’s section‑array into the full tree
@@ -419,7 +458,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
 
     print(f"\n[*] Processing: {txt_path}")
     with open(txt_path, "r", encoding="utf-8") as f:
-        arabic_text = f.read()
+        arabic_text = clean_ocr_lines(f.read())
 
     # -------- PASS 1 --------
     print("[*] Pass 1: extracting metadata + skeleton of sections/subsections…")
@@ -479,10 +518,16 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                     inherited = inherit_line + "\n"
                 else:
                     inherited = ""
+                    inherited_info = None
+            else:
+                inherited_info = None
+                inherited = ""
+
             chunk_content = json_part
             if isinstance(chunk_content, str):
                 chunk_content = remove_code_fences(chunk_content)
 
+            chunk_array = []
             try:
                 chunk_data = json.loads(chunk_content) if isinstance(chunk_content, str) else chunk_content
                 if isinstance(chunk_data, dict):
@@ -495,9 +540,6 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                 print(f"⚠️  Chunk #{idx} returned invalid JSON; attempting repair")
                 repaired = repair_chunk_json(raw_articles)
                 chunk_array = repaired if repaired is not None else []
-
-            if not chunk_array:
-                print(f"⚠️  Chunk #{idx} produced no sections.")
 
             target_tree = structure_tree
             if inherit_line and inherited_info:
@@ -512,6 +554,41 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                     }
                     structure_tree.append(parent)
                 target_tree = parent.get("children", [])
+
+            if not chunk_array:
+                print(f"⚠️  Chunk #{idx} produced no sections. Retrying in halves.")
+                enc = tiktoken.encoding_for_model(GPT_MODEL)
+                tok = enc.encode(chunk)
+                halves = [enc.decode(tok[:len(tok)//2]), enc.decode(tok[len(tok)//2:])]
+                recovered = 0
+                for h, sub in enumerate(halves, 1):
+                    try:
+                        r_msgs = build_messages_for_pass2(sub, inherited)
+                        r_raw = call_gpt_on_chunk(r_msgs, json_mode=False)
+                        r_line, r_part = extract_inherited(r_raw) if isinstance(r_raw, str) else ("", r_raw)
+                        if isinstance(r_part, str):
+                            r_part = remove_code_fences(r_part)
+                        r_data = json.loads(r_part) if isinstance(r_part, str) else r_part
+                        if isinstance(r_data, dict):
+                            r_array = [r_data]
+                        elif isinstance(r_data, list):
+                            r_array = r_data
+                        else:
+                            raise ValueError("Not a JSON array")
+                        merge_chunk_structure(target_tree, r_array)
+                        recovered += len(r_array)
+                        print(f"[+] Recovered {len(r_array)} nodes from retry {h} of chunk #{idx}")
+                    except Exception as err:
+                        print(f"⚠️  Retry {h} for chunk #{idx} failed: {err}")
+                if recovered == 0:
+                    dbg = os.path.join(output_dir, f"debug_pass2_chunk_{idx}.txt")
+                    with open(dbg, "w", encoding="utf-8") as ff:
+                        ff.write(raw_articles if isinstance(raw_articles, str) else str(raw_articles))
+                enc       = tiktoken.encoding_for_model(GPT_MODEL)
+                tok       = enc.encode(chunk)
+                tail      = tok[-100:] if len(tok) >= 100 else tok
+                prev_tail = enc.decode(tail)
+                continue
 
             merge_chunk_structure(target_tree, chunk_array)
             print(f"[+] Merged {len(chunk_array)} nodes from chunk #{idx}")
@@ -531,6 +608,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
 
     # -------- Save final JSON --------
     finalize_structure(structure_tree)
+    remove_empty_duplicate_articles(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
         json.dump(full_obj, fout, ensure_ascii=False, indent=2)
