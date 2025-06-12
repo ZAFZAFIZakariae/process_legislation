@@ -401,8 +401,8 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
                 new = clean_text(node["text"])
                 if match.get("text"):
                     existing = match["text"]
-                    if existing and not existing.endswith("\\n") and not new.startswith("\\n"):
-                        match["text"] = existing + "\\n" + new
+                    if existing and not existing.endswith("\n") and not new.startswith("\n"):
+                        match["text"] = existing + "\n" + new
                     else:
                         match["text"] = existing + new
                 else:
@@ -417,7 +417,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     base     = os.path.basename(txt_path).rsplit(".", 1)[0]
     out_json = os.path.join(output_dir, f"{base}.json")
 
-    print(f"\\n[*] Processing: {txt_path}")
+    print(f"\n[*] Processing: {txt_path}")
     with open(txt_path, "r", encoding="utf-8") as f:
         arabic_text = f.read()
 
@@ -568,7 +568,7 @@ def main():
     if input_path.lower().endswith(".pdf"):
         print(f"[*] OCRing PDF: {input_path}")
         base     = os.path.basename(input_path).rsplit(".", 1)[0]
-        txt_base = f"{base}.txt"
+        txt_base = f"{base}.txt}"
         txt_path = os.path.join(output_dir, txt_base)
 
         arabic_text = pdf_to_arabic_text(input_path)
