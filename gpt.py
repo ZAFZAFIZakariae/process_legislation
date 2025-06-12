@@ -314,7 +314,7 @@ def extract_inherited(reply: str) -> tuple[str, str]:
 
 
 def parse_inherited_fields(line: str) -> dict | None:
-    match = re.match(r"Inherited context:\s*type=([^,]+),\s*number=([^,]+),\s*title=\"([^\"]*)\"", line)
+    match = re.match(r"Inherited context:\\s*type=([^,]+),\\s*number=([^,]+),\\s*title=\\\"([^\\\"]*)\\\"", line)
     if match:
         return {
             "type": match.group(1).strip(),
@@ -329,8 +329,8 @@ def remove_code_fences(text: str) -> str:
     if not isinstance(text, str):
         return text
     text = text.strip()
-    text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'```\s*$', '', text)
+    text = re.sub(r'^```(?:json)?\\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'```\\s*$', '', text)
     return text.strip()
 
 
@@ -345,10 +345,23 @@ def find_node(tree: list, typ: str, num: str) -> dict | None:
     return None
 
 
+def find_node_with_parent(
+    tree: list, typ: str, num: str, parent: list | None = None
+) -> tuple[dict | None, list | None]:
+    """Return (node, parent_list) for the first match of type/number."""
+    for n in tree:
+        if n.get("type") == typ and n.get("number") == num:
+            return n, tree
+        child, p = find_node_with_parent(n.get("children", []), typ, num, tree)
+        if child is not None:
+            return child, p
+    return None, None
+
+
 def clean_number(node: dict) -> None:
     """Remove heading words like 'الفصل' or 'المادة' from the number field."""
     if node.get("type") in ARTICLE_TYPES and isinstance(node.get("number"), str):
-        node["number"] = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", node["number"]).strip()
+        node["number"] = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\\s*", "", node["number"]).strip()
 
 
 def clean_text(text: str) -> str:
@@ -356,9 +369,9 @@ def clean_text(text: str) -> str:
     if not isinstance(text, str):
         return ""
     text = re.sub(r"[A-Za-z]+", "", text)
-    text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
+    text = re.sub(r"\\n\\s*\\d+\\s*\\n", "\\n", text)
     text = re.sub(r"(?:مديرية التشريع والدراسات|وزارة العدل|المملكة المغربية)", "", text)
-    text = re.sub(r"^-?\s*\d+\s*-?$", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^-?\\s*\\d+\\s*-?$", "", text, flags=re.MULTILINE)
     return text.strip()
 
 
@@ -398,56 +411,52 @@ def remove_empty_duplicate_articles(tree: list) -> None:
 # ----------------------------------------------------------------------
 # 12) Merge a chunk’s section‑array into the full tree
 # ----------------------------------------------------------------------
-def merge_chunk_structure(full_tree: list, chunk_array: list):
+def merge_chunk_structure(full_tree: list, chunk_array: list, root_tree: list | None = None):
     """
     full_tree: list of nodes with keys {type, number, title, text, children}
     chunk_array: same structure for one chunk
+    root_tree:   reference to the top-level tree for cross-level deduping
     """
+    if root_tree is None:
+        root_tree = full_tree
+
     for node in chunk_array:
         if not isinstance(node, dict) or "number" not in node:
             print(f"[Debug] Skipping malformed node: {node}")
             continue
 
-        # Ensure the node always has a children list
         node.setdefault("children", [])
 
-        # Match on both type and number to avoid merging nodes from different
-        # levels that share the same numbering (e.g. "الباب الأول" vs
-        # "الفصل الأول").
-        match = next(
-            (
-                n
-                for n in full_tree
-                if n.get("type") == node.get("type")
-                and n.get("number") == node["number"]
-            ),
-            None,
-        )
-        if match is None:
-            # Append new nodes with an explicit children list
-            node.setdefault("children", [])
-            # Only articles should carry text; wipe it from higher level nodes
+        existing, parent_list = find_node_with_parent(root_tree, node.get("type"), node["number"])
+
+        if existing is None:
             if node.get("type") not in ARTICLE_TYPES:
                 node["text"] = ""
             clean_number(node)
             if node.get("type") in ARTICLE_TYPES and node.get("text"):
                 node["text"] = clean_text(node["text"])
             full_tree.append(node)
+            existing = node
         else:
-            # Existing nodes may not have the children key yet
-            match.setdefault("children", [])
-            if node.get("text") and match.get("type") in ARTICLE_TYPES:
-                new = clean_text(node["text"])
-                if match.get("text"):
-                    existing = match["text"]
-                    if existing and not existing.endswith("\n") and not new.startswith("\n"):
-                        match["text"] = existing + "\n" + new
-                    else:
-                        match["text"] = existing + new
+            if parent_list is not full_tree:
+                parent_list.remove(existing)
+                full_tree.append(existing)
+
+        existing.setdefault("children", [])
+
+        if node.get("text") and existing.get("type") in ARTICLE_TYPES:
+            new = clean_text(node["text"])
+            if existing.get("text"):
+                existing_text = existing["text"]
+                if existing_text and not existing_text.endswith("\n") and not new.startswith("\n"):
+                    existing["text"] = existing_text + "\n" + new
                 else:
-                    match["text"] = new
-            if node.get("children"):
-                merge_chunk_structure(match["children"], node["children"])
+                    existing["text"] = existing_text + new
+            else:
+                existing["text"] = new
+
+        if node.get("children"):
+            merge_chunk_structure(existing["children"], node["children"], root_tree)
 
 # ----------------------------------------------------------------------
 # 13) Main processing: OCR (if PDF) or read .txt, Pass 1, Pass 2, merge, save JSON
@@ -575,7 +584,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                             r_array = r_data
                         else:
                             raise ValueError("Not a JSON array")
-                        merge_chunk_structure(target_tree, r_array)
+                        merge_chunk_structure(target_tree, r_array, structure_tree)
                         recovered += len(r_array)
                         print(f"[+] Recovered {len(r_array)} nodes from retry {h} of chunk #{idx}")
                     except Exception as err:
@@ -589,8 +598,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
                 tail      = tok[-100:] if len(tok) >= 100 else tok
                 prev_tail = enc.decode(tail)
                 continue
-
-            merge_chunk_structure(target_tree, chunk_array)
+            merge_chunk_structure(target_tree, chunk_array, structure_tree)
             print(f"[+] Merged {len(chunk_array)} nodes from chunk #{idx}")
 
             enc       = tiktoken.encoding_for_model(GPT_MODEL)
@@ -646,7 +654,7 @@ def main():
     if input_path.lower().endswith(".pdf"):
         print(f"[*] OCRing PDF: {input_path}")
         base     = os.path.basename(input_path).rsplit(".", 1)[0]
-        txt_base = f"{base}.txt"
+        txt_base = f"{base}.txt}"
         txt_path = os.path.join(output_dir, txt_base)
 
         arabic_text = pdf_to_arabic_text(input_path)
