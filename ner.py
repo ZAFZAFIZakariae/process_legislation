@@ -4,7 +4,21 @@ import argparse
 import tempfile
 from typing import Dict, Any
 
+import re
+from datetime import datetime
+
 import openai
+
+try:
+    from dateutil import parser as date_parser  # type: ignore
+except Exception:  # pragma: no cover - optional dependency may be missing
+    date_parser = None
+
+try:
+    from unidecode import unidecode  # type: ignore
+except Exception:  # pragma: no cover - optional dependency may be missing
+    def unidecode(text: str) -> str:  # type: ignore
+        return text
 
 try:  # Prefer relative import when available
     from .ocr import pdf_to_arabic_text
@@ -19,6 +33,155 @@ NER_PROMPT_FILE = os.path.join(os.path.dirname(__file__), "prompts", "ner_prompt
 DEFAULT_MODEL = "gpt-3.5-turbo-16k"
 
 openai.api_key = os.getenv("OPENAI_API_KEY", "DUMMY")
+
+
+# Arabic to Western digit translation table
+_DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
+# Map of Arabic month names to month numbers for simple date parsing
+_MONTHS = {
+    "يناير": 1,
+    "فبراير": 2,
+    "مارس": 3,
+    "أبريل": 4,
+    "ابريل": 4,
+    "ماي": 5,
+    "يونيو": 6,
+    "يوليوز": 7,
+    "غشت": 8,
+    "شتنبر": 9,
+    "أكتوبر": 10,
+    "اكتوبر": 10,
+    "نوفمبر": 11,
+    "دجنبر": 12,
+}
+
+
+def _canonical_number(text: str) -> str | None:
+    """Return digits from text as a canonical string."""
+    if not isinstance(text, str):
+        return None
+    s = text.translate(_DIGIT_TRANS)
+    m = re.search(r"\d+(?:[./]\d+)*", s)
+    return m.group(0) if m else None
+
+
+def _parse_date(text: str) -> str | None:
+    """Parse Arabic or ISO date text to YYYY-MM-DD."""
+    if not isinstance(text, str):
+        return None
+    s = text.translate(_DIGIT_TRANS)
+    if date_parser is not None:
+        try:
+            dt = date_parser.parse(s, dayfirst=True, fuzzy=True)
+            return dt.date().isoformat()
+        except Exception:
+            pass
+    m = re.search(r"(\d{1,2})\s+(\S+)\s+(\d{4})", s)
+    if m:
+        day = int(m.group(1))
+        month_name = m.group(2)
+        year = int(m.group(3))
+        month = _MONTHS.get(month_name)
+        if month:
+            try:
+                return datetime(year, month, day).strftime("%Y-%m-%d")
+            except Exception:
+                pass
+    try:
+        return datetime.fromisoformat(s.strip()).strftime("%Y-%m-%d")
+    except Exception:
+        return None
+
+
+def normalize_entities(result: Dict[str, Any]) -> None:
+    """Populate missing normalized values for entities in-place."""
+    for ent in result.get("entities", []):
+        if ent.get("normalized"):
+            continue
+        typ = ent.get("type")
+        text = ent.get("text", "")
+        norm: str | None = None
+        if typ == "DATE":
+            norm = _parse_date(text)
+        elif typ in {"LAW", "DECRET", "OFFICIAL_JOURNAL", "ARTICLE", "CHAPTER", "SECTION", "CASE"}:
+            norm = _canonical_number(text)
+        else:
+            norm = unidecode(text) if text else ""
+        if norm:
+            ent["normalized"] = norm
+
+
+def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
+    """Detect ranges like 'من 7 إلى 12' and create ARTICLE entities."""
+    entities = result.setdefault("entities", [])
+    relations = result.setdefault("relations", [])
+
+    seq: dict[str, int] = {}
+
+    def next_id(typ: str, canonical: str) -> str:
+        base = f"{typ}_{canonical}"
+        seq[base] = seq.get(base, 0) + 1
+        return f"{base}_{seq[base]}"
+
+    # Initialize counters from existing IDs
+    for e in entities:
+        m = re.match(r"([A-Z_]+_[^_]+)_(\d+)$", str(e.get("id", "")))
+        if m:
+            base = m.group(1)
+            num = int(m.group(2))
+            if num > seq.get(base, 0):
+                seq[base] = num
+
+    art_map: dict[str, str] = {}
+    for e in entities:
+        if e.get("type") == "ARTICLE":
+            norm = e.get("normalized") or _canonical_number(e.get("text", ""))
+            if norm:
+                art_map.setdefault(norm, e.get("id"))
+
+    pattern = re.compile(r"من\s+(?:الفصل\s+)?([0-9٠-٩]+)\s+(?:إ?لى|الى)\s+(?:الفصل\s+)?([0-9٠-٩]+)")
+
+    for m in pattern.finditer(text):
+        start = _canonical_number(m.group(1))
+        end = _canonical_number(m.group(2))
+        if not start or not end:
+            continue
+        a = int(start)
+        b = int(end)
+        if a > b:
+            a, b = b, a
+        canonical = f"{a}-{b}"
+        ref_id = next_id("INTERNAL_REF", canonical)
+        entities.append({
+            "id": ref_id,
+            "type": "INTERNAL_REF",
+            "text": m.group(0),
+            "start_char": m.start(),
+            "end_char": m.end(),
+            "normalized": canonical,
+        })
+
+        for num in range(a, b + 1):
+            num_str = str(num)
+            art_id = art_map.get(num_str)
+            if not art_id:
+                art_id = next_id("ARTICLE", num_str)
+                entities.append({
+                    "id": art_id,
+                    "type": "ARTICLE",
+                    "text": num_str,
+                    "start_char": m.start(),
+                    "end_char": m.start(),
+                    "normalized": num_str,
+                })
+                art_map[num_str] = art_id
+            relations.append({
+                "relation_id": f"REL_refers_to_{ref_id}_{art_id}",
+                "type": "refers_to",
+                "source_id": ref_id,
+                "target_id": art_id,
+            })
 
 
 def load_prompt(text: str) -> str:
@@ -47,13 +210,14 @@ def extract_entities(text: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
     return call_openai(prompt, model)
 
 
-def extract_from_file(path: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
+def extract_from_file(path: str, model: str = DEFAULT_MODEL) -> tuple[Dict[str, Any], str]:
     if path.lower().endswith(".pdf"):
         text = pdf_to_arabic_text(path)
     else:
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
-    return extract_entities(text, model)
+    result = extract_entities(text, model)
+    return result, text
 
 
 def save_as_csv(result: Dict[str, Any], output_dir: str) -> None:
@@ -96,7 +260,9 @@ def main() -> None:
     parser.add_argument("--model", default=DEFAULT_MODEL, help="OpenAI model name")
     args = parser.parse_args()
 
-    result = extract_from_file(args.input, args.model)
+    result, text = extract_from_file(args.input, args.model)
+    expand_article_ranges(text, result)
+    normalize_entities(result)
     out_json = os.path.join(args.output_dir, "ner_result.json")
     os.makedirs(args.output_dir, exist_ok=True)
     with open(out_json, "w", encoding="utf-8") as f:
