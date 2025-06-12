@@ -7,7 +7,13 @@ from typing import Dict, Any
 import re
 from datetime import datetime
 
-import openai
+try:
+    import openai
+except Exception:  # pragma: no cover - optional dependency may be missing
+    class _Dummy:
+        def __getattr__(self, name):
+            raise RuntimeError("openai package is not available")
+    openai = _Dummy()
 
 try:
     from dateutil import parser as date_parser  # type: ignore
@@ -57,6 +63,30 @@ _MONTHS = {
 }
 
 
+NAME_ENTITY_TYPES = {
+    "PERSON",
+    "JUDGE",
+    "LAWYER",
+    "COURT_CLERK",
+    "ATTORNEY_GENERAL",
+    "GOVERNMENT_BODY",
+    "COURT",
+    "AGENCY",
+}
+
+_FEMININE_FORMS = {
+    "مديرة": "مدير",
+    "قاضية": "قاضي",
+    "محامية": "محامي",
+    "رئيسة": "رئيس",
+    "مستشارة": "مستشار",
+    "كاتبة": "كاتب",
+    "السيدة": "سيد",
+    "سيدة": "سيد",
+    "وزيرة": "وزير",
+}
+
+
 def _canonical_number(text: str) -> str | None:
     """Return digits from text as a canonical string."""
     if not isinstance(text, str):
@@ -94,6 +124,25 @@ def _parse_date(text: str) -> str | None:
         return None
 
 
+def normalize_arabic(text: str) -> str:
+    """Simplistic normalization for Arabic names."""
+    tokens: list[str] = []
+    for word in text.split():
+        w = word
+        if w.startswith("ال") and len(w) > 2:
+            w = w[2:]
+        if w in _FEMININE_FORMS:
+            w = _FEMININE_FORMS[w]
+        elif w.endswith("وات"):
+            w = w[:-3] + "ة"
+        elif w.endswith("ات"):
+            w = w[:-2] + "ة"
+        elif w.endswith("ون") or w.endswith("ين"):
+            w = w[:-2]
+        tokens.append(w)
+    return " ".join(tokens)
+
+
 def normalize_entities(result: Dict[str, Any]) -> None:
     """Populate missing normalized values for entities in-place."""
     for ent in result.get("entities", []):
@@ -106,6 +155,9 @@ def normalize_entities(result: Dict[str, Any]) -> None:
             norm = _parse_date(text)
         elif typ in {"LAW", "DECRET", "OFFICIAL_JOURNAL", "ARTICLE", "CHAPTER", "SECTION", "CASE"}:
             norm = _canonical_number(text)
+        elif typ in NAME_ENTITY_TYPES:
+            cleaned = normalize_arabic(text)
+            norm = unidecode(cleaned) if cleaned else ""
         else:
             norm = unidecode(text) if text else ""
         if norm:
@@ -126,7 +178,7 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
 
     # Initialize counters from existing IDs
     for e in entities:
-        m = re.match(r"([A-Z_]+_[^_]+)_(\d+)$", str(e.get("id", "")))
+        m = re.match(r"([A-Z_]+_[^_]+)_(\\d+)$", str(e.get("id", "")))
         if m:
             base = m.group(1)
             num = int(m.group(2))
@@ -140,7 +192,7 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
             if norm:
                 art_map.setdefault(norm, e.get("id"))
 
-    pattern = re.compile(r"من\s+(?:الفصل\s+)?([0-9٠-٩]+)\s+(?:إ?لى|الى)\s+(?:الفصل\s+)?([0-9٠-٩]+)")
+    pattern = re.compile(r"من\\s+(?:الفصل\\s+)?([0-9٠-٩]+)\\s+(?:إ?لى|الى)\\s+(?:الفصل\\s+)?([0-9٠-٩]+)")
 
     for m in pattern.finditer(text):
         start = _canonical_number(m.group(1))
