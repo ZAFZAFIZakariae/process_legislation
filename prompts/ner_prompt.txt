@@ -45,7 +45,7 @@ And identify **all** relations between them, of types:
 
 Each **entity** object must have:
 {
-  "id":          "<TYPE>_<canonical>_<seq>",  // e.g. "LAW_36.15_1"
+  "id":          <incremental number starting at 1>,
   "type":        "<one of the entity types above>",
   "text":        "<surface form>",
   "start_char":  <offset into the text, 0-based>,
@@ -55,10 +55,10 @@ Each **entity** object must have:
 
 Each relation object must have:
 {
-  "relation_id": "<REL>_<type>_<source_id>_<target_id>",  
+  "relation_id": <incremental number starting at 1>,  
   "type":        "<one of the relation types above>",
-  "source_id":   "<entity.id of the source>",
-  "target_id":   "<entity.id of the target>"
+  "source_id":   <entity.id of the source>,
+  "target_id":   <entity.id of the target>
 }
 
 Be exhaustive and precise. Use temperature=0.
