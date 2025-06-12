@@ -236,6 +236,30 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
             })
 
 
+def assign_numeric_ids(result: Dict[str, Any]) -> None:
+    """Replace entity and relation IDs with simple incremental numbers."""
+    entities = result.get("entities", [])
+    relations = result.get("relations", [])
+    id_map: dict[str, int] = {}
+    for idx, ent in enumerate(entities, start=1):
+        old = str(ent.get("id", ""))
+        id_map[old] = idx
+        ent["id"] = idx
+    for idx, rel in enumerate(relations, start=1):
+        rel["relation_id"] = idx
+        src = str(rel.get("source_id", ""))
+        tgt = str(rel.get("target_id", ""))
+        rel["source_id"] = id_map.get(src, src)
+        rel["target_id"] = id_map.get(tgt, tgt)
+
+
+def postprocess_result(text: str, result: Dict[str, Any]) -> None:
+    """Run all normalization and ID adjustments on the raw result."""
+    expand_article_ranges(text, result)
+    normalize_entities(result)
+    assign_numeric_ids(result)
+
+
 def load_prompt(text: str) -> str:
     with open(NER_PROMPT_FILE, "r", encoding="utf-8") as f:
         prompt = f.read()
@@ -269,6 +293,7 @@ def extract_from_file(path: str, model: str = DEFAULT_MODEL) -> tuple[Dict[str, 
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
     result = extract_entities(text, model)
+    postprocess_result(text, result)
     return result, text
 
 
@@ -313,8 +338,6 @@ def main() -> None:
     args = parser.parse_args()
 
     result, text = extract_from_file(args.input, args.model)
-    expand_article_ranges(text, result)
-    normalize_entities(result)
     out_json = os.path.join(args.output_dir, "ner_result.json")
     os.makedirs(args.output_dir, exist_ok=True)
     with open(out_json, "w", encoding="utf-8") as f:
