@@ -10,9 +10,11 @@ from datetime import datetime
 try:
     import openai
 except Exception:  # pragma: no cover - optional dependency may be missing
+
     class _Dummy:
         def __getattr__(self, name):
             raise RuntimeError("openai package is not available")
+
     openai = _Dummy()
 
 try:
@@ -23,8 +25,10 @@ except Exception:  # pragma: no cover - optional dependency may be missing
 try:
     from unidecode import unidecode  # type: ignore
 except Exception:  # pragma: no cover - optional dependency may be missing
+
     def unidecode(text: str) -> str:  # type: ignore
         return text
+
 
 try:  # Prefer relative import when available
     from .ocr import pdf_to_arabic_text
@@ -32,10 +36,16 @@ except Exception:
     try:
         from ocr import pdf_to_arabic_text  # type: ignore
     except Exception:
-        def pdf_to_arabic_text(path: str) -> str:
-            raise RuntimeError("OCR functionality is unavailable in this environment")
 
-NER_PROMPT_FILE = os.path.join(os.path.dirname(__file__), "prompts", "ner_prompt.txt")
+        def pdf_to_arabic_text(path: str) -> str:
+            raise RuntimeError(
+                "OCR functionality is unavailable in this environment"
+            )
+
+
+NER_PROMPT_FILE = os.path.join(
+    os.path.dirname(__file__), "prompts", "ner_prompt.txt"
+)
 DEFAULT_MODEL = "gpt-3.5-turbo-16k"
 
 openai.api_key = os.getenv("OPENAI_API_KEY", "DUMMY")
@@ -153,7 +163,41 @@ def normalize_entities(result: Dict[str, Any]) -> None:
         norm: str | None = None
         if typ == "DATE":
             norm = _parse_date(text)
-        elif typ in {"LAW", "DECRET", "OFFICIAL_JOURNAL", "ARTICLE", "CHAPTER", "SECTION", "CASE"}:
+        elif typ in {"LAW", "DECRET"}:
+            num = _canonical_number(text)
+            if num:
+                # include the Arabic legal type when available
+                if "ظهير" in text:
+                    norm = f"{num} الظهير شريف"
+                elif "القانون التنظيمي" in text:
+                    norm = f"{num} القانون تنظيمي"
+                elif "القانون" in text:
+                    norm = f"{num} القانون"
+                elif "مرسوم" in text:
+                    norm = f"{num} المرسوم"
+                elif "قرار" in text:
+                    norm = f"{num} القرار"
+                else:
+                    norm = num
+        elif typ in {"ARTICLE", "CHAPTER", "SECTION"}:
+            num = _canonical_number(text)
+            if num:
+                if "المادة" in text or "مادة" in text:
+                    heading = "المادة"
+                elif "الفصل" in text or "فصل" in text:
+                    heading = "الفصل"
+                elif "الباب" in text or "باب" in text:
+                    heading = "الباب"
+                elif "القسم" in text or "قسم" in text:
+                    heading = "القسم"
+                else:
+                    heading = {
+                        "ARTICLE": "الفصل",
+                        "CHAPTER": "الباب",
+                        "SECTION": "القسم",
+                    }.get(typ, "")
+                norm = f"{num} {heading}" if heading else num
+        elif typ in {"OFFICIAL_JOURNAL", "CASE"}:
             norm = _canonical_number(text)
         elif typ in NAME_ENTITY_TYPES:
             cleaned = normalize_arabic(text)
@@ -188,11 +232,15 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
     art_map: dict[str, str] = {}
     for e in entities:
         if e.get("type") == "ARTICLE":
-            norm = e.get("normalized") or _canonical_number(e.get("text", ""))
-            if norm:
-                art_map.setdefault(norm, e.get("id"))
+            canon_num = _canonical_number(
+                e.get("normalized") or e.get("text", "")
+            )
+            if canon_num:
+                art_map.setdefault(canon_num, e.get("id"))
 
-    pattern = re.compile(r"من\\s+(?:الفصل\\s+)?([0-9٠-٩]+)\\s+(?:إ?لى|الى)\\s+(?:الفصل\\s+)?([0-9٠-٩]+)")
+    pattern = re.compile(
+        r"من\s+(?:الفصل\s+)?([0-9٠-٩]+)\s+(?:إ?لى|الى)\s+(?:الفصل\s+)?([0-9٠-٩]+)"
+    )
 
     for m in pattern.finditer(text):
         start = _canonical_number(m.group(1))
@@ -205,35 +253,40 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
             a, b = b, a
         canonical = f"{a}-{b}"
         ref_id = next_id("INTERNAL_REF", canonical)
-        entities.append({
-            "id": ref_id,
-            "type": "INTERNAL_REF",
-            "text": m.group(0),
-            "start_char": m.start(),
-            "end_char": m.end(),
-            "normalized": canonical,
-        })
+        entities.append(
+            {
+                "id": ref_id,
+                "type": "INTERNAL_REF",
+                "text": m.group(0),
+                "start_char": m.start(),
+                "end_char": m.end(),
+                "normalized": canonical,
+            }
+        )
 
         for num in range(a, b + 1):
             num_str = str(num)
             art_id = art_map.get(num_str)
             if not art_id:
                 art_id = next_id("ARTICLE", num_str)
-                entities.append({
-                    "id": art_id,
-                    "type": "ARTICLE",
-                    "text": num_str,
-                    "start_char": m.start(),
-                    "end_char": m.start(),
-                    "normalized": num_str,
-                })
+                entities.append(
+                    {
+                        "id": art_id,
+                        "type": "ARTICLE",
+                        "text": num_str,
+                        "start_char": m.start(),
+                        "end_char": m.start(),
+                    }
+                )
                 art_map[num_str] = art_id
-            relations.append({
-                "relation_id": f"REL_refers_to_{ref_id}_{art_id}",
-                "type": "refers_to",
-                "source_id": ref_id,
-                "target_id": art_id,
-            })
+            relations.append(
+                {
+                    "relation_id": f"REL_refers_to_{ref_id}_{art_id}",
+                    "type": "refers_to",
+                    "source_id": ref_id,
+                    "target_id": art_id,
+                }
+            )
 
 
 def assign_numeric_ids(result: Dict[str, Any]) -> None:
@@ -268,7 +321,10 @@ def load_prompt(text: str) -> str:
 
 def call_openai(prompt: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
     messages = [
-        {"role": "system", "content": "You extract named entities from Moroccan legal text."},
+        {
+            "role": "system",
+            "content": "You extract named entities from Moroccan legal text.",
+        },
         {"role": "user", "content": prompt},
     ]
     resp = openai.chat.completions.create(
@@ -286,7 +342,9 @@ def extract_entities(text: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
     return call_openai(prompt, model)
 
 
-def extract_from_file(path: str, model: str = DEFAULT_MODEL) -> tuple[Dict[str, Any], str]:
+def extract_from_file(
+    path: str, model: str = DEFAULT_MODEL
+) -> tuple[Dict[str, Any], str]:
     if path.lower().endswith(".pdf"):
         text = pdf_to_arabic_text(path)
     else:
@@ -304,37 +362,62 @@ def save_as_csv(result: Dict[str, Any], output_dir: str) -> None:
     ent_path = os.path.join(output_dir, "entities.csv")
     rel_path = os.path.join(output_dir, "relations.csv")
     import csv
+
     with open(ent_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["id", "type", "text", "start_char", "end_char", "normalized"])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "id",
+                "type",
+                "text",
+                "start_char",
+                "end_char",
+                "normalized",
+            ],
+        )
         writer.writeheader()
         for e in entities:
-            writer.writerow({
-                "id": e.get("id", ""),
-                "type": e.get("type", ""),
-                "text": e.get("text", ""),
-                "start_char": e.get("start_char", ""),
-                "end_char": e.get("end_char", ""),
-                "normalized": e.get("normalized", ""),
-            })
+            writer.writerow(
+                {
+                    "id": e.get("id", ""),
+                    "type": e.get("type", ""),
+                    "text": e.get("text", ""),
+                    "start_char": e.get("start_char", ""),
+                    "end_char": e.get("end_char", ""),
+                    "normalized": e.get("normalized", ""),
+                }
+            )
     with open(rel_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["relation_id", "type", "source_id", "target_id"])
+        writer = csv.DictWriter(
+            f, fieldnames=["relation_id", "type", "source_id", "target_id"]
+        )
         writer.writeheader()
         for r in relations:
-            writer.writerow({
-                "relation_id": r.get("relation_id", ""),
-                "type": r.get("type", ""),
-                "source_id": r.get("source_id", ""),
-                "target_id": r.get("target_id", ""),
-            })
+            writer.writerow(
+                {
+                    "relation_id": r.get("relation_id", ""),
+                    "type": r.get("type", ""),
+                    "source_id": r.get("source_id", ""),
+                    "target_id": r.get("target_id", ""),
+                }
+            )
     print(f"[+] Saved entities to {ent_path}")
     print(f"[+] Saved relations to {rel_path}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Extract legal NER using OpenAI")
-    parser.add_argument("--input", required=True, help="Path to a PDF or text file")
-    parser.add_argument("--output_dir", required=True, help="Directory for CSV output")
-    parser.add_argument("--model", default=DEFAULT_MODEL, help="OpenAI model name")
+    parser = argparse.ArgumentParser(
+        description="Extract legal NER using OpenAI"
+    )
+    parser.add_argument(
+        "--input", required=True, help="Path to a PDF or text file"
+    )
+    parser.add_argument(
+        "--output_dir", required=True, help="Directory for CSV output"
+    )
+    parser.add_argument(
+        "--model", default=DEFAULT_MODEL, help="OpenAI model name"
+    )
     args = parser.parse_args()
 
     result, text = extract_from_file(args.input, args.model)
