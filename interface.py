@@ -5,10 +5,10 @@ import pandas as pd
 import streamlit as st
 
 try:
-    from .ner import extract_entities
+    from .ner import extract_entities, postprocess_result
     from .ocr import pdf_to_arabic_text
 except Exception:  # Allow running without package context
-    from ner import extract_entities  # type: ignore
+    from ner import extract_entities, postprocess_result  # type: ignore
     from ocr import pdf_to_arabic_text  # type: ignore
 
 
@@ -45,6 +45,7 @@ if uploaded and st.button("Extract Entities"):
         text = uploaded.read().decode("utf-8")
 
     result = extract_entities(text, model)
+    postprocess_result(text, result)
 
     entities = result.get("entities", [])
     relations = result.get("relations", [])
