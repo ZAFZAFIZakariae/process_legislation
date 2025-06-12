@@ -1,0 +1,488 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "type": "COURT",
+      "text": "محكمة النقض",
+      "start_char": 20,
+      "end_char": 31,
+      "normalized": "محكمة النقض"
+    },
+    {
+      "id": 2,
+      "type": "SECTION",
+      "text": "القسم الإداري",
+      "start_char": 32,
+      "end_char": 45,
+      "normalized": "القسم الإداري"
+    },
+    {
+      "id": 3,
+      "type": "CASE",
+      "text": "قرار عدد: 789/2025",
+      "start_char": 46,
+      "end_char": 63,
+      "normalized": "789/2025"
+    },
+    {
+      "id": 4,
+      "type": "CASE",
+      "text": "ملف إداري عدد: 1289/5/4/2025",
+      "start_char": 64,
+      "end_char": 91,
+      "normalized": "1289/5/4/2025"
+    },
+    {
+      "id": 5,
+      "type": "DATE",
+      "text": "12 يونيو 2025",
+      "start_char": 104,
+      "end_char": 116,
+      "normalized": "2025-06-12"
+    },
+    {
+      "id": 6,
+      "type": "JUDGE",
+      "text": "رئيس الغرفة الإدارية",
+      "start_char": 203,
+      "end_char": 222,
+      "normalized": "رئيس الغرفة الإدارية"
+    },
+    {
+      "id": 7,
+      "type": "ATTORNEY_GENERAL",
+      "text": "المحامي العام",
+      "start_char": 246,
+      "end_char": 258,
+      "normalized": "المحامي العام"
+    },
+    {
+      "id": 8,
+      "type": "COURT_CLERK",
+      "text": "كاتبة الضبط",
+      "start_char": 274,
+      "end_char": 286,
+      "normalized": "كاتبة الضبط"
+    },
+    {
+      "id": 9,
+      "type": "PERSON",
+      "text": "السيد ع.م",
+      "start_char": 404,
+      "end_char": 413,
+      "normalized": "السيد ع.م"
+    },
+    {
+      "id": 10,
+      "type": "PERSON",
+      "text": "الأستاذة (ن.ل)",
+      "start_char": 454,
+      "end_char": 469,
+      "normalized": "الأستاذة (ن.ل)"
+    },
+    {
+      "id": 11,
+      "type": "COURT",
+      "text": "المحكمة الإدارية بالرباط",
+      "start_char": 485,
+      "end_char": 510,
+      "normalized": "المحكمة الإدارية بالرباط"
+    },
+    {
+      "id": 12,
+      "type": "DATE",
+      "text": "20 دجنبر 2024",
+      "start_char": 523,
+      "end_char": 536,
+      "normalized": "2024-12-20"
+    },
+    {
+      "id": 13,
+      "type": "GOVERNMENT_BODY",
+      "text": "والي جهة الرباط-سلا-القنيطرة",
+      "start_char": 594,
+      "end_char": 624,
+      "normalized": "والي جهة الرباط-سلا-القنيطرة"
+    },
+    {
+      "id": 14,
+      "type": "DATE",
+      "text": "15 نونبر 2024",
+      "start_char": 648,
+      "end_char": 661,
+      "normalized": "2024-11-15"
+    },
+    {
+      "id": 15,
+      "type": "LAW",
+      "text": "ظهير شريف رقم 1.11.91",
+      "start_char": 1045,
+      "end_char": 1065,
+      "normalized": "1.11.91 الظهير الشريف"
+    },
+    {
+      "id": 16,
+      "type": "DATE",
+      "text": "27 من شعبان 1432",
+      "start_char": 1074,
+      "end_char": 1090,
+      "normalized": "2011-07-29"
+    },
+    {
+      "id": 17,
+      "type": "DATE",
+      "text": "29 يوليو 2011",
+      "start_char": 1092,
+      "end_char": 1104,
+      "normalized": "2011-07-29"
+    },
+    {
+      "id": 18,
+      "type": "OFFICIAL_JOURNAL",
+      "text": "الجريدة الرسمية عدد 5964 مكرر",
+      "start_char": 1118,
+      "end_char": 1148,
+      "normalized": "الجريدة الرسمية عدد 5964 مكرر"
+    },
+    {
+      "id": 19,
+      "type": "DATE",
+      "text": "30 يوليو 2011",
+      "start_char": 1156,
+      "end_char": 1168,
+      "normalized": "2011-07-30"
+    },
+    {
+      "id": 20,
+      "type": "ARTICLE",
+      "text": "الفصول: 1، 3، 4، 6، 7، 25، 29، 37",
+      "start_char": 1171,
+      "end_char": 1207,
+      "normalized": "1، 3، 4، 6، 7، 25، 29، 37 الفصول"
+    },
+    {
+      "id": 21,
+      "type": "LAW",
+      "text": "دستور 2011",
+      "start_char": 1211,
+      "end_char": 1221,
+      "normalized": "دستور 2011"
+    },
+    {
+      "id": 22,
+      "type": "LAW",
+      "text": "القانون التنظيمي رقم 44.12",
+      "start_char": 1224,
+      "end_char": 1251,
+      "normalized": "44.12 القانون التنظيمي"
+    },
+    {
+      "id": 23,
+      "type": "LAW",
+      "text": "الظهير الشريف رقم 1.58.376",
+      "start_char": 1304,
+      "end_char": 1331,
+      "normalized": "1.58.376 الظهير الشريف"
+    },
+    {
+      "id": 24,
+      "type": "INTERNAL_REF",
+      "text": "الفصول من 7 إلى 12",
+      "start_char": 1455,
+      "end_char": 1473,
+      "normalized": "الفصول من 7 إلى 12"
+    },
+    {
+      "id": 25,
+      "type": "DATE",
+      "text": "30 أكتوبر 2024",
+      "start_char": 1680,
+      "end_char": 1693,
+      "normalized": "2024-10-30"
+    },
+    {
+      "id": 26,
+      "type": "DATE",
+      "text": "21 نونبر 2024",
+      "start_char": 1754,
+      "end_char": 1767,
+      "normalized": "2024-11-21"
+    },
+    {
+      "id": 27,
+      "type": "DATE",
+      "text": "15 نونبر 2024",
+      "start_char": 2020,
+      "end_char": 2033,
+      "normalized": "2024-11-15"
+    },
+    {
+      "id": 28,
+      "type": "ARTICLE",
+      "text": "الفصول 1 و3 و4 و7",
+      "start_char": 2210,
+      "end_char": 2228,
+      "normalized": "1 و3 و4 و7 الفصول"
+    },
+    {
+      "id": 29,
+      "type": "ARTICLE",
+      "text": "الفصلين 25 و29",
+      "start_char": 2344,
+      "end_char": 2359,
+      "normalized": "25 و29 الفصلين"
+    },
+    {
+      "id": 30,
+      "type": "ARTICLE",
+      "text": "الفصل 1",
+      "start_char": 2480,
+      "end_char": 2487,
+      "normalized": "1 الفصل"
+    },
+    {
+      "id": 31,
+      "type": "ARTICLE",
+      "text": "الفصل 3",
+      "start_char": 2610,
+      "end_char": 2617,
+      "normalized": "3 الفصل"
+    },
+    {
+      "id": 32,
+      "type": "ARTICLE",
+      "text": "الفصل 4",
+      "start_char": 2660,
+      "end_char": 2667,
+      "normalized": "4 الفصل"
+    },
+    {
+      "id": 33,
+      "type": "ARTICLE",
+      "text": "الفصل 7",
+      "start_char": 2710,
+      "end_char": 2717,
+      "normalized": "7 الفصل"
+    },
+    {
+      "id": 34,
+      "type": "ARTICLE",
+      "text": "الفصل 25",
+      "start_char": 2780,
+      "end_char": 2788,
+      "normalized": "25 الفصل"
+    },
+    {
+      "id": 35,
+      "type": "ARTICLE",
+      "text": "الفصل 29",
+      "start_char": 2830,
+      "end_char": 2838,
+      "normalized": "29 الفصل"
+    },
+    {
+      "id": 36,
+      "type": "ARTICLE",
+      "text": "الفصل 37",
+      "start_char": 3085,
+      "end_char": 3093,
+      "normalized": "37 الفصل"
+    },
+    {
+      "id": 37,
+      "type": "JUDGE",
+      "text": "الرئيس: السيد محمد بنعيسى",
+      "start_char": 3845,
+      "end_char": 3873,
+      "normalized": "السيد محمد بنعيسى"
+    },
+    {
+      "id": 38,
+      "type": "JUDGE",
+      "text": "المستشار المقرر: السيدة فاطمة الزهراء الإدريسي",
+      "start_char": 3874,
+      "end_char": 3920,
+      "normalized": "السيدة فاطمة الزهراء الإدريسي"
+    },
+    {
+      "id": 39,
+      "type": "ATTORNEY_GENERAL",
+      "text": "المحامي العام: السيد عبد الرحيم العلوي",
+      "start_char": 3921,
+      "end_char": 3961,
+      "normalized": "السيد عبد الرحيم العلوي"
+    },
+    {
+      "id": 40,
+      "type": "COURT_CLERK",
+      "text": "كاتبة الضبط: السيدة خديجة الوردي",
+      "start_char": 3962,
+      "end_char": 4000,
+      "normalized": "السيدة خديجة الوردي"
+    },
+    {
+      "id": 41,
+      "type": "INTERNAL_REF",
+      "text": "من 7 إلى 12",
+      "start_char": 1711,
+      "end_char": 1722,
+      "normalized": "7-12"
+    },
+    {
+      "id": 42,
+      "type": "ARTICLE",
+      "text": "8",
+      "start_char": 1711,
+      "end_char": 1711,
+      "normalized": "8 الفصل"
+    },
+    {
+      "id": 43,
+      "type": "ARTICLE",
+      "text": "9",
+      "start_char": 1711,
+      "end_char": 1711,
+      "normalized": "9 الفصل"
+    },
+    {
+      "id": 44,
+      "type": "ARTICLE",
+      "text": "10",
+      "start_char": 1711,
+      "end_char": 1711,
+      "normalized": "10 الفصل"
+    },
+    {
+      "id": 45,
+      "type": "ARTICLE",
+      "text": "11",
+      "start_char": 1711,
+      "end_char": 1711,
+      "normalized": "11 الفصل"
+    },
+    {
+      "id": 46,
+      "type": "ARTICLE",
+      "text": "12",
+      "start_char": 1711,
+      "end_char": 1711,
+      "normalized": "12 الفصل"
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": 1,
+      "type": "decides",
+      "source_id": 1,
+      "target_id": 3
+    },
+    {
+      "relation_id": 2,
+      "type": "decides",
+      "source_id": 1,
+      "target_id": 4
+    },
+    {
+      "relation_id": 3,
+      "type": "judged_by",
+      "source_id": 3,
+      "target_id": 37
+    },
+    {
+      "relation_id": 4,
+      "type": "judged_by",
+      "source_id": 4,
+      "target_id": 38
+    },
+    {
+      "relation_id": 5,
+      "type": "prosecuted_by",
+      "source_id": 3,
+      "target_id": 39
+    },
+    {
+      "relation_id": 6,
+      "type": "prosecuted_by",
+      "source_id": 4,
+      "target_id": 39
+    },
+    {
+      "relation_id": 7,
+      "type": "clerk_for",
+      "source_id": 8,
+      "target_id": 1
+    },
+    {
+      "relation_id": 8,
+      "type": "clerk_for",
+      "source_id": 40,
+      "target_id": 1
+    },
+    {
+      "relation_id": 9,
+      "type": "enacted_by",
+      "source_id": 15,
+      "target_id": 21
+    },
+    {
+      "relation_id": 10,
+      "type": "published_in",
+      "source_id": 15,
+      "target_id": 18
+    },
+    {
+      "relation_id": 11,
+      "type": "effective_on",
+      "source_id": 15,
+      "target_id": 17
+    },
+    {
+      "relation_id": 12,
+      "type": "contains",
+      "source_id": 21,
+      "target_id": 20
+    },
+    {
+      "relation_id": 13,
+      "type": "jumps_to",
+      "source_id": 24,
+      "target_id": 20
+    },
+    {
+      "relation_id": 14,
+      "type": "refers_to",
+      "source_id": 41,
+      "target_id": 33
+    },
+    {
+      "relation_id": 15,
+      "type": "refers_to",
+      "source_id": 41,
+      "target_id": 42
+    },
+    {
+      "relation_id": 16,
+      "type": "refers_to",
+      "source_id": 41,
+      "target_id": 43
+    },
+    {
+      "relation_id": 17,
+      "type": "refers_to",
+      "source_id": 41,
+      "target_id": 44
+    },
+    {
+      "relation_id": 18,
+      "type": "refers_to",
+      "source_id": 41,
+      "target_id": 45
+    },
+    {
+      "relation_id": 19,
+      "type": "refers_to",
+      "source_id": 41,
+      "target_id": 46
+    }
+  ]
+}
