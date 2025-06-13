@@ -1,8 +1,18 @@
 import os
 import html
+import json
+import re
 import tempfile
 import pandas as pd
 import streamlit as st
+
+_DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
+
+def canonical_num(value: str) -> str | None:
+    s = str(value).translate(_DIGIT_TRANS)
+    m = re.search(r"\d+", s)
+    return m.group(0) if m else None
 
 try:
     from .ner import extract_entities, postprocess_result
@@ -12,7 +22,11 @@ except Exception:  # Allow running without package context
     from ocr import pdf_to_arabic_text  # type: ignore
 
 
-def highlight_text(text: str, entities: list[dict]) -> str:
+def highlight_text(
+    text: str,
+    entities: list[dict],
+    article_map: dict[str, str] | None = None,
+) -> str:
     """Return HTML for the text with entity spans anchored for linking."""
     parts: list[str] = []
     last = 0
@@ -23,13 +37,50 @@ def highlight_text(text: str, entities: list[dict]) -> str:
             continue
         parts.append(html.escape(text[last:start]))
         span_text = html.escape(text[start:end])
-        parts.append(f'<span id="{ent["id"]}"><mark>{span_text}</mark></span>')
+        target = ent.get("id")
+        if ent.get("type") == "ARTICLE" and article_map is not None:
+            num = canonical_num(ent.get("normalized") or ent.get("text"))
+            if num is not None and num in article_map:
+                target = article_map[num]
+        parts.append(
+            f'<span id="{ent["id"]}"><a href="#{target}"><mark>{span_text}</mark></a></span>'
+        )
         last = end
     parts.append(html.escape(text[last:]))
     return "".join(parts)
 
 st.set_page_config(page_title="Legal NER Assistant")
 st.title("Legal NER Assistant")
+
+article_map: dict[str, str] = {}
+articles_html = ""
+json_files = [f for f in os.listdir("output") if f.endswith(".json")]
+selected_json = st.selectbox("Structured JSON", json_files) if json_files else None
+if selected_json:
+    path = os.path.join("output", selected_json)
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    sections: list[str] = []
+
+    def _collect(nodes: list[dict]) -> None:
+        for node in nodes:
+            typ = node.get("type")
+            if typ in {"الفصل", "مادة"}:
+                num = canonical_num(node.get("number"))
+                if num:
+                    anchor = f"article-{num}"
+                    article_map[num] = anchor
+                    title = html.escape(f"{typ} {node.get('number', '')}")
+                    text_html = html.escape(node.get("text", ""))
+                    sections.append(
+                        f'<div id="{anchor}"><strong>{title}</strong><p>{text_html}</p></div>'
+                    )
+            if node.get("children"):
+                _collect(node["children"])
+
+    _collect(data.get("structure", []))
+    articles_html = "\n\n".join(sections)
 
 uploaded = st.file_uploader("Upload a PDF or text file", type=["pdf", "txt"])
 model = st.text_input("OpenAI model", value="gpt-3.5-turbo-16k")
@@ -58,11 +109,20 @@ if uploaded and st.button("Extract Entities"):
         st.download_button("Download entities.csv", csv, "entities.csv")
 
         st.subheader("Annotated Text")
-        st.markdown(highlight_text(text, entities), unsafe_allow_html=True)
+        st.markdown(highlight_text(text, entities, article_map), unsafe_allow_html=True)
 
         st.subheader("Jump to entity")
         for e in entities:
-            st.markdown(f"- [{e['text']}](#{e['id']})", unsafe_allow_html=True)
+            anchor = e.get("id")
+            if e.get("type") == "ARTICLE":
+                num = canonical_num(e.get("normalized") or e.get("text"))
+                if num is not None and num in article_map:
+                    anchor = article_map[num]
+            st.markdown(f"- [{e['text']}](#{anchor})", unsafe_allow_html=True)
+
+        if articles_html:
+            st.subheader("Articles")
+            st.markdown(articles_html, unsafe_allow_html=True)
 
     if relations:
         df_r = pd.DataFrame(relations)
