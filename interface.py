@@ -18,8 +18,11 @@ _DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 
 
 def canonical_num(value: str) -> str | None:
-    s = str(value).translate(_DIGIT_TRANS)
-    m = re.search(r"\d+", s)
+    """Return digits from text as a canonical string."""
+    if not isinstance(value, str):
+        return None
+    s = value.translate(_DIGIT_TRANS)
+    m = re.search(r"\d+(?:[./]\d+)*", s)
     return m.group(0) if m else None
 
 try:
