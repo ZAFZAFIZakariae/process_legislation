@@ -174,7 +174,7 @@ def normalize_entities(result: Dict[str, Any]) -> None:
             if num:
                 # include the Arabic legal type when available
                 if "ظهير" in text:
-                    norm = f"{num} الظهير الشريف}"
+                    norm = f"{num} الظهير الشريف"
                 elif "القانون التنظيمي" in text:
                     norm = f"{num} القانون التنظيمي"
                 elif "القانون" in text:
