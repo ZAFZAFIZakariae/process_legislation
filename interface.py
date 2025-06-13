@@ -34,6 +34,7 @@ def highlight_text(
     text: str,
     entities: list[dict],
     article_map: dict[str, str] | None = None,
+    ref_targets: dict[str, list[str]] | None = None,
 ) -> str:
     """Return HTML for the text with entity spans anchored for linking."""
     parts: list[str] = []
@@ -54,14 +55,27 @@ def highlight_text(
             continue
         parts.append(html.escape(text[last:start]))
         span_text = html.escape(text[start:end])
-        target = ent.get("id")
-        if ent.get("type") == "ARTICLE" and article_map is not None:
+
+        target: str | None = None
+        if ref_targets is not None:
+            targets = ref_targets.get(str(ent.get("id")))
+            if targets:
+                target = str(targets[0])
+
+        if target is None and ent.get("type") == "ARTICLE" and article_map is not None:
             num = canonical_num(ent.get("normalized") or ent.get("text"))
             if num is not None and num in article_map:
                 target = article_map[num]
-        parts.append(
-            f'<span id="{ent["id"]}" class="ner-span"><a href="#{target}"><mark id="ent-{ent["id"]}" class="entity-mark">{span_text}</mark></a></span>'
-        )
+
+        inner = f'<mark id="ent-{ent["id"]}" class="entity-mark">{span_text}</mark>'
+        if target:
+            parts.append(
+                f'<span id="{ent["id"]}" class="ner-span"><a href="#{target}">{inner}</a></span>'
+            )
+        else:
+            parts.append(
+                f'<span id="{ent["id"]}" class="ner-span">{inner}</span>'
+            )
         last = end
     parts.append(html.escape(text[last:]))
     html_str = "".join(parts)
@@ -178,6 +192,13 @@ if uploaded and st.button("Extract Entities"):
     entities = result.get("entities", [])
     relations = result.get("relations", [])
 
+    ref_targets: dict[str, list[str]] = {}
+    for rel in relations:
+        src = str(rel.get("source_id"))
+        tgt = str(rel.get("target_id"))
+        if src and tgt:
+            ref_targets.setdefault(src, []).append(tgt)
+
     if entities:
         df_e = pd.DataFrame(entities)
         st.subheader("Entities")
@@ -186,16 +207,15 @@ if uploaded and st.button("Extract Entities"):
         st.download_button("Download entities.csv", csv, "entities.csv")
 
         st.subheader("Annotated Text")
-        st.markdown(highlight_text(text, entities, article_map), unsafe_allow_html=True)
+        st.markdown(
+            highlight_text(text, entities, article_map, ref_targets),
+            unsafe_allow_html=True,
+        )
 
         st.subheader("Jump to entity")
         jump_links: list[str] = ["<ul>"]
         for e in entities:
             anchor = e.get("id")
-            if e.get("type") == "ARTICLE":
-                num = canonical_num(e.get("normalized") or e.get("text"))
-                if num is not None and num in article_map:
-                    anchor = article_map[num]
             text_html = html.escape(e.get("text", ""))
             jump_links.append(
                 f'<li><a href="javascript:void(0)" onclick="document.getElementById(\'{anchor}\').scrollIntoView();">{text_html}</a></li>'
