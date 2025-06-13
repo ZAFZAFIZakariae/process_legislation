@@ -55,7 +55,8 @@ def highlight_text(
         )
         last = end
     parts.append(html.escape(text[last:]))
-    return "".join(parts)
+    html_str = "".join(parts)
+    return f'<div dir="rtl">{html_str}</div>'
 
 
 def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
@@ -109,7 +110,13 @@ def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
 st.set_page_config(page_title="Legal NER Assistant")
 st.title("Legal NER Assistant")
 st.markdown(
-    "<style>.entity-mark.selected{background-color:orange;}</style>",
+    """
+    <style>
+    .ner-span { direction: rtl; }
+    .entity-mark { background-color: #FFFF00; }
+    .entity-mark.selected { background-color: orange; }
+    </style>
+    """,
     unsafe_allow_html=True,
 )
 
@@ -173,13 +180,19 @@ if uploaded and st.button("Extract Entities"):
         st.markdown(highlight_text(text, entities, article_map), unsafe_allow_html=True)
 
         st.subheader("Jump to entity")
+        jump_links: list[str] = ["<ul>"]
         for e in entities:
             anchor = e.get("id")
             if e.get("type") == "ARTICLE":
                 num = canonical_num(e.get("normalized") or e.get("text"))
                 if num is not None and num in article_map:
                     anchor = article_map[num]
-            st.markdown(f"- [{e['text']}](#{anchor})", unsafe_allow_html=True)
+            text_html = html.escape(e.get("text", ""))
+            jump_links.append(
+                f'<li><a href="javascript:void(0)" onclick="document.getElementById(\'{anchor}\').scrollIntoView();">{text_html}</a></li>'
+            )
+        jump_links.append("</ul>")
+        st.markdown("\n".join(jump_links), unsafe_allow_html=True)
 
         if articles_html:
             st.subheader("Articles")
