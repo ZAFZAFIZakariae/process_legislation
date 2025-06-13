@@ -296,7 +296,7 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
                 art_map.setdefault(canon_num, e.get("id"))
 
     pattern = re.compile(
-        r"من\\s+(?:الفصل\\s+)?([0-9٠-٩]+)\\s+(?:إ?لى|الى)\\s+(?:الفصل\\s+)?([0-9٠-٩]+"
+        r"من\s+(?:الفصل\s+)?([0-9٠-٩]+)\s+(?:إ?لى|الى)\s+(?:الفصل\s+)?([0-9٠-٩]+)"
     )
 
     for m in pattern.finditer(text):
