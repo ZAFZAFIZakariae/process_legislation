@@ -164,7 +164,6 @@ def normalize_entities(result: Dict[str, Any]) -> None:
             "ARTICLE",
             "CHAPTER",
             "SECTION",
-            "INTERNAL_REF",
         }:
             continue
         norm: str | None = None
@@ -175,7 +174,7 @@ def normalize_entities(result: Dict[str, Any]) -> None:
             if num:
                 # include the Arabic legal type when available
                 if "ظهير" in text:
-                    norm = f"{num} الظهير الشريف"
+                    norm = f"{num} الظهير الشريف}"
                 elif "القانون التنظيمي" in text:
                     norm = f"{num} القانون التنظيمي"
                 elif "القانون" in text:
@@ -297,7 +296,7 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
                 art_map.setdefault(canon_num, e.get("id"))
 
     pattern = re.compile(
-        r"من\s+(?:الفصل\s+)?([0-9٠-٩]+)\s+(?:إ?لى|الى)\s+(?:الفصل\s+)?([0-9٠-٩]+)"
+        r"من\\s+(?:الفصل\\s+)?([0-9٠-٩]+)\\s+(?:إ?لى|الى)\\s+(?:الفصل\\s+)?([0-9٠-٩]+"
     )
 
     for m in pattern.finditer(text):
@@ -318,7 +317,7 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
                 "text": m.group(0),
                 "start_char": m.start(),
                 "end_char": m.end(),
-                "normalized": canonical,
+                "normalized": f"الفصل {canonical}",
             }
         )
 
@@ -375,12 +374,12 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
                 art_map.setdefault(canon_num, e.get("id"))
 
     pattern = re.compile(
-        r"الفصول?ين?\s*:[\s\u00A0]*((?:[0-9٠-٩]+(?:\s*[،,]\s*|\s+و\s+))*[0-9٠-٩]+)"
+        r"الفصول?ين?\\s*:[\\s\\u00A0]*((?:[0-9٠-٩]+(?:\\s*[،,]\\s*|\\s+و\\s+))*[0-9٠-٩]+)"
     )
 
     for m in pattern.finditer(text):
         num_text = m.group(1)
-        raw_nums = re.split(r"[،,]\s*|\s+و\s+", num_text)
+        raw_nums = re.split(r"[،,]\\s*|\\s+و\\s+", num_text)
         numbers: list[str] = []
         for n in raw_nums:
             c = _canonical_number(n)
@@ -388,8 +387,8 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
                 numbers.append(str(int(c)))
         if not numbers:
             continue
-        canonical = ",".join(numbers)
-        ref_id = next_id("INTERNAL_REF", canonical.replace(",", "_"))
+        joined = "_".join(numbers)
+        ref_id = next_id("INTERNAL_REF", joined)
         entities.append(
             {
                 "id": ref_id,
@@ -397,7 +396,7 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
                 "text": m.group(0),
                 "start_char": m.start(),
                 "end_char": m.end(),
-                "normalized": canonical,
+                "normalized": f"الفصل {joined}",
             }
         )
 
@@ -443,7 +442,7 @@ def assign_numeric_ids(result: Dict[str, Any]) -> None:
 
 
 def postprocess_result(text: str, result: Dict[str, Any]) -> None:
-    """Run all normalization and ID adjustments on the raw result."""
+    """Apply post-processing steps to raw NER result."""
     expand_article_ranges(text, result)
     expand_article_lists(text, result)
     normalize_entities(result)
