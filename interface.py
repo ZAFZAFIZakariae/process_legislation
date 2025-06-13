@@ -82,8 +82,12 @@ def highlight_text(
                 if num is not None and num in article_texts:
                     art = article_texts[num].replace("\n", "<br/>")
                     art_data = f' data-article="{html.escape(art)}"'
+            click_js = (
+                "var c=this.getAttribute('data-article');"
+                " if(c){window.alert(c);}"
+            )
             parts.append(
-                f'<span id="{ent["id"]}" class="ner-span"><a href="javascript:void(0)"{art_data} onclick="showArticle(this)">{inner}</a></span>'
+                f'<span id="{ent["id"]}" class="ner-span"><a href="javascript:void(0)"{art_data} onclick="{click_js}">{inner}</a></span>'
             )
         else:
             parts.append(
@@ -152,12 +156,6 @@ st.markdown(
     .entity-mark { background-color: #FFFF00; }
     .entity-mark.selected { background-color: orange; }
     </style>
-    <script>
-    function showArticle(el) {
-        var content = el.getAttribute('data-article');
-        if (content) { window.alert(content); }
-    }
-    </script>
     """,
     unsafe_allow_html=True,
 )
