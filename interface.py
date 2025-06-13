@@ -35,6 +35,8 @@ def highlight_text(
     entities: list[dict],
     article_map: dict[str, str] | None = None,
     ref_targets: dict[str, list[str]] | None = None,
+    tooltips: dict[str, str] | None = None,
+    article_texts: dict[str, str] | None = None,
 ) -> str:
     """Return HTML for the text with entity spans anchored for linking."""
     parts: list[str] = []
@@ -55,6 +57,11 @@ def highlight_text(
             continue
         parts.append(html.escape(text[last:start]))
         span_text = html.escape(text[start:end])
+        tooltip = ""
+        if tooltips is not None:
+            tip = tooltips.get(str(ent.get("id")))
+            if tip:
+                tooltip = f' title="{html.escape(tip)}"'
 
         target: str | None = None
         if ref_targets is not None:
@@ -67,10 +74,16 @@ def highlight_text(
             if num is not None and num in article_map:
                 target = article_map[num]
 
-        inner = f'<mark id="ent-{ent["id"]}" class="entity-mark">{span_text}</mark>'
+        inner = f'<mark id="ent-{ent["id"]}" class="entity-mark"{tooltip}>{span_text}</mark>'
         if target:
+            art_data = ""
+            if article_texts is not None and ent.get("type") == "ARTICLE":
+                num = canonical_num(ent.get("normalized") or ent.get("text"))
+                if num is not None and num in article_texts:
+                    art = article_texts[num].replace("\n", "<br/>")
+                    art_data = f' data-article="{html.escape(art)}"'
             parts.append(
-                f'<span id="{ent["id"]}" class="ner-span"><a href="#{target}">{inner}</a></span>'
+                f'<span id="{ent["id"]}" class="ner-span"><a href="javascript:void(0)"{art_data} onclick="showArticle(this)">{inner}</a></span>'
             )
         else:
             parts.append(
@@ -139,11 +152,18 @@ st.markdown(
     .entity-mark { background-color: #FFFF00; }
     .entity-mark.selected { background-color: orange; }
     </style>
+    <script>
+    function showArticle(el) {
+        var content = el.getAttribute('data-article');
+        if (content) { window.alert(content); }
+    }
+    </script>
     """,
     unsafe_allow_html=True,
 )
 
 article_map: dict[str, str] = {}
+article_texts: dict[str, str] = {}
 articles_html = ""
 json_files = [f for f in os.listdir("output") if f.endswith(".json")]
 selected_json = st.selectbox("Structured JSON", json_files) if json_files else None
@@ -162,6 +182,7 @@ if selected_json:
                 if num:
                     anchor = f"article-{num}"
                     article_map[num] = anchor
+                    article_texts[num] = node.get("text", "")
                     title = html.escape(f"{typ} {node.get('number', '')}")
                     text_html = html.escape(node.get("text", ""))
                     sections.append(
@@ -193,39 +214,54 @@ if uploaded and st.button("Extract Entities"):
     relations = result.get("relations", [])
 
     ref_targets: dict[str, list[str]] = {}
+    tooltip_map: dict[str, str] = {}
+    id_to_text = {str(e.get("id")): e.get("text", "") for e in entities}
     for rel in relations:
         src = str(rel.get("source_id"))
         tgt = str(rel.get("target_id"))
+        typ = rel.get("type")
         if src and tgt:
             ref_targets.setdefault(src, []).append(tgt)
+            if typ:
+                s_txt = id_to_text.get(src, "")
+                t_txt = id_to_text.get(tgt, "")
+                tooltip_map[src] = f"{s_txt} {typ} {t_txt}".strip()
 
     if entities:
         df_e = pd.DataFrame(entities)
-        st.subheader("Entities")
-        st.dataframe(df_e)
-        csv = df_e.to_csv(index=False).encode("utf-8")
-        st.download_button("Download entities.csv", csv, "entities.csv")
+
+        with st.expander("Entities"):
+            st.dataframe(df_e)
+            csv = df_e.to_csv(index=False).encode("utf-8")
+            st.download_button("Download entities.csv", csv, "entities.csv")
 
         st.subheader("Annotated Text")
         st.markdown(
-            highlight_text(text, entities, article_map, ref_targets),
+            highlight_text(
+                text,
+                entities,
+                article_map,
+                ref_targets,
+                tooltip_map,
+                article_texts,
+            ),
             unsafe_allow_html=True,
         )
 
-        st.subheader("Jump to entity")
-        jump_links: list[str] = ["<ul>"]
-        for e in entities:
-            anchor = e.get("id")
-            text_html = html.escape(e.get("text", ""))
-            jump_links.append(
-                f'<li><a href="javascript:void(0)" onclick="document.getElementById(\'{anchor}\').scrollIntoView();">{text_html}</a></li>'
-            )
-        jump_links.append("</ul>")
-        st.markdown("\n".join(jump_links), unsafe_allow_html=True)
+        with st.expander("Jump to entity"):
+            jump_links: list[str] = ["<ul>"]
+            for e in entities:
+                anchor = e.get("id")
+                text_html = html.escape(e.get("text", ""))
+                jump_links.append(
+                    f'<li><a href="javascript:void(0)" onclick="document.getElementById(\'{anchor}\').scrollIntoView();">{text_html}</a></li>'
+                )
+            jump_links.append("</ul>")
+            st.markdown("\n".join(jump_links), unsafe_allow_html=True)
 
         if articles_html:
-            st.subheader("Articles")
-            st.markdown(articles_html, unsafe_allow_html=True)
+            with st.expander("Articles"):
+                st.markdown(articles_html, unsafe_allow_html=True)
 
     if relations:
         df_r = pd.DataFrame(relations)
