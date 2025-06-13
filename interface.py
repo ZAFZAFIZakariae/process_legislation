@@ -5,6 +5,14 @@ import re
 import tempfile
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
+
+try:
+    import networkx as nx
+    from pyvis.network import Network
+except Exception:  # pragma: no cover - optional dependency may be missing
+    nx = None
+    Network = None
 
 _DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 
@@ -43,14 +51,67 @@ def highlight_text(
             if num is not None and num in article_map:
                 target = article_map[num]
         parts.append(
-            f'<span id="{ent["id"]}"><a href="#{target}"><mark>{span_text}</mark></a></span>'
+            f'<span id="{ent["id"]}" class="ner-span"><a href="#{target}"><mark id="ent-{ent["id"]}" class="entity-mark">{span_text}</mark></a></span>'
         )
         last = end
     parts.append(html.escape(text[last:]))
     return "".join(parts)
 
+
+def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
+    """Return HTML for a relation graph or None if dependencies missing."""
+    if nx is None or Network is None:
+        return None
+
+    G = nx.DiGraph()
+    for ent in entities:
+        eid = ent.get("id")
+        label = ent.get("normalized") or ent.get("text")
+        G.add_node(eid, label=label, title=ent.get("type"))
+
+    for rel in relations:
+        src = rel.get("source_id")
+        tgt = rel.get("target_id")
+        typ = rel.get("type")
+        if src in G and tgt in G:
+            G.add_edge(src, tgt, title=typ)
+
+    net = Network(height="600px", width="100%", directed=True)
+    net.from_nx(G)
+    html_str = net.generate_html()  # type: ignore
+    script = """
+    <script type="text/javascript">
+    function highlightEntities(ids) {
+        document.querySelectorAll('.entity-mark').forEach(function(el) {
+            el.classList.remove('selected');
+        });
+        ids.forEach(function(id){
+            var el = document.getElementById('ent-'+id);
+            if (el) {
+                el.classList.add('selected');
+            }
+        });
+    }
+    network.on('click', function(params){
+        if (params.nodes.length > 0) {
+            var node = params.nodes[0];
+            var connected = network.getConnectedNodes(node);
+            connected.push(node);
+            highlightEntities(connected);
+            var target = document.getElementById('ent-'+node);
+            if (target) { target.scrollIntoView({behavior:'smooth', block:'center'}); }
+        }
+    });
+    </script>
+    """
+    return html_str.replace("</body>", script + "</body>")
+
 st.set_page_config(page_title="Legal NER Assistant")
 st.title("Legal NER Assistant")
+st.markdown(
+    "<style>.entity-mark.selected{background-color:orange;}</style>",
+    unsafe_allow_html=True,
+)
 
 article_map: dict[str, str] = {}
 articles_html = ""
@@ -130,5 +191,12 @@ if uploaded and st.button("Extract Entities"):
         st.dataframe(df_r)
         csv_r = df_r.to_csv(index=False).encode("utf-8")
         st.download_button("Download relations.csv", csv_r, "relations.csv")
+
+        graph_html = build_graph(entities, relations)
+        if graph_html:
+            st.subheader("Relation Graph")
+            components.html(graph_html, height=650, scrolling=True)
+        else:
+            st.info("Network graph requires networkx and pyvis packages")
 
     st.success("Extraction complete")
