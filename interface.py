@@ -39,6 +39,14 @@ def highlight_text(
     article_texts: dict[str, str] | None = None,
 ) -> str:
     """Return HTML for the text with entity spans anchored for linking."""
+    popup = (
+        "<div id=\"article-popup\" style=\"display:none;position:fixed;top:10%;"
+        "left:10%;width:80%;max-height:80%;overflow:auto;background-color:white;"
+        "border:1px solid #888;padding:10px;z-index:1000;\">"
+        "<button onclick=\"document.getElementById('article-popup').style.display='none';\" style=\"float:left;\">X</button>"
+        "<div id=\"article-popup-content\"></div></div>"
+    )
+
     parts: list[str] = []
     last = 0
     for ent in sorted(entities, key=lambda e: int(e.get("start_char", 0))):
@@ -84,7 +92,9 @@ def highlight_text(
                     art_data = f' data-article="{html.escape(art)}"'
             click_js = (
                 "var c=this.getAttribute('data-article');"
-                " if(c){window.alert(c);}"
+                " if(c){var p=document.getElementById('article-popup');"
+                " var s=document.getElementById('article-popup-content');"
+                " if(s){s.innerHTML=c;} if(p){p.style.display='block';}}"
             )
             parts.append(
                 f'<span id="{ent["id"]}" class="ner-span"><a href="javascript:void(0)"{art_data} onclick="{click_js}">{inner}</a></span>'
@@ -96,7 +106,7 @@ def highlight_text(
         last = end
     parts.append(html.escape(text[last:]))
     html_str = "".join(parts)
-    return f'<div dir="rtl">{html_str}</div>'
+    return popup + f'<div dir="rtl">{html_str}</div>'
 
 
 def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
