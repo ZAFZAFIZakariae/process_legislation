@@ -217,7 +217,13 @@ def normalize_entities(result: Dict[str, Any]) -> None:
 
 def fix_entity_offsets(text: str, result: Dict[str, Any]) -> None:
     """Correct misaligned start/end offsets for entities in-place."""
-    for ent in result.get("entities", []):
+    entities = result.get("entities", [])
+    used: list[tuple[int, int]] = []
+
+    def _overlaps(r1: tuple[int, int], r2: tuple[int, int]) -> bool:
+        return not (r1[1] <= r2[0] or r1[0] >= r2[1])
+
+    for ent in entities:
         ent_text = str(ent.get("text", ""))
         try:
             start = int(ent.get("start_char", -1))
@@ -225,17 +231,39 @@ def fix_entity_offsets(text: str, result: Dict[str, Any]) -> None:
         except Exception:
             start = -1
             end = -1
+
         if not ent_text:
             continue
-        if 0 <= start < end <= len(text) and text[start:end] == ent_text:
+
+        # gather all occurrences of the entity text in the document
+        occs: list[tuple[int, int]] = []
+        idx = text.find(ent_text)
+        while idx != -1:
+            occs.append((idx, idx + len(ent_text)))
+            idx = text.find(ent_text, idx + 1)
+
+        if not occs:
             continue
-        # try to locate the text near the expected position
-        window_start = max(0, start - 25) if start >= 0 else 0
-        window_end = min(len(text), end + 25) if end > start else len(text)
-        idx = text.find(ent_text, window_start, window_end)
-        if idx != -1:
-            ent["start_char"] = idx
-            ent["end_char"] = idx + len(ent_text)
+
+        # if the current offsets already match an unused occurrence keep them
+        if (
+            0 <= start < end <= len(text)
+            and text[start:end] == ent_text
+            and not any(_overlaps((start, end), r) for r in used)
+        ):
+            used.append((start, end))
+            continue
+
+        if start < 0:
+            start = 0
+
+        occs.sort(key=lambda r: abs(r[0] - start))
+        for s, e in occs:
+            if not any(_overlaps((s, e), r) for r in used):
+                ent["start_char"] = s
+                ent["end_char"] = e
+                used.append((s, e))
+                break
 
 
 def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
@@ -252,7 +280,7 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
 
     # Initialize counters from existing IDs
     for e in entities:
-        m = re.match(r"([A-Z_]+_[^_]+)_(\d+)$", str(e.get("id", "")))
+        m = re.match(r"([A-Z_]+_[^_]+)_(\\d+)$", str(e.get("id", "")))
         if m:
             base = m.group(1)
             num = int(m.group(2))
@@ -332,7 +360,7 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
         return f"{base}_{seq[base]}"
 
     for e in entities:
-        m = re.match(r"([A-Z_]+_[^_]+)_(\d+)$", str(e.get("id", "")))
+        m = re.match(r"([A-Z_]+_[^_]+)_(\\d+)$", str(e.get("id", "")))
         if m:
             base = m.group(1)
             num = int(m.group(2))
