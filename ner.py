@@ -215,6 +215,29 @@ def normalize_entities(result: Dict[str, Any]) -> None:
             ent["normalized"] = norm
 
 
+def fix_entity_offsets(text: str, result: Dict[str, Any]) -> None:
+    """Correct misaligned start/end offsets for entities in-place."""
+    for ent in result.get("entities", []):
+        ent_text = str(ent.get("text", ""))
+        try:
+            start = int(ent.get("start_char", -1))
+            end = int(ent.get("end_char", -1))
+        except Exception:
+            start = -1
+            end = -1
+        if not ent_text:
+            continue
+        if 0 <= start < end <= len(text) and text[start:end] == ent_text:
+            continue
+        # try to locate the text near the expected position
+        window_start = max(0, start - 25) if start >= 0 else 0
+        window_end = min(len(text), end + 25) if end > start else len(text)
+        idx = text.find(ent_text, window_start, window_end)
+        if idx != -1:
+            ent["start_char"] = idx
+            ent["end_char"] = idx + len(ent_text)
+
+
 def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
     """Detect ranges like 'من 7 إلى 12' and create ARTICLE entities."""
     entities = result.setdefault("entities", [])
@@ -229,7 +252,7 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
 
     # Initialize counters from existing IDs
     for e in entities:
-        m = re.match(r"([A-Z_]+_[^_]+)_(\\d+)$", str(e.get("id", "")))
+        m = re.match(r"([A-Z_]+_[^_]+)_(\d+)$", str(e.get("id", "")))
         if m:
             base = m.group(1)
             num = int(m.group(2))
@@ -309,7 +332,7 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
         return f"{base}_{seq[base]}"
 
     for e in entities:
-        m = re.match(r"([A-Z_]+_[^_]+)_(\\d+)$", str(e.get("id", "")))
+        m = re.match(r"([A-Z_]+_[^_]+)_(\d+)$", str(e.get("id", "")))
         if m:
             base = m.group(1)
             num = int(m.group(2))
@@ -324,7 +347,7 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
                 art_map.setdefault(canon_num, e.get("id"))
 
     pattern = re.compile(
-        r"الفصول?ين?\s*:?[\s\u00A0]*((?:[0-9٠-٩]+(?:\s*[،,]\s*|\s+و\s+))*[0-9٠-٩]+)"
+        r"الفصول?ين?\s*:[\s\u00A0]*((?:[0-9٠-٩]+(?:\s*[،,]\s*|\s+و\s+))*[0-9٠-٩]+)"
     )
 
     for m in pattern.finditer(text):
@@ -396,6 +419,7 @@ def postprocess_result(text: str, result: Dict[str, Any]) -> None:
     expand_article_ranges(text, result)
     expand_article_lists(text, result)
     normalize_entities(result)
+    fix_entity_offsets(text, result)
     assign_numeric_ids(result)
 
 
