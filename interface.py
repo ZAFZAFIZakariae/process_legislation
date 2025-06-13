@@ -38,10 +38,19 @@ def highlight_text(
     """Return HTML for the text with entity spans anchored for linking."""
     parts: list[str] = []
     last = 0
-    for ent in sorted(entities, key=lambda e: e.get("start_char", 0)):
-        start = ent.get("start_char", 0)
-        end = ent.get("end_char", 0)
-        if start < last:
+    for ent in sorted(entities, key=lambda e: int(e.get("start_char", 0))):
+        try:
+            start = int(ent.get("start_char", 0))
+            end = int(ent.get("end_char", 0))
+        except Exception:
+            continue
+        if (
+            start < last
+            or start < 0
+            or end <= start
+            or start >= len(text)
+            or end > len(text)
+        ):
             continue
         parts.append(html.escape(text[last:start]))
         span_text = html.escape(text[start:end])
