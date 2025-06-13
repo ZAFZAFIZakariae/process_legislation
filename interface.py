@@ -69,10 +69,13 @@ def highlight_text(
         parts.append(html.escape(text[last:start]))
         span_text = html.escape(text[start:end])
         tooltip = ""
+        rel_attr = ""
         if tooltips is not None:
             tip = tooltips.get(str(ent.get("id")))
             if tip:
-                tooltip = f' title="{html.escape(tip)}"'
+                esc_tip = html.escape(tip)
+                tooltip = f' title="{esc_tip}"'
+                rel_attr = f' data-rel="{esc_tip}"'
 
         target: str | None = None
         if ref_targets is not None:
@@ -86,7 +89,7 @@ def highlight_text(
                 target = article_map[num]
 
         inner = f'<mark id="ent-{ent["id"]}" class="entity-mark"{tooltip}>{span_text}</mark>'
-        if target:
+        if target or rel_attr:
             art_data = ""
             if article_texts is not None and ent.get("type") == "ARTICLE":
                 num = canonical_num(ent.get("normalized") or ent.get("text"))
@@ -94,13 +97,15 @@ def highlight_text(
                     art = article_texts[num].replace("\n", "<br/>")
                     art_data = f' data-article="{html.escape(art)}"'
             click_js = (
-                "var c=this.getAttribute('data-article');"
+                "var a=this.getAttribute('data-article');"
+                "var r=this.getAttribute('data-rel');"
+                "var c=a||r;"
                 " if(c){var p=document.getElementById('article-popup');"
                 " var s=document.getElementById('article-popup-content');"
                 " if(s){s.innerHTML=c;} if(p){p.style.display='block';}}"
             )
             parts.append(
-                f'<span id="{ent["id"]}" class="ner-span"><a href="javascript:void(0)"{art_data} onclick="{click_js}">{inner}</a></span>'
+                f'<span id="{ent["id"]}" class="ner-span"><a href="javascript:void(0)"{art_data}{rel_attr} onclick="{click_js}">{inner}</a></span>'
             )
         else:
             parts.append(
