@@ -156,10 +156,17 @@ def normalize_arabic(text: str) -> str:
 def normalize_entities(result: Dict[str, Any]) -> None:
     """Populate missing normalized values for entities in-place."""
     for ent in result.get("entities", []):
-        if ent.get("normalized"):
-            continue
         typ = ent.get("type")
         text = ent.get("text", "")
+        if ent.get("normalized") and typ not in {
+            "LAW",
+            "DECRET",
+            "ARTICLE",
+            "CHAPTER",
+            "SECTION",
+            "INTERNAL_REF",
+        }:
+            continue
         norm: str | None = None
         if typ == "DATE":
             norm = _parse_date(text)
@@ -168,9 +175,9 @@ def normalize_entities(result: Dict[str, Any]) -> None:
             if num:
                 # include the Arabic legal type when available
                 if "ظهير" in text:
-                    norm = f"{num} الظهير شريف"
+                    norm = f"{num} الظهير الشريف"
                 elif "القانون التنظيمي" in text:
-                    norm = f"{num} القانون تنظيمي"
+                    norm = f"{num} القانون التنظيمي"
                 elif "القانون" in text:
                     norm = f"{num} القانون"
                 elif "مرسوم" in text:
@@ -289,6 +296,84 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
             )
 
 
+def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
+    """Detect lists like 'الفصلين 25 و29' or 'الفصول: 1، 3، 4'."""
+    entities = result.setdefault("entities", [])
+    relations = result.setdefault("relations", [])
+
+    seq: dict[str, int] = {}
+
+    def next_id(typ: str, canonical: str) -> str:
+        base = f"{typ}_{canonical}"
+        seq[base] = seq.get(base, 0) + 1
+        return f"{base}_{seq[base]}"
+
+    for e in entities:
+        m = re.match(r"([A-Z_]+_[^_]+)_(\\d+)$", str(e.get("id", "")))
+        if m:
+            base = m.group(1)
+            num = int(m.group(2))
+            if num > seq.get(base, 0):
+                seq[base] = num
+
+    art_map: dict[str, str] = {}
+    for e in entities:
+        if e.get("type") == "ARTICLE":
+            canon_num = _canonical_number(e.get("normalized") or e.get("text", ""))
+            if canon_num:
+                art_map.setdefault(canon_num, e.get("id"))
+
+    pattern = re.compile(
+        r"الفصول?ين?\s*:?[\s\u00A0]*((?:[0-9٠-٩]+(?:\s*[،,]\s*|\s+و\s+))*[0-9٠-٩]+)"
+    )
+
+    for m in pattern.finditer(text):
+        num_text = m.group(1)
+        raw_nums = re.split(r"[،,]\s*|\s+و\s+", num_text)
+        numbers: list[str] = []
+        for n in raw_nums:
+            c = _canonical_number(n)
+            if c:
+                numbers.append(str(int(c)))
+        if not numbers:
+            continue
+        canonical = ",".join(numbers)
+        ref_id = next_id("INTERNAL_REF", canonical.replace(",", "_"))
+        entities.append(
+            {
+                "id": ref_id,
+                "type": "INTERNAL_REF",
+                "text": m.group(0),
+                "start_char": m.start(),
+                "end_char": m.end(),
+                "normalized": canonical,
+            }
+        )
+
+        for num in numbers:
+            art_id = art_map.get(num)
+            if not art_id:
+                art_id = next_id("ARTICLE", num)
+                entities.append(
+                    {
+                        "id": art_id,
+                        "type": "ARTICLE",
+                        "text": num,
+                        "start_char": m.start(),
+                        "end_char": m.start(),
+                    }
+                )
+                art_map[num] = art_id
+            relations.append(
+                {
+                    "relation_id": f"REL_refers_to_{ref_id}_{art_id}",
+                    "type": "refers_to",
+                    "source_id": ref_id,
+                    "target_id": art_id,
+                }
+            )
+
+
 def assign_numeric_ids(result: Dict[str, Any]) -> None:
     """Replace entity and relation IDs with simple incremental numbers."""
     entities = result.get("entities", [])
@@ -309,6 +394,7 @@ def assign_numeric_ids(result: Dict[str, Any]) -> None:
 def postprocess_result(text: str, result: Dict[str, Any]) -> None:
     """Run all normalization and ID adjustments on the raw result."""
     expand_article_ranges(text, result)
+    expand_article_lists(text, result)
     normalize_entities(result)
     assign_numeric_ids(result)
 
