@@ -19,6 +19,25 @@ app = Flask(__name__)
 
 _DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 
+# Arabic labels for relation types
+RELATION_LABELS = {
+    "enacted_by": "صادر بمقتضى",
+    "published_in": "نشر في",
+    "effective_on": "ساري المفعول اعتبارًا من",
+    "contains": "يضم",
+    "approved_by": "صودق عليه من طرف",
+    "signed_by": "وقعه",
+    "amended_by": "عُدّل بواسطة",
+    "implements": "يطبق",
+    "decides": "يبت في",
+    "judged_by": "حكم من طرف",
+    "represented_by": "يمثل بواسطة",
+    "clerk_for": "كاتب ضبط لدى",
+    "prosecuted_by": "تابعته",
+    "refers_to": "يشير إلى",
+    "jumps_to": "يحيل على",
+}
+
 
 def canonical_num(value: str) -> str | None:
     if not isinstance(value, str):
@@ -123,10 +142,16 @@ def highlight_text(
 
         inner = f'<mark id="ent-{ent["id"]}" class="entity-mark"{tooltip}>{span_text}</mark>'
         art_data = ""
-        if article_texts is not None and ent.get("type") == "ARTICLE":
-            num = canonical_num(ent.get("normalized") or ent.get("text"))
-            if num is not None and num in article_texts:
-                art = article_texts[num].replace("\n", "<br/>")
+        if article_texts is not None:
+            art = None
+            if ent.get("type") == "ARTICLE":
+                num = canonical_num(ent.get("normalized") or ent.get("text"))
+                if num is not None:
+                    art = article_texts.get(num)
+            if art is None:
+                art = article_texts.get(str(ent.get("id")))
+            if art:
+                art = art.replace("\n", "<br/>")
                 art_data = f' data-article="{html.escape(art)}"'
 
         if target or rel_attr or art_data:
@@ -228,7 +253,13 @@ def index():
                     if typ:
                         s_txt = id_to_text.get(src, '')
                         t_txt = id_to_text.get(tgt, '')
-                        tooltip_map[src] = f"{s_txt} {typ} {t_txt}".strip()
+                        rel_label = RELATION_LABELS.get(typ, typ)
+                        msg = f"{s_txt} {rel_label} {t_txt}".strip()
+                        existing = tooltip_map.get(src)
+                        if existing:
+                            tooltip_map[src] = '<br/>'.join([existing, msg])
+                        else:
+                            tooltip_map[src] = msg
 
             article_texts: dict[str, str] = {}
             id_to_ent = {str(e.get('id')): e for e in entities}
@@ -255,6 +286,24 @@ def index():
                 if not found_msg:
                     found_msg = "No matching article found"
                 article_texts[num] = found_msg
+
+            # Build popup text for article references
+            ref_article_texts: dict[str, str] = {}
+            for ent in entities:
+                if ent.get('type') != 'INTERNAL_REF':
+                    continue
+                lines: list[str] = []
+                for tgt in ref_targets.get(str(ent.get('id')), []):
+                    tgt_ent = id_to_ent.get(str(tgt))
+                    if tgt_ent and tgt_ent.get('type') == 'ARTICLE':
+                        num = canonical_num(tgt_ent.get('normalized') or tgt_ent.get('text'))
+                        if not num:
+                            continue
+                        art_txt = article_texts.get(num, '')
+                        lines.append(f"الفصل {num}<br/>{art_txt}")
+                if lines:
+                    ref_article_texts[str(ent.get('id'))] = '<br/><br/>'.join(lines)
+            article_texts.update(ref_article_texts)
 
             annotated = highlight_text(text, entities, None, ref_targets, tooltip_map, article_texts)
 
