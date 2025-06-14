@@ -25,6 +25,7 @@ def canonical_num(value: str) -> str | None:
     m = re.search(r"\d+(?:[./]\d+)*", s)
     return m.group(0) if m else None
 
+
 try:
     from .ner import extract_entities, postprocess_result
     from .ocr import pdf_to_arabic_text
@@ -43,11 +44,11 @@ def highlight_text(
 ) -> str:
     """Return HTML for the text with entity spans anchored for linking."""
     popup = (
-        "<div id=\"article-popup\" style=\"display:none;position:fixed;top:10%;"
+        '<div id="article-popup" style="display:none;position:fixed;top:10%;'
         "left:10%;width:80%;max-height:80%;overflow:auto;background-color:white;"
-        "border:1px solid #888;padding:10px;z-index:1000;\">"
+        'border:1px solid #888;padding:10px;z-index:1000;">'
         "<button onclick=\"document.getElementById('article-popup').style.display='none';\" style=\"float:left;\">X</button>"
-        "<div id=\"article-popup-content\"></div></div>"
+        '<div id="article-popup-content"></div></div>'
     )
 
     parts: list[str] = []
@@ -83,19 +84,24 @@ def highlight_text(
             if targets:
                 target = str(targets[0])
 
-        if target is None and ent.get("type") == "ARTICLE" and article_map is not None:
+        if (
+            target is None
+            and ent.get("type") == "ARTICLE"
+            and article_map is not None
+        ):
             num = canonical_num(ent.get("normalized") or ent.get("text"))
             if num is not None and num in article_map:
                 target = article_map[num]
 
         inner = f'<mark id="ent-{ent["id"]}" class="entity-mark"{tooltip}>{span_text}</mark>'
-        if target or rel_attr:
-            art_data = ""
-            if article_texts is not None and ent.get("type") == "ARTICLE":
-                num = canonical_num(ent.get("normalized") or ent.get("text"))
-                if num is not None and num in article_texts:
-                    art = article_texts[num].replace("\n", "<br/>")
-                    art_data = f' data-article="{html.escape(art)}"'
+        art_data = ""
+        if article_texts is not None and ent.get("type") == "ARTICLE":
+            num = canonical_num(ent.get("normalized") or ent.get("text"))
+            if num is not None and num in article_texts:
+                art = article_texts[num].replace("\n", "<br/>")
+                art_data = f' data-article="{html.escape(art)}"'
+
+        if target or rel_attr or art_data:
             click_js = (
                 "var a=this.getAttribute('data-article');"
                 "var r=this.getAttribute('data-rel');"
@@ -165,6 +171,7 @@ def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
     """
     return html_str.replace("</body>", script + "</body>")
 
+
 st.set_page_config(page_title="Legal NER Assistant")
 st.title("Legal NER Assistant")
 st.markdown(
@@ -182,7 +189,9 @@ article_map: dict[str, str] = {}
 article_texts: dict[str, str] = {}
 articles_html = ""
 json_files = [f for f in os.listdir("output") if f.endswith(".json")]
-selected_json = st.selectbox("Structured JSON", json_files) if json_files else None
+selected_json = (
+    st.selectbox("Structured JSON", json_files) if json_files else None
+)
 if selected_json:
     path = os.path.join("output", selected_json)
     with open(path, "r", encoding="utf-8") as f:
