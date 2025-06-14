@@ -24,8 +24,43 @@ def canonical_num(value: str) -> str | None:
     if not isinstance(value, str):
         return None
     s = value.translate(_DIGIT_TRANS)
-    m = __import__('re').search(r"\d+(?:[./]\d+)*", s)
+    m = __import__("re").search(r"\d+(?:[./]\d+)*", s)
     return m.group(0) if m else None
+
+
+def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
+    """Load law articles from all JSON files under *dir_path*."""
+    mapping: dict[str, dict[str, str]] = {}
+    for name in os.listdir(dir_path):
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(dir_path, name)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            law = canonical_num(data.get("metadata", {}).get("document_number"))
+            if not law:
+                continue
+            articles: dict[str, str] = {}
+
+            def _collect(nodes: list[dict]) -> None:
+                for node in nodes:
+                    if node.get("type") in {"الفصل", "مادة"}:
+                        num = canonical_num(node.get("number"))
+                        if num and node.get("text"):
+                            articles[num] = node.get("text", "")
+                    if node.get("children"):
+                        _collect(node["children"])
+
+            _collect(data.get("structure", []))
+            if articles:
+                mapping[law] = articles
+        except Exception as exc:  # pragma: no cover - ignore bad files
+            print(f"Failed to load {path}: {exc}")
+    return mapping
+
+
+LAW_ARTICLES = load_law_articles()
 
 
 def highlight_text(
@@ -195,7 +230,33 @@ def index():
                         t_txt = id_to_text.get(tgt, '')
                         tooltip_map[src] = f"{s_txt} {typ} {t_txt}".strip()
 
-            annotated = highlight_text(text, entities, None, ref_targets, tooltip_map, None)
+            article_texts: dict[str, str] = {}
+            id_to_ent = {str(e.get('id')): e for e in entities}
+            for ent in entities:
+                if ent.get('type') != 'ARTICLE':
+                    continue
+                num = canonical_num(ent.get('normalized') or ent.get('text'))
+                if not num:
+                    continue
+                law_nums: list[str] = []
+                for tgt in ref_targets.get(str(ent.get('id')), []):
+                    target_ent = id_to_ent.get(str(tgt))
+                    if target_ent and target_ent.get('type') in {'LAW', 'DECREE'}:
+                        ln = canonical_num(target_ent.get('normalized') or target_ent.get('text'))
+                        if ln:
+                            law_nums.append(ln)
+                search_laws = law_nums or list(LAW_ARTICLES.keys())
+                found_msg = None
+                for ln in search_laws:
+                    art_map = LAW_ARTICLES.get(ln)
+                    if art_map and num in art_map:
+                        found_msg = f"{ln}: {art_map[num]}"
+                        break
+                if not found_msg:
+                    found_msg = "No matching article found"
+                article_texts[num] = found_msg
+
+            annotated = highlight_text(text, entities, None, ref_targets, tooltip_map, article_texts)
 
             df_e = pd.DataFrame(entities)
             entities_table = df_e.to_html(index=False)
