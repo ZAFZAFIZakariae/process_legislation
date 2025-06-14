@@ -1,0 +1,8 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+.ner-span { direction: rtl; }
+.entity-mark { background-color: #FFFF00; }
+.entity-mark.selected { background-color: orange; }
