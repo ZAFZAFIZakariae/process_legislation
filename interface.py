@@ -26,6 +26,40 @@ def canonical_num(value: str) -> str | None:
     return m.group(0) if m else None
 
 
+def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
+    """Return mapping of law number to article texts from JSON files."""
+    mapping: dict[str, dict[str, str]] = {}
+    for name in os.listdir(dir_path):
+        if not name.endswith(".json"):
+            continue
+        path = os.path.join(dir_path, name)
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            law = canonical_num(data.get("metadata", {}).get("document_number"))
+            if not law:
+                continue
+            articles: dict[str, str] = {}
+
+            def _collect(nodes: list[dict]) -> None:
+                for node in nodes:
+                    if node.get("type") in {"الفصل", "مادة"}:
+                        num = canonical_num(node.get("number"))
+                        if num and node.get("text"):
+                            articles[num] = node.get("text", "")
+                    if node.get("children"):
+                        _collect(node["children"])
+
+            _collect(data.get("structure", []))
+            if articles:
+                mapping[law] = articles
+        except Exception as exc:  # pragma: no cover
+            print(f"Failed to load {path}: {exc}")
+    return mapping
+
+
+LAW_ARTICLES = load_law_articles()
+
 try:
     from .ner import extract_entities, postprocess_result
     from .ocr import pdf_to_arabic_text
@@ -252,6 +286,32 @@ if uploaded and st.button("Extract Entities"):
                 t_txt = id_to_text.get(tgt, "")
                 tooltip_map[src] = f"{s_txt} {typ} {t_txt}".strip()
 
+    article_popup_texts: dict[str, str] = {}
+    id_to_ent = {str(e.get("id")): e for e in entities}
+    for ent in entities:
+        if ent.get("type") != "ARTICLE":
+            continue
+        num = canonical_num(ent.get("normalized") or ent.get("text"))
+        if not num:
+            continue
+        law_nums: list[str] = []
+        for tgt in ref_targets.get(str(ent.get("id")), []):
+            tgt_ent = id_to_ent.get(str(tgt))
+            if tgt_ent and tgt_ent.get("type") in {"LAW", "DECREE"}:
+                ln = canonical_num(tgt_ent.get("normalized") or tgt_ent.get("text"))
+                if ln:
+                    law_nums.append(ln)
+        search_laws = law_nums or list(LAW_ARTICLES.keys())
+        found = None
+        for ln in search_laws:
+            amap = LAW_ARTICLES.get(ln)
+            if amap and num in amap:
+                found = f"{ln}: {amap[num]}"
+                break
+        if not found:
+            found = "No matching article found"
+        article_popup_texts[num] = found
+
     if entities:
         df_e = pd.DataFrame(entities)
 
@@ -268,7 +328,7 @@ if uploaded and st.button("Extract Entities"):
                 article_map,
                 ref_targets,
                 tooltip_map,
-                article_texts,
+                article_popup_texts,
             ),
             unsafe_allow_html=True,
         )
