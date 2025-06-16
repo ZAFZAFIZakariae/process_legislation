@@ -374,12 +374,12 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
                 art_map.setdefault(canon_num, e.get("id"))
 
     pattern = re.compile(
-        r"الفصول?ين?\\s*:[\\s\\u00A0]*((?:[0-9٠-٩]+(?:\\s*[،,]\\s*|\\s+و\\s+))*[0-9٠-٩]+)"
+        r"(?:الفصلين|الفصول)\s*:?[\s\u00A0]*((?:[0-9٠-٩]+(?:\s*[،,]\s*|\s*و\s*))*[0-9٠-٩]+)"
     )
 
     for m in pattern.finditer(text):
         num_text = m.group(1)
-        raw_nums = re.split(r"[،,]\\s*|\\s+و\\s+", num_text)
+        raw_nums = re.split(r"[،,]\\s*|\\s*و\\s*", num_text)
         numbers: list[str] = []
         for n in raw_nums:
             c = _canonical_number(n)
