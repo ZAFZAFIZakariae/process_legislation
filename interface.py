@@ -155,7 +155,7 @@ def highlight_text(
                 if num is not None:
                     art = article_texts.get(num)
             if art is None:
-                art = article_texts.get(str(ent.get("id")))
+                art = article_texts.get(f"ID_{ent.get('id')}")
             if art:
                 art = art.replace("\n", "<br/>")
                 art_data = f' data-article="{html.escape(art)}"'
@@ -358,7 +358,7 @@ if uploaded and st.button("Extract Entities"):
                 art_txt = article_popup_texts.get(num, "")
                 lines.append(f"الفصل {num}<br/>{art_txt}")
         if lines:
-            ref_article_texts[str(ent.get("id"))] = "<br/><br/>".join(lines)
+            ref_article_texts[f"ID_{ent.get('id')}"] = "<br/><br/>".join(lines)
     article_popup_texts.update(ref_article_texts)
 
     if entities:
