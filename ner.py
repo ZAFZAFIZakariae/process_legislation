@@ -424,6 +424,27 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
             )
 
 
+def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
+    """Remove ARTICLE entities that exactly match INTERNAL_REF spans."""
+    entities = result.get("entities", [])
+    ref_ranges = {
+        (int(e.get("start_char", -1)), int(e.get("end_char", -1)))
+        for e in entities
+        if e.get("type") == "INTERNAL_REF"
+    }
+    if not ref_ranges:
+        return
+    cleaned: list[dict] = []
+    for e in entities:
+        if (
+            e.get("type") == "ARTICLE"
+            and (int(e.get("start_char", -1)), int(e.get("end_char", -1))) in ref_ranges
+        ):
+            continue
+        cleaned.append(e)
+    result["entities"] = cleaned
+
+
 def assign_numeric_ids(result: Dict[str, Any]) -> None:
     """Replace entity and relation IDs with simple incremental numbers."""
     entities = result.get("entities", [])
