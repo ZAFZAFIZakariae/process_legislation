@@ -8,6 +8,14 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 try:
+    from .decision_parser import process_file as parse_decision
+except Exception:  # Allow running without package context
+    try:
+        from decision_parser import process_file as parse_decision  # type: ignore
+    except Exception:  # pragma: no cover - missing dependency
+        parse_decision = None
+
+try:
     import networkx as nx
     from pyvis.network import Network
 except Exception:  # pragma: no cover - optional dependency may be missing
@@ -280,6 +288,18 @@ if selected_json:
 
 uploaded = st.file_uploader("Upload a PDF or text file", type=["pdf", "txt"])
 model = st.text_input("OpenAI model", value="gpt-3.5-turbo-16k")
+
+if uploaded and parse_decision and st.button("Parse Court Decision"):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded.name)[1]) as tmp:
+        tmp.write(uploaded.read())
+        tmp_path = tmp.name
+    try:
+        result = parse_decision(tmp_path, model)
+        st.subheader("Decision JSON")
+        st.json(result)
+    finally:
+        os.unlink(tmp_path)
+    st.stop()
 
 if uploaded and st.button("Extract Entities"):
     if uploaded.name.lower().endswith(".pdf"):
