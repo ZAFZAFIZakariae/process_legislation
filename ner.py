@@ -358,8 +358,9 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
         seq[base] = seq.get(base, 0) + 1
         return f"{base}_{seq[base]}"
 
+    # Initialize ID counters from existing entities
     for e in entities:
-        m = re.match(r"([A-Z_]+_[^_]+)_(\\d+)$", str(e.get("id", "")))
+        m = re.match(r"([A-Z_]+_[^_]+)_(\d+)$", str(e.get("id", "")))
         if m:
             base = m.group(1)
             num = int(m.group(2))
@@ -379,15 +380,15 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
 
     for m in pattern.finditer(text):
         num_text = m.group(1)
-        raw_nums = re.split(r"[،,]\\s*|\\s*و\\s*", num_text)
-        numbers: list[str] = []
+        raw_nums = re.split(r"[،,]\s*|\s*و\s*", num_text)
+        nums: list[str] = []
         for n in raw_nums:
             c = _canonical_number(n)
             if c:
-                numbers.append(str(int(c)))
-        if not numbers:
+                nums.append(str(int(c)))
+        if not nums:
             continue
-        joined = "_".join(numbers)
+        joined = "_".join(nums)
         ref_id = next_id("INTERNAL_REF", joined)
         entities.append(
             {
@@ -400,7 +401,7 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
             }
         )
 
-        for num in numbers:
+        for num in nums:
             art_id = art_map.get(num)
             if not art_id:
                 art_id = next_id("ARTICLE", num)
