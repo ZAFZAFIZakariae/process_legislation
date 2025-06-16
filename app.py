@@ -14,7 +14,11 @@ except Exception:  # pragma: no cover
 
 from ner import extract_entities, postprocess_result
 from ocr import pdf_to_arabic_text
-
+try:
+    from decision_parser import process_file as parse_decision
+except Exception:  # pragma: no cover - optional dependency
+    parse_decision = None
+    
 app = Flask(__name__)
 
 _DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
@@ -330,6 +334,24 @@ def index():
                 graph_html=graph_html,
             )
     return render_template('index.html')
+
+@app.route('/decision', methods=['GET', 'POST'])
+def parse_decision_route():
+    if request.method == 'POST' and parse_decision:
+        uploaded = request.files.get('file')
+        model = request.form.get('model', 'gpt-3.5-turbo-16k')
+        if uploaded:
+            suffix = '.pdf' if uploaded.filename.lower().endswith('.pdf') else '.txt'
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                uploaded.save(tmp.name)
+                tmp_path = tmp.name
+            try:
+                result = parse_decision(tmp_path, model)
+            finally:
+                os.unlink(tmp_path)
+            pretty = json.dumps(result, ensure_ascii=False, indent=2)
+            return render_template('decision.html', result_json=pretty)
+    return render_template('decision.html', result_json=None)
 
 
 if __name__ == '__main__':
