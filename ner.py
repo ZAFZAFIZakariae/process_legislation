@@ -466,6 +466,7 @@ def postprocess_result(text: str, result: Dict[str, Any]) -> None:
     """Apply post-processing steps to raw NER result."""
     expand_article_ranges(text, result)
     expand_article_lists(text, result)
+    _remove_overlapping_articles(result)
     normalize_entities(result)
     fix_entity_offsets(text, result)
     assign_numeric_ids(result)
