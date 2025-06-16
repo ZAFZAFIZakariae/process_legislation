@@ -225,7 +225,11 @@ def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
     return html_str.replace("</body>", script + "</body>")
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+@app.route('/entities', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         uploaded = request.files.get('file')
