@@ -149,7 +149,7 @@ def highlight_text(
                 if num is not None:
                     art = article_texts.get(num)
             if art is None:
-                art = article_texts.get(str(ent.get("id")))
+                art = article_texts.get(f"ID_{ent.get('id')}")
             if art:
                 art = art.replace("\n", "<br/>")
                 art_data = f' data-article="{html.escape(art)}"'
@@ -302,7 +302,7 @@ def index():
                         art_txt = article_texts.get(num, '')
                         lines.append(f"الفصل {num}<br/>{art_txt}")
                 if lines:
-                    ref_article_texts[str(ent.get('id'))] = '<br/><br/>'.join(lines)
+                    ref_article_texts[f"ID_{ent.get('id')}"] = '<br/><br/>'.join(lines)
             article_texts.update(ref_article_texts)
 
             annotated = highlight_text(text, entities, None, ref_targets, tooltip_map, article_texts)
