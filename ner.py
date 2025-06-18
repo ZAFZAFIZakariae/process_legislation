@@ -448,6 +448,29 @@ def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
     result["entities"] = cleaned
 
 
+def remove_articles_inside_dates(result: Dict[str, Any]) -> None:
+    """Remove ARTICLE entities whose offsets fall completely within a DATE span."""
+    entities = result.get("entities", [])
+    date_ranges = [
+        (
+            int(e.get("start_char", -1)),
+            int(e.get("end_char", -1)),
+        )
+        for e in entities
+        if e.get("type") == "DATE"
+    ]
+    if not date_ranges:
+        return
+    cleaned: list[dict] = []
+    for e in entities:
+        start = int(e.get("start_char", -1))
+        end = int(e.get("end_char", -1))
+        if e.get("type") == "ARTICLE" and any(ds <= start and end <= de for ds, de in date_ranges):
+            continue
+        cleaned.append(e)
+    result["entities"] = cleaned
+
+
 def assign_numeric_ids(result: Dict[str, Any]) -> None:
     """Replace entity and relation IDs with simple incremental numbers."""
     entities = result.get("entities", [])
@@ -470,6 +493,7 @@ def postprocess_result(text: str, result: Dict[str, Any]) -> None:
     expand_article_ranges(text, result)
     expand_article_lists(text, result)
     fix_entity_offsets(text, result)
+    remove_articles_inside_dates(result)
     _remove_overlapping_articles(result)
     normalize_entities(result)
     assign_numeric_ids(result)
