@@ -188,23 +188,28 @@ def normalize_entities(result: Dict[str, Any]) -> None:
                 else:
                     norm = num
         elif typ in {"ARTICLE", "CHAPTER", "SECTION"}:
-            num = _canonical_number(text)
-            if num:
-                if "المادة" in text or "مادة" in text:
-                    heading = "المادة"
-                elif "الفصل" in text or "فصل" in text:
-                    heading = "الفصل"
-                elif "الباب" in text or "باب" in text:
-                    heading = "الباب"
-                elif "القسم" in text or "قسم" in text:
-                    heading = "القسم"
-                else:
-                    heading = {
-                        "ARTICLE": "الفصل",
-                        "CHAPTER": "الباب",
-                        "SECTION": "القسم",
-                    }.get(typ, "")
-                norm = f"{num} {heading}" if heading else num
+            nums = re.findall(r"[0-9٠-٩]+", text.translate(_DIGIT_TRANS))
+            if "المادة" in text or "مادة" in text:
+                heading = "المادة"
+            elif "الفصل" in text or "فصل" in text:
+                heading = "الفصل"
+            elif "الباب" in text or "باب" in text:
+                heading = "الباب"
+            elif "القسم" in text or "قسم" in text:
+                heading = "القسم"
+            else:
+                heading = {
+                    "ARTICLE": "الفصل",
+                    "CHAPTER": "الباب",
+                    "SECTION": "القسم",
+                }.get(typ, "")
+            if len(nums) > 1:
+                joined = "_".join(str(int(n)) for n in nums)
+                norm = f"{heading} {joined}" if heading else joined
+            else:
+                num = _canonical_number(text)
+                if num:
+                    norm = f"{num} {heading}" if heading else num
         elif typ in {"OFFICIAL_JOURNAL", "CASE"}:
             norm = _canonical_number(text)
         elif typ in NAME_ENTITY_TYPES:
@@ -444,8 +449,13 @@ def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
     for e in entities:
         start = int(e.get("start_char", -1))
         end = int(e.get("end_char", -1))
-        if e.get("type") == "ARTICLE" and any(rs <= start and end <= re for rs, re in ref_ranges):
-            continue
+        if e.get("type") == "ARTICLE":
+            text = str(e.get("text", ""))
+            nums = re.findall(r"[0-9٠-٩]+", text.translate(_DIGIT_TRANS))
+            contained = any(rs <= start and end <= re for rs, re in ref_ranges)
+            overlaps = any(not (end <= rs or start >= re) for rs, re in ref_ranges)
+            if contained or (len(nums) > 1 and overlaps):
+                continue
         cleaned.append(e)
     result["entities"] = cleaned
 
