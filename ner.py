@@ -179,6 +179,8 @@ def normalize_entities(result: Dict[str, Any]) -> None:
                     norm = f"{num} القانون التنظيمي"
                 elif "القانون" in text:
                     norm = f"{num} القانون"
+                elif "دستور" in text:
+                    norm = f"{num} الدستور"
                 elif "مرسوم" in text:
                     norm = f"{num} المرسوم"
                 elif "قرار" in text:
