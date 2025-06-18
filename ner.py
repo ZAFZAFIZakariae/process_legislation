@@ -426,21 +426,23 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
 
 
 def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
-    """Remove ARTICLE entities that exactly match INTERNAL_REF spans."""
+    """Remove ARTICLE entities fully contained in INTERNAL_REF spans."""
     entities = result.get("entities", [])
-    ref_ranges = {
-        (int(e.get("start_char", -1)), int(e.get("end_char", -1)))
+    ref_ranges = [
+        (
+            int(e.get("start_char", -1)),
+            int(e.get("end_char", -1)),
+        )
         for e in entities
         if e.get("type") == "INTERNAL_REF"
-    }
+    ]
     if not ref_ranges:
         return
     cleaned: list[dict] = []
     for e in entities:
-        if (
-            e.get("type") == "ARTICLE"
-            and (int(e.get("start_char", -1)), int(e.get("end_char", -1))) in ref_ranges
-        ):
+        start = int(e.get("start_char", -1))
+        end = int(e.get("end_char", -1))
+        if e.get("type") == "ARTICLE" and any(rs <= start and end <= re for rs, re in ref_ranges):
             continue
         cleaned.append(e)
     result["entities"] = cleaned
@@ -467,9 +469,9 @@ def postprocess_result(text: str, result: Dict[str, Any]) -> None:
     """Apply post-processing steps to raw NER result."""
     expand_article_ranges(text, result)
     expand_article_lists(text, result)
+    fix_entity_offsets(text, result)
     _remove_overlapping_articles(result)
     normalize_entities(result)
-    fix_entity_offsets(text, result)
     assign_numeric_ids(result)
 
 
