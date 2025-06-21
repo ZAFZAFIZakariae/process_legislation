@@ -87,11 +87,26 @@ def load_prompts() -> tuple[str, str]:
 
 pass1_instructions, pass2_instructions = load_prompts()
 
-# Recognized article-type labels (with and without the definite article)
-ARTICLE_TYPES = {"فصل", "الفصل", "مادة", "المادة"}
+# Recognized article-type labels and mapping to canonical form
+ARTICLE_TYPE_MAP = {
+    "الفصل": "فصل",
+    "فصل": "فصل",
+    "المادة": "مادة",
+    "مادة": "مادة",
+}
+ARTICLE_TYPES = set(ARTICLE_TYPE_MAP.keys())
+
+def canonical_type(t: str) -> str:
+    """Return the canonical form of an article/section type."""
+    return ARTICLE_TYPE_MAP.get(t.strip(), t.strip())
 
 # Common header/footer lines to strip from OCR text
-HEADER_LINES = {"مديرية التشريع والدراسات", "وزارة العدل", "المملكة المغربية"}
+HEADER_LINES = {
+    "مديرية التشريع والدراسات",
+    "مديرية التشريع والدرامات",
+    "وزارة العدل",
+    "المملكة المغربية",
+}
 
 # ----------------------------------------------------------------------
 # 4) Utility helpers
@@ -211,10 +226,12 @@ def split_for_pass2(arabic_text: str) -> list[str]:
     enc = tiktoken.encoding_for_model(GPT_MODEL)
     tokens = enc.encode(arabic_text)
     chunk_limit = compute_pass2_chunk_limit()
-    # Account for the ~100 token overlap between chunks when context is small
+    # Account for overlap between chunks so article headings aren't split
     if MAX_CONTEXT <= 4_096:
-        chunk_limit = max(100, chunk_limit - 100)
-    overlap = 100 if MAX_CONTEXT <= 4_096 else 0
+        overlap = 100
+    else:
+        overlap = 20
+    chunk_limit = max(100, chunk_limit - overlap)
     chunks = []
     i = 0
     prev_tail = []
@@ -336,8 +353,9 @@ def remove_code_fences(text: str) -> str:
 
 def find_node(tree: list, typ: str, num: str) -> dict | None:
     """Recursively search for a node matching type and number."""
+    typ = canonical_type(typ)
     for n in tree:
-        if n.get("type") == typ and n.get("number") == num:
+        if canonical_type(n.get("type")) == typ and n.get("number") == num:
             return n
         child = find_node(n.get("children", []), typ, num)
         if child:
@@ -357,7 +375,7 @@ def clean_text(text: str) -> str:
         return ""
     text = re.sub(r"[A-Za-z]+", "", text)
     text = re.sub(r"\n\s*\d+\s*\n", "\n", text)
-    text = re.sub(r"(?:مديرية التشريع والدراسات|وزارة العدل|المملكة المغربية)", "", text)
+    text = re.sub(r"(?:مديرية التشريع والدراسات|مديرية التشريع والدرامات|وزارة العدل|المملكة المغربية)", "", text)
     text = re.sub(r"^-?\s*\d+\s*-?$", "", text, flags=re.MULTILINE)
     return text.strip()
 
@@ -365,6 +383,7 @@ def clean_text(text: str) -> str:
 def finalize_structure(tree: list) -> None:
     """Clean numbers/text and ensure only articles contain text."""
     for node in tree:
+        node["type"] = canonical_type(node.get("type", ""))
         clean_number(node)
         if node.get("type") not in ARTICLE_TYPES:
             node["text"] = ""
@@ -382,8 +401,8 @@ def remove_empty_duplicate_articles(tree: list) -> None:
         i = 0
         while i < len(nodes):
             n = nodes[i]
-            key = (n.get("type"), n.get("number"))
-            if n.get("type") in ARTICLE_TYPES:
+            key = (canonical_type(n.get("type")), n.get("number"))
+            if canonical_type(n.get("type")) in ARTICLE_TYPES:
                 if n.get("text"):
                     seen.add(key)
                 elif key in seen:
@@ -410,6 +429,7 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
 
         # Ensure the node always has a children list
         node.setdefault("children", [])
+        node["type"] = canonical_type(node.get("type", ""))
 
         # Match on both type and number to avoid merging nodes from different
         # levels that share the same numbering (e.g. "الباب الأول" vs
@@ -418,7 +438,7 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
             (
                 n
                 for n in full_tree
-                if n.get("type") == node.get("type")
+                if canonical_type(n.get("type")) == node.get("type")
                 and n.get("number") == node["number"]
             ),
             None,
@@ -427,16 +447,16 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
             # Append new nodes with an explicit children list
             node.setdefault("children", [])
             # Only articles should carry text; wipe it from higher level nodes
-            if node.get("type") not in ARTICLE_TYPES:
+            if canonical_type(node.get("type")) not in ARTICLE_TYPES:
                 node["text"] = ""
             clean_number(node)
-            if node.get("type") in ARTICLE_TYPES and node.get("text"):
+            if canonical_type(node.get("type")) in ARTICLE_TYPES and node.get("text"):
                 node["text"] = clean_text(node["text"])
             full_tree.append(node)
         else:
             # Existing nodes may not have the children key yet
             match.setdefault("children", [])
-            if node.get("text") and match.get("type") in ARTICLE_TYPES:
+            if node.get("text") and canonical_type(match.get("type")) in ARTICLE_TYPES:
                 new = clean_text(node["text"])
                 if match.get("text"):
                     existing = match["text"]
@@ -543,13 +563,14 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
 
             target_tree = structure_tree
             if inherit_line and inherited_info:
+                inherited_info["type"] = canonical_type(inherited_info["type"])
                 parent = find_node(structure_tree, inherited_info["type"], inherited_info["number"])
                 if parent is None:
                     parent = {
                         "type": inherited_info["type"],
                         "number": inherited_info["number"],
                         "title": inherited_info.get("title", ""),
-                        "text": "" if inherited_info["type"] not in ARTICLE_TYPES else "",
+                        "text": "" if canonical_type(inherited_info["type"]) not in ARTICLE_TYPES else "",
                         "children": [],
                     }
                     structure_tree.append(parent)
