@@ -273,7 +273,10 @@ def split_for_pass2(arabic_text: str) -> list[str]:
     if MAX_CONTEXT <= 4_096:
         overlap = 100
     else:
-        overlap = 20
+        # Using a larger overlap helps preserve article headings that
+        # appear near chunk boundaries even when the following text is
+        # very short or empty.
+        overlap = 100
     chunk_limit = max(100, chunk_limit - overlap)
     chunks = []
     i = 0
@@ -524,6 +527,43 @@ def sort_sections(tree: list) -> None:
     tree.sort(key=sort_key)
 
 # ----------------------------------------------------------------------
+# 13) Insert placeholder articles for missing numbers
+# ----------------------------------------------------------------------
+def fill_missing_articles(nodes: list) -> None:
+    """Ensure sequential article numbers by inserting empty placeholders."""
+    i = 0
+    while i < len(nodes) - 1:
+        current = nodes[i]
+        nxt = nodes[i + 1]
+        if (
+            canonical_type(current.get("type")) == "مادة"
+            and canonical_type(nxt.get("type")) == "مادة"
+        ):
+            try:
+                cur_num = int(str(current.get("number")))
+                next_num = int(str(nxt.get("number")))
+            except Exception:
+                i += 1
+                continue
+            missing = cur_num + 1
+            while missing < next_num:
+                placeholder = {
+                    "type": "مادة",
+                    "number": str(missing),
+                    "title": "",
+                    "text": "",
+                    "children": [],
+                }
+                nodes.insert(i + 1, placeholder)
+                missing += 1
+                i += 1
+        i += 1
+
+    for node in nodes:
+        if node.get("children"):
+            fill_missing_articles(node["children"])
+
+# ----------------------------------------------------------------------
 # 13) Merge a chunk’s section‑array into the full tree
 # ----------------------------------------------------------------------
 def merge_chunk_structure(full_tree: list, chunk_array: list):
@@ -739,6 +779,9 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     # -------- Save final JSON --------
     finalize_structure(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
+    sort_sections(structure_tree)
+    # Insert placeholders for any skipped article headings
+    fill_missing_articles(structure_tree)
     sort_sections(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
