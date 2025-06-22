@@ -387,7 +387,10 @@ def find_node(tree: list, typ: str, num: str) -> dict | None:
     """Recursively search for a node matching type and number."""
     typ = canonical_type(typ)
     for n in tree:
-        if canonical_type(n.get("type")) == typ and n.get("number") == num:
+        if (
+            canonical_type(n.get("type")) == typ
+            and str(n.get("number")) == str(num)
+        ):
             return n
         child = find_node(n.get("children", []), typ, num)
         if child:
@@ -401,9 +404,14 @@ def clean_number(node: dict) -> None:
     This removes heading words like ``الفصل`` or ``المادة`` and converts
     common ordinal words (e.g. ``الأولى``, ``الحادي عشر``) to plain digits.
     """
-    if node.get("type") in ARTICLE_TYPES and isinstance(node.get("number"), str):
-        num = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", node["number"]).strip()
-        node["number"] = _ORDINAL_MAP.get(num, num)
+    if node.get("type") in ARTICLE_TYPES:
+        num = node.get("number")
+        if isinstance(num, int):
+            node["number"] = str(num)
+            return
+        if isinstance(num, str):
+            num = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", num).strip()
+            node["number"] = _ORDINAL_MAP.get(num, num)
 
 
 def clean_text(text: str) -> str:
@@ -421,6 +429,8 @@ def finalize_structure(tree: list) -> None:
     """Clean numbers/text and ensure only articles contain text."""
     for node in tree:
         node["type"] = canonical_type(node.get("type", ""))
+        if node.get("type") in ARTICLE_TYPES and node.get("number") is not None:
+            node["number"] = str(node.get("number"))
         clean_number(node)
         if node.get("type") not in ARTICLE_TYPES:
             node["text"] = ""
@@ -437,7 +447,7 @@ def remove_empty_duplicate_articles(tree: list) -> None:
     def collect(nodes: list, depth: int) -> None:
         for node in list(nodes):
             typ = canonical_type(node.get("type"))
-            key = (typ, node.get("number"))
+            key = (typ, str(node.get("number")))
             if typ in ARTICLE_TYPES:
                 mapping.setdefault(key, []).append((node, nodes, depth))
             if node.get("children"):
@@ -502,7 +512,7 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
                 n
                 for n in full_tree
                 if canonical_type(n.get("type")) == node.get("type")
-                and n.get("number") == node["number"]
+                and str(n.get("number")) == str(node["number"])
             ),
             None,
         )
