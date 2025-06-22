@@ -394,25 +394,51 @@ def finalize_structure(tree: list) -> None:
 
 
 def remove_empty_duplicate_articles(tree: list) -> None:
-    """Drop empty article nodes if a duplicate with text exists."""
-    seen: set[tuple[str, str]] = set()
+    """Merge or drop duplicate article nodes across the tree."""
+    mapping: dict[tuple[str, str], list[tuple[dict, list, int]]] = {}
 
-    def _walk(nodes: list):
-        i = 0
-        while i < len(nodes):
-            n = nodes[i]
-            key = (canonical_type(n.get("type")), n.get("number"))
-            if canonical_type(n.get("type")) in ARTICLE_TYPES:
-                if n.get("text"):
-                    seen.add(key)
-                elif key in seen:
-                    nodes.pop(i)
-                    continue
-            if n.get("children"):
-                _walk(n["children"])
-            i += 1
+    def collect(nodes: list, depth: int) -> None:
+        for node in list(nodes):
+            typ = canonical_type(node.get("type"))
+            key = (typ, node.get("number"))
+            if typ in ARTICLE_TYPES:
+                mapping.setdefault(key, []).append((node, nodes, depth))
+            if node.get("children"):
+                collect(node["children"], depth + 1)
 
-    _walk(tree)
+    collect(tree, 0)
+
+    for key, entries in mapping.items():
+        if len(entries) <= 1:
+            continue
+
+        # Prefer the deepest node (usually the correctly nested one)
+        best_idx = max(
+            range(len(entries)),
+            key=lambda i: (entries[i][2], len(entries[i][0].get("text", ""))),
+        )
+        best_node, best_parent, _ = entries[best_idx]
+
+        for idx, (node, parent, _) in enumerate(entries):
+            if idx == best_idx:
+                continue
+
+            if node.get("text"):
+                if best_node.get("text"):
+                    existing = best_node["text"]
+                    new = node["text"]
+                    if existing and not existing.endswith("\n") and not new.startswith("\n"):
+                        best_node["text"] = existing + "\n" + new
+                    else:
+                        best_node["text"] = existing + new
+                else:
+                    best_node["text"] = node["text"]
+
+            if node.get("children"):
+                best_node.setdefault("children", [])
+                merge_chunk_structure(best_node["children"], node["children"])
+
+            parent.remove(node)
 
 # ----------------------------------------------------------------------
 # 12) Merge a chunk’s section‑array into the full tree
