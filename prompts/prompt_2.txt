@@ -9,7 +9,7 @@ Respond ONLY with a valid pure JSON array of section objects (e.g., [{"type": ..
 Do not include any other text, markdown, or explanations.
 Each object must contain:
   "type"     – the Arabic heading word exactly as written (for example "الباب", "القسم", "الفصل", "المادة").
-  "number"   – the official chapter or article number exactly as written in the text.
+  "number"   – the official chapter or article number as digits, converting any ordinal words (e.g. "الأولى", "الحادي عشر") to their numeric form.
   "title"    – heading text after any dash or punctuation, or "".
   "text"     – lines belonging to that heading until the next heading of the
                 same or higher level. Preserve those lines verbatim and do not
