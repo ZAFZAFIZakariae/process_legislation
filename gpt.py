@@ -93,6 +93,12 @@ ARTICLE_TYPE_MAP = {
     "فصل": "فصل",
     "المادة": "مادة",
     "مادة": "مادة",
+    "القسم": "قسم",
+    "قسم": "قسم",
+    "الباب": "باب",
+    "باب": "باب",
+    "الجزء": "جزء",
+    "جزء": "جزء",
 }
 ARTICLE_TYPES = set(ARTICLE_TYPE_MAP.keys())
 
@@ -130,7 +136,12 @@ _ORDINAL_MAP = {
 
 def canonical_type(t: str) -> str:
     """Return the canonical form of an article/section type."""
-    return ARTICLE_TYPE_MAP.get(t.strip(), t.strip())
+    if not isinstance(t, str):
+        return ""
+    s = t.strip()
+    if s.startswith("ال"):
+        s = s[2:]
+    return ARTICLE_TYPE_MAP.get(s, s)
 
 # Common header/footer lines to strip from OCR text
 HEADER_LINES = {
