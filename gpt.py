@@ -96,6 +96,38 @@ ARTICLE_TYPE_MAP = {
 }
 ARTICLE_TYPES = set(ARTICLE_TYPE_MAP.keys())
 
+# Map common Arabic ordinal words to digit strings
+_ORDINAL_MAP = {
+    "الأول": "1",
+    "الأولى": "1",
+    "الثاني": "2",
+    "الثانية": "2",
+    "الثالث": "3",
+    "الثالثة": "3",
+    "الرابع": "4",
+    "الرابعة": "4",
+    "الخامس": "5",
+    "الخامسة": "5",
+    "السادس": "6",
+    "السادسة": "6",
+    "السابع": "7",
+    "السابعة": "7",
+    "الثامن": "8",
+    "الثامنة": "8",
+    "التاسع": "9",
+    "التاسعة": "9",
+    "العاشر": "10",
+    "العاشرة": "10",
+    "الحادي عشر": "11",
+    "الحادية عشرة": "11",
+    "الثاني عشر": "12",
+    "الثانية عشرة": "12",
+    "الثالث عشر": "13",
+    "الثالثة عشرة": "13",
+    "الرابع عشر": "14",
+    "الرابعة عشرة": "14",
+}
+
 def canonical_type(t: str) -> str:
     """Return the canonical form of an article/section type."""
     return ARTICLE_TYPE_MAP.get(t.strip(), t.strip())
@@ -364,9 +396,14 @@ def find_node(tree: list, typ: str, num: str) -> dict | None:
 
 
 def clean_number(node: dict) -> None:
-    """Remove heading words like 'الفصل' or 'المادة' from the number field."""
+    """Normalize the *number* field for article nodes.
+
+    This removes heading words like ``الفصل`` or ``المادة`` and converts
+    common ordinal words (e.g. ``الأولى``, ``الحادي عشر``) to plain digits.
+    """
     if node.get("type") in ARTICLE_TYPES and isinstance(node.get("number"), str):
-        node["number"] = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", node["number"]).strip()
+        num = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", node["number"]).strip()
+        node["number"] = _ORDINAL_MAP.get(num, num)
 
 
 def clean_text(text: str) -> str:
