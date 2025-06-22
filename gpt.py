@@ -564,6 +564,20 @@ def fill_missing_articles(nodes: list) -> None:
             fill_missing_articles(node["children"])
 
 # ----------------------------------------------------------------------
+# 14) Drop blank non-article nodes
+# ----------------------------------------------------------------------
+def drop_empty_non_article_nodes(nodes: list) -> None:
+    """Recursively remove nodes without text or children that aren't articles."""
+    for node in list(nodes):
+        typ = canonical_type(node.get("type"))
+        has_text = bool(node.get("text"))
+        has_children = bool(node.get("children"))
+        if not has_text and not has_children and typ != "مادة":
+            nodes.remove(node)
+        elif has_children:
+            drop_empty_non_article_nodes(node["children"])
+
+# ----------------------------------------------------------------------
 # 13) Merge a chunk’s section‑array into the full tree
 # ----------------------------------------------------------------------
 def merge_chunk_structure(full_tree: list, chunk_array: list):
@@ -779,9 +793,11 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     # -------- Save final JSON --------
     finalize_structure(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
+    drop_empty_non_article_nodes(structure_tree)
     sort_sections(structure_tree)
     # Insert placeholders for any skipped article headings
     fill_missing_articles(structure_tree)
+    drop_empty_non_article_nodes(structure_tree)
     sort_sections(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
