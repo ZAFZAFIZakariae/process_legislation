@@ -488,7 +488,32 @@ def remove_empty_duplicate_articles(tree: list) -> None:
             parent.remove(node)
 
 # ----------------------------------------------------------------------
-# 12) Merge a chunk’s section‑array into the full tree
+# 12) Sort sections numerically and recursively
+# ----------------------------------------------------------------------
+def sort_sections(tree: list) -> None:
+    """Recursively sort sections by numeric order."""
+
+    def try_int(val):
+        try:
+            return int(str(val))
+        except (ValueError, TypeError):
+            return None
+
+    for node in tree:
+        num_int = try_int(node.get("number"))
+        if num_int is not None:
+            node["number"] = num_int
+        if node.get("children"):
+            sort_sections(node["children"])
+
+    def sort_key(n):
+        val = try_int(n.get("number"))
+        return (0, val) if val is not None else (1, str(n.get("number")))
+
+    tree.sort(key=sort_key)
+
+# ----------------------------------------------------------------------
+# 13) Merge a chunk’s section‑array into the full tree
 # ----------------------------------------------------------------------
 def merge_chunk_structure(full_tree: list, chunk_array: list):
     """
@@ -543,7 +568,7 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
                 merge_chunk_structure(match["children"], node["children"])
 
 # ----------------------------------------------------------------------
-# 13) Main processing: OCR (if PDF) or read .txt, Pass 1, Pass 2, merge, save JSON
+# 14) Main processing: OCR (if PDF) or read .txt, Pass 1, Pass 2, merge, save JSON
 # ----------------------------------------------------------------------
 def process_single_arabic(txt_path: str, output_dir: str) -> None:
     base     = os.path.basename(txt_path).rsplit(".", 1)[0]
@@ -703,13 +728,14 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     # -------- Save final JSON --------
     finalize_structure(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
+    sort_sections(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
         json.dump(full_obj, fout, ensure_ascii=False, indent=2)
     print(f"[+] Finished and saved JSON: {out_json}")
 
 # ----------------------------------------------------------------------
-# 14) Entrypoint: --input (PDF or .txt), --output_dir
+# 15) Entrypoint: --input (PDF or .txt), --output_dir
 # ----------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(
