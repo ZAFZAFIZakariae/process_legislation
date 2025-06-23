@@ -136,6 +136,19 @@ _ORDINAL_MAP = {
     "تمهيدية": "0",
 }
 
+def ordinal_to_int(val: str) -> int | None:
+    """Convert Arabic ordinal words to an integer if possible."""
+    if not isinstance(val, str):
+        return None
+    s = val.strip()
+    mapped = _ORDINAL_MAP.get(s)
+    if mapped is not None:
+        s = mapped
+    try:
+        return int(s)
+    except ValueError:
+        return None
+
 def canonical_type(t: str) -> str:
     """Return the canonical form of an article/section type."""
     if not isinstance(t, str):
@@ -426,7 +439,7 @@ def clean_number(node: dict) -> None:
             node["number"] = str(num)
             return
         if isinstance(num, str):
-            num = re.sub(r"^(?:الفصل|فصل|المادة|مادة)\s*", "", num).strip()
+            num = re.sub(r"^(?:الفصل|فصل|المادة|مادة|الباب|باب|القسم|قسم|الجزء|جزء)\s*", "", num).strip()
             node["number"] = _ORDINAL_MAP.get(num, num)
 
 
@@ -510,6 +523,10 @@ def sort_sections(tree: list) -> None:
     """Recursively sort sections by numeric order."""
 
     def try_int(val):
+        if isinstance(val, str):
+            ord_val = ordinal_to_int(val)
+            if ord_val is not None:
+                return ord_val
         try:
             return int(str(val))
         except (ValueError, TypeError):
