@@ -666,6 +666,8 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     with open(txt_path, "r", encoding="utf-8") as f:
         arabic_text = clean_ocr_lines(f.read())
 
+    has_preamble_heading = bool(re.search(r"\bقسم\s+تمهيدي\b", arabic_text))
+
     # -------- PASS 1 --------
     print("[*] Pass 1: extracting metadata + skeleton of sections/subsections…")
     first_chunk = split_for_pass1(arabic_text)
@@ -815,6 +817,9 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
 
     # -------- Save final JSON --------
     finalize_structure(structure_tree)
+    if has_preamble_heading and find_node(structure_tree, "قسم", "0") is None:
+        structure_tree.insert(0, {"type": "قسم", "number": "0", "title": "", "text": "", "children": []})
+        finalize_structure(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
     drop_empty_non_article_nodes(structure_tree)
     # Insert placeholders for any skipped article headings
