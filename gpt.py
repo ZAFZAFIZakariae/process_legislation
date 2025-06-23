@@ -601,6 +601,45 @@ def drop_empty_non_article_nodes(nodes: list) -> None:
             drop_empty_non_article_nodes(node["children"])
 
 # ----------------------------------------------------------------------
+# Helper: Repair hierarchy based on canonical ranks
+# ----------------------------------------------------------------------
+RANK_MAP = {
+    "قسم": 0,
+    "جزء": 0,
+    "باب": 1,
+    "فصل": 2,
+    "مادة": 2,
+}
+
+
+def fix_hierarchy(nodes: list) -> None:
+    """Reattach nodes according to their hierarchical rank."""
+    stack: list[tuple[dict, int]] = []
+    new_root: list[dict] = []
+
+    for node in nodes:
+        typ = canonical_type(node.get("type", ""))
+        rank = RANK_MAP.get(typ, max(RANK_MAP.values()) + 1)
+        node.setdefault("children", [])
+
+        while stack and rank <= stack[-1][1]:
+            stack.pop()
+
+        if stack:
+            parent = stack[-1][0]
+            parent.setdefault("children", [])
+            parent["children"].append(node)
+        else:
+            new_root.append(node)
+
+        stack.append((node, rank))
+
+    nodes[:] = new_root
+    for n in nodes:
+        if n.get("children"):
+            fix_hierarchy(n["children"])
+
+# ----------------------------------------------------------------------
 # 13) Merge a chunk’s section‑array into the full tree
 # ----------------------------------------------------------------------
 def merge_chunk_structure(full_tree: list, chunk_array: list):
@@ -816,6 +855,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
             continue
 
     # -------- Save final JSON --------
+    fix_hierarchy(structure_tree)
     finalize_structure(structure_tree)
     if has_preamble_heading and find_node(structure_tree, "قسم", "0") is None:
         structure_tree.insert(0, {"type": "قسم", "number": "0", "title": "", "text": "", "children": []})
