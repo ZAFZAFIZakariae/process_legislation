@@ -555,6 +555,28 @@ def sort_sections(tree: list) -> None:
 def fill_missing_articles(nodes: list) -> None:
     """Ensure sequential article numbers by inserting empty placeholders."""
     i = 0
+    if nodes:
+        first = nodes[0]
+        if canonical_type(first.get("type")) == "مادة":
+            try:
+                first_num = int(str(first.get("number")))
+            except Exception:
+                first_num = None
+            if first_num is not None and first_num > 1:
+                missing = 1
+                while missing < first_num:
+                    placeholder = {
+                        "type": "مادة",
+                        "number": str(missing),
+                        "title": "",
+                        "text": "",
+                        "children": [],
+                        "_placeholder": True,
+                    }
+                    nodes.insert(i, placeholder)
+                    missing += 1
+                    i += 1
+
     while i < len(nodes) - 1:
         current = nodes[i]
         nxt = nodes[i + 1]
@@ -593,6 +615,29 @@ def fill_missing_articles(nodes: list) -> None:
 def fill_missing_sections(nodes: list) -> None:
     """Recursively insert blank sections when numbering skips within a level."""
     i = 0
+    if nodes:
+        first = nodes[0]
+        first_type = canonical_type(first.get("type"))
+        if first_type != "مادة":
+            try:
+                first_num = int(str(first.get("number")))
+            except Exception:
+                first_num = None
+            if first_num is not None and first_num > 1:
+                missing = 1
+                while missing < first_num:
+                    placeholder = {
+                        "type": first_type,
+                        "number": str(missing),
+                        "title": "",
+                        "text": "",
+                        "children": [],
+                        "_placeholder": True,
+                    }
+                    nodes.insert(i, placeholder)
+                    missing += 1
+                    i += 1
+
     while i < len(nodes) - 1:
         current = nodes[i]
         nxt = nodes[i + 1]
