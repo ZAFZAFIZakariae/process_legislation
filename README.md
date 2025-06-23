@@ -1,54 +1,61 @@
 # process_legislation
 
-Utilities for OCR, entity extraction, and GPT‑based structuring of Moroccan legal documents.
+This repository contains utilities for processing Moroccan legal documents using OCR and GPT models. The tools handle PDF conversion, extraction of named entities, document structuring and lightweight web interfaces.
 
-# Contents
+## Repository layout
 
-.
-├── gpt.py            # Parse legislation into a nested JSON structure
-├── ner.py            # Named‑entity extraction helper
-├── ocr.py            # Azure Form Recognizer wrapper for PDF OCR
-├── interface.py      # Streamlit interface for the NER pipeline
-├── prompts/          # Prompt templates used by the scripts
-├── data_pdf/         # Example PDFs
-└── test_data/        # Sample text files
-Requirements
+├── gpt.py # Parse legislation into a nested JSON structure
+├── ner.py # Named‑entity extraction helper
+├── ocr.py # Azure Form Recognizer wrapper for PDF OCR
+├── decision_parser.py# Summarise court decisions to JSON
+├── interface.py # Streamlit interface for entity extraction and decision parsing
+├── app.py # Flask web app exposing the same features
+├── prompts/ # Prompt templates used by the scripts
+├── data_pdf/ # Example PDFs
+├── data_txt/ # Example text files
+└── input_ner/ # Sample decision text
 
-## Install the Python dependencies (OpenAI SDK, tiktoken, Azure Form Recognizer, Streamlit, pandas, etc.):
+## Requirements
 
-pip install openai tiktoken azure-ai-formrecognizer==3.3.3 streamlit pandas
-Environment Variables
+Install the required Python packages (OpenAI SDK, tiktoken, Azure Form Recognizer, Streamlit, Flask, pandas, etc.):
 
-## Set these variables so the scripts can access the APIs:
+```bash
+pip install openai tiktoken azure-ai-formrecognizer==3.3.3 streamlit flask pandas
 
-OPENAI_API_KEY – API key for OpenAI’s chat completions.
+# Environment variables
+
+Set the following variables so the scripts can access the APIs:
+
+OPENAI_API_KEY – API key for OpenAI chat completions.
 AZURE_ENDPOINT – Endpoint URL for the Azure Form Recognizer service (used by ocr.py).
 AZURE_KEY – Key for the Azure Form Recognizer service.
-OCR a PDF
+
+# OCR a PDF
 
 python ocr.py --input path/to/document.pdf
-This saves the extracted Arabic text as <document>.txt next to the PDF.
 
-## Parse Legislation with GPT
+The script saves the extracted Arabic text as <document>.txt next to the PDF.
+
+# Parse legislation with GPT
 
 python gpt.py --input path/to/document.pdf --output_dir output
-If --input is a PDF, the file is OCR’d first.
-Output is a JSON file (<document>.json) describing the legislation’s structure.
-You can choose a different model with --model, e.g. gpt-4.
 
-## Named‑Entity Extraction
+If the input is a PDF it is OCRed first. The result is a JSON file (<document>.json) describing the legislation’s structure. A different model can be selected using --model.
+
+# Named‑entity extraction
 
 python ner.py --input path/to/text.txt --output_dir ner_out
-The script creates entities.csv and relations.csv in the output directory.
-Use a PDF file as input to trigger OCR automatically.
 
-Streamlit Interface
-Run the lightweight demo interface:
+This creates entities.csv and relations.csv inside the output directory. Using a PDF file as input triggers automatic OCR.
 
-streamlit run interface.py
-Upload a PDF or text file, then view and download the extracted entities and relations.
+# Court decision parser
 
-## Sample Data
+python decision_parser.py --input path/to/decision.pdf --output decision.json
 
-data_pdf/ contains example PDFs for testing.
-test_data/ has two short text samples that can be used with ner.py or the interface.
+The script summarises the major sections of a court decision into JSON.
+
+# Flask web app
+
+python app.py
+
+Open the browser at http://localhost:5000 to access entity extraction, relationship graph visualisation and decision parsing.
