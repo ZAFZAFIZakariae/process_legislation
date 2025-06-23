@@ -586,7 +586,43 @@ def fill_missing_articles(nodes: list) -> None:
             fill_missing_articles(node["children"])
 
 # ----------------------------------------------------------------------
-# 14) Drop blank non-article nodes
+# 14) Insert placeholder sections for missing numbers
+# ----------------------------------------------------------------------
+def fill_missing_sections(nodes: list) -> None:
+    """Recursively insert blank sections when numbering skips within a level."""
+    i = 0
+    while i < len(nodes) - 1:
+        current = nodes[i]
+        nxt = nodes[i + 1]
+        cur_type = canonical_type(current.get("type"))
+        nxt_type = canonical_type(nxt.get("type"))
+        if cur_type == nxt_type and cur_type != "مادة":
+            try:
+                cur_num = int(str(current.get("number")))
+                next_num = int(str(nxt.get("number")))
+            except Exception:
+                i += 1
+                continue
+            missing = cur_num + 1
+            while missing < next_num:
+                placeholder = {
+                    "type": cur_type,
+                    "number": str(missing),
+                    "title": "",
+                    "text": "",
+                    "children": [],
+                }
+                nodes.insert(i + 1, placeholder)
+                missing += 1
+                i += 1
+        i += 1
+
+    for node in nodes:
+        if node.get("children"):
+            fill_missing_sections(node["children"])
+
+# ----------------------------------------------------------------------
+# 15) Drop blank non-article nodes
 # ----------------------------------------------------------------------
 def drop_empty_non_article_nodes(nodes: list) -> None:
     """Recursively remove nodes without text or children that aren't articles."""
@@ -864,6 +900,8 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     drop_empty_non_article_nodes(structure_tree)
     # Insert placeholders for any skipped article headings
     fill_missing_articles(structure_tree)
+    # Insert placeholders for skipped section numbers
+    fill_missing_sections(structure_tree)
     # Ensure sections are in numeric order
     sort_sections(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
