@@ -252,7 +252,7 @@ def smart_token_split(arabic_text: str, token_limit: int, model: str) -> list[st
     return chunks
 
 # ----------------------------------------------------------------------
-# 7) Split for Pass 2 (model aware chunk size with 100 token overlap)
+# 7) Split for Pass 2 (model aware chunk size with ~256 token overlap)
 # ----------------------------------------------------------------------
 def compute_pass2_chunk_limit() -> int:
     """Return token limit per Pass 2 chunk for the current model."""
@@ -286,12 +286,12 @@ def split_for_pass2(arabic_text: str) -> list[str]:
     chunk_limit = compute_pass2_chunk_limit()
     # Account for overlap between chunks so article headings aren't split
     if MAX_CONTEXT <= 4_096:
-        overlap = 100
+        overlap = 256
     else:
         # Using a larger overlap helps preserve article headings that
         # appear near chunk boundaries even when the following text is
         # very short or empty.
-        overlap = 100
+        overlap = 256
     chunk_limit = max(100, chunk_limit - overlap)
     chunks = []
     i = 0
@@ -677,16 +677,17 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
         else:
             # Existing nodes may not have the children key yet
             match.setdefault("children", [])
-            if node.get("text") and canonical_type(match.get("type")) in ARTICLE_TYPES:
-                new = clean_text(node["text"])
-                if match.get("text"):
-                    existing = match["text"]
-                    if existing and not existing.endswith("\n") and not new.startswith("\n"):
-                        match["text"] = existing + "\n" + new
+            if canonical_type(match.get("type")) in ARTICLE_TYPES:
+                new = clean_text(node.get("text", ""))
+                if new:
+                    existing = match.get("text", "")
+                    if existing:
+                        if not existing.endswith("\n") and not new.startswith("\n"):
+                            match["text"] = existing + "\n" + new
+                        else:
+                            match["text"] = existing + new
                     else:
-                        match["text"] = existing + new
-                else:
-                    match["text"] = new
+                        match["text"] = new
             if node.get("children"):
                 merge_chunk_structure(match["children"], node["children"])
 
