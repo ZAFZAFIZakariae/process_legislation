@@ -950,6 +950,8 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     fill_missing_articles(structure_tree)
     # Insert placeholders for skipped section numbers
     fill_missing_sections(structure_tree)
+    # Clean up placeholder markers and normalize numbers/text
+    finalize_structure(structure_tree)
     # Ensure sections are in numeric order
     sort_sections(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
