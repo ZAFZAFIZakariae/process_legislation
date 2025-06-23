@@ -440,7 +440,10 @@ def clean_number(node: dict) -> None:
             return
         if isinstance(num, str):
             num = re.sub(r"^(?:الفصل|فصل|المادة|مادة|الباب|باب|القسم|قسم|الجزء|جزء)\s*", "", num).strip()
-            node["number"] = _ORDINAL_MAP.get(num, num)
+            if num == "تمهيدي":
+                node["number"] = "0"
+            else:
+                node["number"] = _ORDINAL_MAP.get(num, num)
 
 
 def clean_text(text: str) -> str:
