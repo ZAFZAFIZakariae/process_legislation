@@ -797,6 +797,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     sort_sections(structure_tree)
     # Insert placeholders for any skipped article headings
     fill_missing_articles(structure_tree)
+    remove_empty_duplicate_articles(structure_tree)
     drop_empty_non_article_nodes(structure_tree)
     sort_sections(structure_tree)
     full_obj["structure"] = structure_tree
