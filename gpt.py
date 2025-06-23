@@ -460,6 +460,7 @@ def clean_text(text: str) -> str:
 def finalize_structure(tree: list) -> None:
     """Clean numbers/text and ensure only articles contain text."""
     for node in tree:
+        node.pop("_placeholder", None)
         node["type"] = canonical_type(node.get("type", ""))
         if node.get("type") in ARTICLE_TYPES and node.get("number") is not None:
             node["number"] = str(node.get("number"))
@@ -575,6 +576,7 @@ def fill_missing_articles(nodes: list) -> None:
                     "title": "",
                     "text": "",
                     "children": [],
+                    "_placeholder": True,
                 }
                 nodes.insert(i + 1, placeholder)
                 missing += 1
@@ -611,6 +613,7 @@ def fill_missing_sections(nodes: list) -> None:
                     "title": "",
                     "text": "",
                     "children": [],
+                    "_placeholder": True,
                 }
                 nodes.insert(i + 1, placeholder)
                 missing += 1
@@ -630,7 +633,7 @@ def drop_empty_non_article_nodes(nodes: list) -> None:
         typ = canonical_type(node.get("type"))
         has_text = bool(node.get("text"))
         has_children = bool(node.get("children"))
-        if not has_text and not has_children and typ != "مادة":
+        if not has_text and not has_children and typ != "مادة" and not node.get("_placeholder"):
             nodes.remove(node)
         elif has_children:
             drop_empty_non_article_nodes(node["children"])
@@ -905,7 +908,6 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     # Ensure sections are in numeric order
     sort_sections(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
-    drop_empty_non_article_nodes(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
         json.dump(full_obj, fout, ensure_ascii=False, indent=2)
