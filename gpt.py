@@ -520,7 +520,11 @@ def remove_empty_duplicate_articles(tree: list) -> None:
 # 12) Sort sections numerically and recursively
 # ----------------------------------------------------------------------
 def sort_sections(tree: list) -> None:
-    """Recursively sort sections by numeric order."""
+    """Recursively sort sections by numeric order.
+
+    This helper is no longer called during processing so that sections in the
+    output JSON remain in the order they originally appear.
+    """
 
     def try_int(val):
         if isinstance(val, str):
@@ -813,12 +817,10 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     finalize_structure(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
     drop_empty_non_article_nodes(structure_tree)
-    sort_sections(structure_tree)
     # Insert placeholders for any skipped article headings
     fill_missing_articles(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
     drop_empty_non_article_nodes(structure_tree)
-    sort_sections(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
         json.dump(full_obj, fout, ensure_ascii=False, indent=2)
