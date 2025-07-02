@@ -245,7 +245,8 @@ def fix_entity_offsets(text: str, result: Dict[str, Any]) -> None:
             start = -1
             end = -1
 
-        if not ent_text:
+        if not ent_text or start < 0 or end < 0:
+            # entities created from ranges may have unknown offsets
             continue
 
         # gather all occurrences of the entity text in the document
@@ -335,18 +336,28 @@ def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
             }
         )
 
+        num_positions: dict[str, tuple[int, int]] = {}
+        for dm in re.finditer(r"[0-9٠-٩]+", m.group(0)):
+            canon = _canonical_number(dm.group(0))
+            if canon:
+                num_positions[str(int(canon))] = (
+                    m.start() + dm.start(),
+                    m.start() + dm.end(),
+                )
+
         for num in range(a, b + 1):
             num_str = str(num)
             art_id = art_map.get(num_str)
             if not art_id:
                 art_id = next_id("ARTICLE", num_str)
+                s, e = num_positions.get(num_str, (-1, -1))
                 entities.append(
                     {
                         "id": art_id,
                         "type": "ARTICLE",
                         "text": num_str,
-                        "start_char": m.start(),
-                        "end_char": m.start(),
+                        "start_char": s,
+                        "end_char": e,
                     }
                 )
                 art_map[num_str] = art_id
@@ -394,12 +405,18 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
 
     for m in pattern.finditer(text):
         num_text = m.group(1)
-        raw_nums = re.split(r"[،,]\s*|\s*و\s*", num_text)
-        nums: list[str] = []
-        for n in raw_nums:
-            c = _canonical_number(n)
+        nums_with_pos: list[tuple[str, int, int]] = []
+        for nm in re.finditer(r"[0-9٠-٩]+", num_text):
+            c = _canonical_number(nm.group(0))
             if c:
-                nums.append(str(int(c)))
+                nums_with_pos.append(
+                    (
+                        str(int(c)),
+                        m.start(1) + nm.start(),
+                        m.start(1) + nm.end(),
+                    )
+                )
+        nums = [n for n, _, _ in nums_with_pos]
         if not nums:
             continue
         joined = "_".join(nums)
@@ -415,7 +432,7 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
             }
         )
 
-        for num in nums:
+        for num, s_pos, e_pos in nums_with_pos:
             art_id = art_map.get(num)
             if not art_id:
                 art_id = next_id("ARTICLE", num)
@@ -424,8 +441,8 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
                         "id": art_id,
                         "type": "ARTICLE",
                         "text": num,
-                        "start_char": m.start(),
-                        "end_char": m.start(),
+                        "start_char": s_pos,
+                        "end_char": e_pos,
                     }
                 )
                 art_map[num] = art_id
