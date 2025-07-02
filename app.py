@@ -14,14 +14,13 @@ except Exception:  # pragma: no cover
 
 from ner import extract_entities, postprocess_result
 from ocr import pdf_to_arabic_text
+from highlight import canonical_num, highlight_text
 try:
     from decision_parser import process_file as parse_decision
 except Exception:  # pragma: no cover - optional dependency
     parse_decision = None
-    
-app = Flask(__name__)
 
-_DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+app = Flask(__name__)
 
 # Arabic labels for relation types
 RELATION_LABELS = {
@@ -39,24 +38,8 @@ RELATION_LABELS = {
     "clerk_for": "كاتب ضبط لدى",
     "prosecuted_by": "تابعته",
     "refers_to": "يشير إلى",
-    "jumps_to": "يحيل على",
+"jumps_to": "يحيل على",
 }
-
-
-def canonical_num(value: str) -> str | None:
-    if not isinstance(value, str):
-        return None
-    s = value.translate(_DIGIT_TRANS)
-    re_mod = __import__("re")
-    m = re_mod.search(r"\d+(?:[./]+[^\d]*\d+)*", s)
-    if not m:
-        return None
-    digits = re_mod.findall(r"\d+", m.group(0))
-    seps = re_mod.findall(r"[./]+", m.group(0))
-    result = digits[0]
-    for sep, d in zip(seps, digits[1:]):
-        result += sep[0] + d
-    return result
 
 
 def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
@@ -92,9 +75,6 @@ def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
 
 
 LAW_ARTICLES = load_law_articles()
-
-
-from highlight import highlight_text
 
 
 def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
