@@ -271,16 +271,25 @@ def fix_entity_offsets(text: str, result: Dict[str, Any]) -> None:
             occs.append((search_start + idx, search_start + idx + len(ent_text)))
             idx = snippet.find(ent_text, idx + 1)
 
-        if not occs:
-            continue
+        def _assign_from(occurrences: list[tuple[int, int]]) -> bool:
+            occurrences.sort(key=lambda r: abs(r[0] - start))
+            for s, e in occurrences:
+                if not any(_overlaps((s, e), r) for r in used):
+                    ent["start_char"] = s
+                    ent["end_char"] = e
+                    used.append((s, e))
+                    return True
+            return False
 
-        occs.sort(key=lambda r: abs(r[0] - start))
-        for s, e in occs:
-            if not any(_overlaps((s, e), r) for r in used):
-                ent["start_char"] = s
-                ent["end_char"] = e
-                used.append((s, e))
-                break
+        found = _assign_from(occs)
+        if not found:
+            occs = []
+            idx = text.find(ent_text)
+            while idx != -1:
+                occs.append((idx, idx + len(ent_text)))
+                idx = text.find(ent_text, idx + 1)
+            if occs:
+                _assign_from(occs)
 
 
 def expand_article_ranges(text: str, result: Dict[str, Any]) -> None:
