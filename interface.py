@@ -49,8 +49,15 @@ def canonical_num(value: str) -> str | None:
     if not isinstance(value, str):
         return None
     s = value.translate(_DIGIT_TRANS)
-    m = re.search(r"\d+(?:[./]\d+)*", s)
-    return m.group(0) if m else None
+    m = re.search(r"\d+(?:[./]+[^\d]*\d+)*", s)
+    if not m:
+        return None
+    digits = re.findall(r"\d+", m.group(0))
+    seps = re.findall(r"[./]+", m.group(0))
+    result = digits[0]
+    for sep, d in zip(seps, digits[1:]):
+        result += sep[0] + d
+    return result
 
 
 def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
