@@ -481,11 +481,19 @@ def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
     ]
     if not ref_ranges:
         return
+    referenced = {
+        str(r.get("target_id"))
+        for r in result.get("relations", [])
+        if r.get("type") == "refers_to"
+    }
     cleaned: list[dict] = []
     for e in entities:
         start = int(e.get("start_char", -1))
         end = int(e.get("end_char", -1))
         if e.get("type") == "ARTICLE":
+            if str(e.get("id")) in referenced:
+                cleaned.append(e)
+                continue
             text = str(e.get("text", ""))
             nums = re.findall(r"[0-9٠-٩]+", text.translate(_DIGIT_TRANS))
             contained = any(rs <= start and end <= re for rs, re in ref_ranges)
