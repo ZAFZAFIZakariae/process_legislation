@@ -245,18 +245,10 @@ def fix_entity_offsets(text: str, result: Dict[str, Any]) -> None:
             start = -1
             end = -1
 
-        if not ent_text or start < 0 or end < 0:
-            # entities created from ranges may have unknown offsets
+        if not ent_text:
             continue
-
-        # gather all occurrences of the entity text in the document
-        occs: list[tuple[int, int]] = []
-        idx = text.find(ent_text)
-        while idx != -1:
-            occs.append((idx, idx + len(ent_text)))
-            idx = text.find(ent_text, idx + 1)
-
-        if not occs:
+        if start == -1 or end == -1:
+            # skip entities with unknown offsets
             continue
 
         # if the current offsets already match an unused occurrence keep them
@@ -268,8 +260,19 @@ def fix_entity_offsets(text: str, result: Dict[str, Any]) -> None:
             used.append((start, end))
             continue
 
-        if start < 0:
-            start = 0
+        # search for the entity text within ±50 characters of the original start
+        search_start = max(0, start - 50)
+        search_end = min(len(text), start + 50 + len(ent_text))
+        snippet = text[search_start:search_end]
+
+        occs: list[tuple[int, int]] = []
+        idx = snippet.find(ent_text)
+        while idx != -1:
+            occs.append((search_start + idx, search_start + idx + len(ent_text)))
+            idx = snippet.find(ent_text, idx + 1)
+
+        if not occs:
+            continue
 
         occs.sort(key=lambda r: abs(r[0] - start))
         for s, e in occs:
