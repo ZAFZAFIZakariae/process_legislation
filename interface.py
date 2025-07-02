@@ -6,6 +6,7 @@ import tempfile
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
+from highlight import canonical_num, highlight_text
 
 try:
     from .decision_parser import process_file as parse_decision
@@ -21,8 +22,6 @@ try:
 except Exception:  # pragma: no cover - optional dependency may be missing
     nx = None
     Network = None
-
-_DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 
 # Map relation types to Arabic labels for popups
 RELATION_LABELS = {
@@ -42,22 +41,6 @@ RELATION_LABELS = {
     "refers_to": "يشير إلى",
     "jumps_to": "يحيل على",
 }
-
-
-def canonical_num(value: str) -> str | None:
-    """Return digits from text as a canonical string."""
-    if not isinstance(value, str):
-        return None
-    s = value.translate(_DIGIT_TRANS)
-    m = re.search(r"\d+(?:[./]+[^\d]*\d+)*", s)
-    if not m:
-        return None
-    digits = re.findall(r"\d+", m.group(0))
-    seps = re.findall(r"[./]+", m.group(0))
-    result = digits[0]
-    for sep, d in zip(seps, digits[1:]):
-        result += sep[0] + d
-    return result
 
 
 def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
@@ -100,8 +83,6 @@ try:
 except Exception:  # Allow running without package context
     from ner import extract_entities, postprocess_result  # type: ignore
     from ocr import pdf_to_arabic_text  # type: ignore
-
-from highlight import highlight_text
 
 
 def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
