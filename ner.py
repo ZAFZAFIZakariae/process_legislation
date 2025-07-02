@@ -102,8 +102,15 @@ def _canonical_number(text: str) -> str | None:
     if not isinstance(text, str):
         return None
     s = text.translate(_DIGIT_TRANS)
-    m = re.search(r"\d+(?:[./]\d+)*", s)
-    return m.group(0) if m else None
+    m = re.search(r"\d+(?:[./]+[^\d]*\d+)*", s)
+    if not m:
+        return None
+    digits = re.findall(r"\d+", m.group(0))
+    seps = re.findall(r"[./]+", m.group(0))
+    num = digits[0]
+    for sep, d in zip(seps, digits[1:]):
+        num += sep[0] + d
+    return num
 
 
 def _parse_date(text: str) -> str | None:
