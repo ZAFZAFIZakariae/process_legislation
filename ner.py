@@ -471,14 +471,6 @@ def expand_article_lists(text: str, result: Dict[str, Any]) -> None:
 def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
     """Remove ARTICLE entities fully contained in INTERNAL_REF spans."""
     entities = result.get("entities", [])
-    relations = result.get("relations", [])
-
-    referenced = {
-        str(r.get("target_id"))
-        for r in relations
-        if r.get("type") == "refers_to"
-    }
-
     ref_ranges = [
         (
             int(e.get("start_char", -1)),
@@ -491,32 +483,18 @@ def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
         return
 
     cleaned: list[dict] = []
-    removed_ids: set[str] = set()
     for e in entities:
         start = int(e.get("start_char", -1))
         end = int(e.get("end_char", -1))
         if e.get("type") == "ARTICLE":
-            ent_id = str(e.get("id", ""))
-            if ent_id in referenced:
-                cleaned.append(e)
-                continue
             text = str(e.get("text", ""))
             nums = re.findall(r"[0-9٠-٩]+", text.translate(_DIGIT_TRANS))
             contained = any(rs <= start and end <= re for rs, re in ref_ranges)
             overlaps = any(not (end <= rs or start >= re) for rs, re in ref_ranges)
             if contained or (len(nums) > 1 and overlaps):
-                removed_ids.add(ent_id)
                 continue
         cleaned.append(e)
     result["entities"] = cleaned
-
-    if removed_ids:
-        result["relations"] = [
-            r
-            for r in relations
-            if str(r.get("source_id")) not in removed_ids
-            and str(r.get("target_id")) not in removed_ids
-        ]
 
 
 def remove_articles_inside_dates(result: Dict[str, Any]) -> None:
