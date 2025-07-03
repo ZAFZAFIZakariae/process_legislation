@@ -196,9 +196,9 @@ def normalize_entities(result: Dict[str, Any]) -> None:
                     norm = num
         elif typ in {"ARTICLE", "CHAPTER", "SECTION"}:
             nums = re.findall(r"[0-9٠-٩]+", text.translate(_DIGIT_TRANS))
-            if "المادة" in text or "مادة" in text:
+            if "المادة" in text or "مادة" in text or "المواد" in text or "مواد" in text or "المادتين" in text:
                 heading = "المادة"
-            elif "الفصل" in text or "فصل" in text:
+            elif "الفصل" in text or "فصل" in text or "الفصول" in text or "فصول" in text or "الفصلين" in text:
                 heading = "الفصل"
             elif "الباب" in text or "باب" in text:
                 heading = "الباب"
@@ -483,6 +483,7 @@ def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
         return
 
     cleaned: list[dict] = []
+    removed_ids: set[str] = set()
     for e in entities:
         start = int(e.get("start_char", -1))
         end = int(e.get("end_char", -1))
@@ -492,9 +493,19 @@ def _remove_overlapping_articles(result: Dict[str, Any]) -> None:
             contained = any(rs <= start and end <= re for rs, re in ref_ranges)
             overlaps = any(not (end <= rs or start >= re) for rs, re in ref_ranges)
             if contained or (len(nums) > 1 and overlaps):
+                removed_ids.add(str(e.get("id")))
                 continue
         cleaned.append(e)
     result["entities"] = cleaned
+
+    if removed_ids:
+        relations = result.get("relations", [])
+        result["relations"] = [
+            r
+            for r in relations
+            if str(r.get("source_id")) not in removed_ids
+            and str(r.get("target_id")) not in removed_ids
+        ]
 
 
 def remove_articles_inside_dates(result: Dict[str, Any]) -> None:
