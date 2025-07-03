@@ -1,6 +1,7 @@
 import os
 import html
 import json
+import re
 import tempfile
 import pandas as pd
 from flask import Flask, render_template, request
@@ -202,6 +203,14 @@ def index():
                     tgt_ent = id_to_ent.get(str(tgt))
                     if tgt_ent and tgt_ent.get('type') == 'ARTICLE':
                         num = canonical_num(tgt_ent.get('normalized') or tgt_ent.get('text'))
+                        if not num:
+                            continue
+                        art_txt = article_texts.get(num, '')
+                        lines.append(f"الفصل {num}<br/>{art_txt}")
+                if not lines:
+                    ref_text = str(ent.get('normalized') or ent.get('text') or '')
+                    for raw in re.findall(r'[0-9٠-٩]+', ref_text):
+                        num = canonical_num(raw)
                         if not num:
                             continue
                         art_txt = article_texts.get(num, '')

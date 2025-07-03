@@ -272,6 +272,14 @@ if uploaded and st.button("Extract Entities"):
                     continue
                 art_txt = article_popup_texts.get(num, "")
                 lines.append(f"الفصل {num}<br/>{art_txt}")
+        if not lines:
+            ref_text = str(ent.get("normalized") or ent.get("text") or "")
+            for raw in re.findall(r"[0-9٠-٩]+", ref_text):
+                num = canonical_num(raw)
+                if not num:
+                    continue
+                art_txt = article_popup_texts.get(num, "")
+                lines.append(f"الفصل {num}<br/>{art_txt}")
         if lines:
             ref_article_texts[f"ID_{ent.get('id')}"] = "<br/><br/>".join(lines)
     article_popup_texts.update(ref_article_texts)
