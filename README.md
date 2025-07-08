@@ -56,6 +56,15 @@ Pass `--annotate_text` to also save a copy of the input text where entity spans
 are wrapped in `[[ENT …]]` markers. The Streamlit and Flask interfaces accept
 such marked files and will highlight the entities without re-running the model.
 
+# Annotation editor
+```bash
+python annotation_editor.py annotated.txt --add 100 110 PERSON --norm "محمد"
+python annotation_editor.py annotated.txt --delete PERSON_1
+python annotation_editor.py annotated.txt --update PERSON_2 TYPE=JUDGE norm="القاضي"
+python annotation_editor.py annotated.txt --replace-text 50 60 "نص جديد" --fix-offsets
+```
+Use this helper to modify entity markers in a text annotated with `--annotate_text`.
+
 # Court decision parser
 ```bash
 python decision_parser.py --input path/to/decision.pdf --output decision.json
