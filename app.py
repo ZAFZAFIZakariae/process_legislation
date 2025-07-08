@@ -13,7 +13,7 @@ except Exception:  # pragma: no cover
     nx = None
     Network = None
 
-from ner import extract_entities, postprocess_result
+from ner import extract_entities, postprocess_result, parse_marked_text
 from ocr import pdf_to_arabic_text
 from highlight import canonical_num, highlight_text
 try:
@@ -141,11 +141,16 @@ def index():
             else:
                 text = uploaded.read().decode('utf-8')
 
-            result = extract_entities(text, model)
-            postprocess_result(text, result)
+            raw_text = text
+            if '[[ENT' in text:
+                text, entities = parse_marked_text(text)
+                relations = []
+            else:
+                result = extract_entities(text, model)
+                postprocess_result(text, result)
 
-            entities = result.get('entities', [])
-            relations = result.get('relations', [])
+                entities = result.get('entities', [])
+                relations = result.get('relations', [])
 
             ref_targets: dict[str, list[str]] = {}
             tooltip_map: dict[str, str] = {}
@@ -219,7 +224,7 @@ def index():
                     ref_article_texts[f"ID_{ent.get('id')}"] = '<br/><br/>'.join(lines)
             article_texts.update(ref_article_texts)
 
-            annotated = highlight_text(text, entities, None, ref_targets, tooltip_map, article_texts)
+            annotated = highlight_text(raw_text, entities, None, ref_targets, tooltip_map, article_texts)
 
             df_e = pd.DataFrame(entities)
             entities_table = df_e.to_html(index=False)

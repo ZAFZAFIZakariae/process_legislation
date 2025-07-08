@@ -7,6 +7,13 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 from highlight import canonical_num, highlight_text
+try:
+    from ner import parse_marked_text
+except Exception:  # pragma: no cover
+    try:
+        from .ner import parse_marked_text  # type: ignore
+    except Exception:
+        parse_marked_text = None
 
 try:
     from .decision_parser import process_file as parse_decision
@@ -206,11 +213,16 @@ if uploaded and st.button("Extract Entities"):
     else:
         text = uploaded.read().decode("utf-8")
 
-    result = extract_entities(text, model)
-    postprocess_result(text, result)
+    raw_text = text
 
-    entities = result.get("entities", [])
-    relations = result.get("relations", [])
+    if parse_marked_text is not None and "[[ENT" in text:
+        text, entities = parse_marked_text(text)
+        relations = []
+    else:
+        result = extract_entities(text, model)
+        postprocess_result(text, result)
+        entities = result.get("entities", [])
+        relations = result.get("relations", [])
 
     ref_targets: dict[str, list[str]] = {}
     tooltip_map: dict[str, str] = {}
@@ -295,7 +307,7 @@ if uploaded and st.button("Extract Entities"):
         st.subheader("Annotated Text")
         st.markdown(
             highlight_text(
-                text,
+                raw_text,
                 entities,
                 article_map,
                 ref_targets,

@@ -52,6 +52,10 @@ python ner.py --input path/to/text.txt --output_dir ner_out
 ```
 This creates entities.csv and relations.csv inside the output directory. Using a PDF file as input triggers automatic OCR.
 
+Pass `--annotate_text` to also save a copy of the input text where entity spans
+are wrapped in `[[ENT …]]` markers. The Streamlit and Flask interfaces accept
+such marked files and will highlight the entities without re-running the model.
+
 # Court decision parser
 ```bash
 python decision_parser.py --input path/to/decision.pdf --output decision.json

@@ -651,6 +651,74 @@ def save_as_csv(result: Dict[str, Any], output_dir: str) -> None:
     print(f"[+] Saved relations to {rel_path}")
 
 
+def text_with_markers(text: str, entities: list[dict]) -> str:
+    """Return *text* with entity spans wrapped in explicit markers."""
+    parts: list[str] = []
+    last = 0
+    for ent in sorted(entities, key=lambda e: int(e.get("start_char", 0))):
+        try:
+            start = int(ent.get("start_char", -1))
+            end = int(ent.get("end_char", -1))
+        except Exception:
+            continue
+        if start < last or start < 0 or end <= start or end > len(text):
+            continue
+        parts.append(text[last:start])
+        attrs: list[str] = [f"id={ent.get('id')}", f"type={ent.get('type')}"]
+        norm = ent.get("normalized")
+        if norm:
+            esc = str(norm).replace('"', "\\\"")
+            attrs.append(f"norm=\"{esc}\"")
+        attr_str = " ".join(attrs)
+        parts.append(f"[[ENT {attr_str}]]{text[start:end]}[[/ENT]]")
+        last = end
+    parts.append(text[last:])
+    return "".join(parts)
+
+
+def parse_marked_text(marked: str) -> tuple[str, list[dict]]:
+    """Return plain text and entity list from *marked* text."""
+    text_parts: list[str] = []
+    entities: list[dict] = []
+    pos = 0
+    out_pos = 0
+    pattern = re.compile(r"\[\[ENT([^\]]*)\]\]")
+    end_pat = re.compile(r"\[\[/ENT\]\]")
+    while True:
+        m = pattern.search(marked, pos)
+        if not m:
+            text_parts.append(marked[pos:])
+            break
+        text_parts.append(marked[pos:m.start()])
+        attr_txt = m.group(1).strip()
+        attr: dict[str, str] = {}
+        for am in re.finditer(r"(\w+)=('([^']*)'|\"([^\"]*)\"|\S+)", attr_txt):
+            key = am.group(1)
+            val = am.group(3) or am.group(4) or am.group(2)
+            attr[key] = val
+        close = end_pat.search(marked, m.end())
+        if not close:
+            break
+        span_text = marked[m.end(): close.start()]
+        start_char = out_pos
+        end_char = out_pos + len(span_text)
+        entities.append(
+            {
+                "id": attr.get("id"),
+                "type": attr.get("type"),
+                "text": span_text,
+                "start_char": start_char,
+                "end_char": end_char,
+                "normalized": attr.get("norm"),
+            }
+        )
+        text_parts.append(span_text)
+        out_pos = end_char
+        pos = close.end()
+    plain = "".join(text_parts)
+    return plain, entities
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Extract legal NER using OpenAI"
@@ -664,6 +732,11 @@ def main() -> None:
     parser.add_argument(
         "--model", default=DEFAULT_MODEL, help="OpenAI model name"
     )
+    parser.add_argument(
+        "--annotate_text",
+        action="store_true",
+        help="Save annotated text with entity markers",
+    )
     args = parser.parse_args()
 
     result, text = extract_from_file(args.input, args.model)
@@ -674,6 +747,13 @@ def main() -> None:
     print(f"[+] Saved raw JSON to {out_json}")
 
     save_as_csv(result, args.output_dir)
+
+    if args.annotate_text:
+        annotated = text_with_markers(text, result.get("entities", []))
+        path = os.path.join(args.output_dir, "annotated.txt")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(annotated)
+        print(f"[+] Saved annotated text to {path}")
 
 
 if __name__ == "__main__":
