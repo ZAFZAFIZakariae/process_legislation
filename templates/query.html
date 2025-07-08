@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>SQL Query</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+    <script>
+        const presets = {{ queries|tojson }};
+        function setPreset(sel) {
+            const q = presets[sel.value] || '';
+            document.getElementById('sql').value = q;
+        }
+    </script>
+</head>
+<body>
+    <h1>Run SQL Query</h1>
+    <form method="post">
+        <label>Predefined:
+            <select id="preset" onchange="setPreset(this)">
+                <option value="">Custom...</option>
+                {% for name in queries.keys() %}
+                <option value="{{ name }}">{{ name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <br/>
+        <textarea id="sql" name="sql" rows="6" cols="80">{{ sql }}</textarea><br/>
+        <button type="submit">Execute</button>
+    </form>
+    {% if error %}
+    <p style="color:red;">{{ error }}</p>
+    {% endif %}
+    {% if result_html %}
+        <h2>Results</h2>
+        <div>{{ result_html|safe }}</div>
+    {% endif %}
+</body>
+</html>

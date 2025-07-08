@@ -4,6 +4,7 @@ import json
 import re
 import tempfile
 import pandas as pd
+import sqlite3
 from flask import Flask, render_template, request
 
 try:
@@ -22,6 +23,9 @@ except Exception:  # pragma: no cover - optional dependency
     parse_decision = None
 
 app = Flask(__name__)
+
+# Path to the SQLite database used for querying
+DB_PATH = os.environ.get("DB_PATH", "legislation.db")
 
 # Arabic labels for relation types
 RELATION_LABELS = {
@@ -76,6 +80,16 @@ def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
 
 
 LAW_ARTICLES = load_law_articles()
+
+# Example queries shown in the web interface
+PREDEFINED_QUERIES = {
+    "Cases judged by a person": (
+        "SELECT Documents.short_title, Entities.text "
+        "FROM Entities JOIN Documents ON Entities.document_id = Documents.id "
+        "WHERE Entities.type='JUDGE' AND Entities.text LIKE '%محمد%';"
+    ),
+    "Documents per type": "SELECT doc_type, COUNT(*) FROM Documents GROUP BY doc_type;",
+}
 
 
 def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
@@ -267,6 +281,30 @@ def parse_decision_route():
             pretty = json.dumps(result, ensure_ascii=False, indent=2)
             return render_template('decision.html', result_json=pretty)
     return render_template('decision.html', result_json=None)
+
+
+@app.route('/query', methods=['GET', 'POST'])
+def run_query():
+    """Execute a read-only SQL query against the database."""
+    result_html = None
+    error = None
+    sql = ''
+    if request.method == 'POST':
+        sql = request.form.get('sql', '')
+        try:
+            con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+            df = pd.read_sql_query(sql, con)
+            con.close()
+            result_html = df.to_html(index=False)
+        except Exception as exc:  # pragma: no cover - just display error
+            error = str(exc)
+    return render_template(
+        'query.html',
+        queries=PREDEFINED_QUERIES,
+        sql=sql,
+        result_html=result_html,
+        error=error,
+    )
 
 
 if __name__ == '__main__':
