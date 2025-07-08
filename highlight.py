@@ -4,6 +4,14 @@ from __future__ import annotations
 
 import html
 
+try:  # Allow using within package or standalone
+    from .ner import parse_marked_text  # type: ignore
+except Exception:  # pragma: no cover - fallback
+    try:
+        from ner import parse_marked_text  # type: ignore
+    except Exception:
+        parse_marked_text = None
+
 _DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 
 
@@ -29,13 +37,18 @@ def canonical_num(value: str) -> str | None:
 
 def highlight_text(
     text: str,
-    entities: list[dict],
+    entities: list[dict] | None = None,
     article_map: dict[str, str] | None = None,
     ref_targets: dict[str, list[str]] | None = None,
     tooltips: dict[str, str] | None = None,
     article_texts: dict[str, str] | None = None,
 ) -> str:
     """Return HTML for *text* with entity spans highlighted."""
+    if "[[ENT" in text and parse_marked_text is not None:
+        text, parsed = parse_marked_text(text)
+        entities = parsed
+    if entities is None:
+        entities = []
     popup = (
         '<div id="article-popup" style="display:none;position:fixed;top:10%;'
         "left:10%;width:80%;max-height:80%;overflow:auto;background-color:white;"
