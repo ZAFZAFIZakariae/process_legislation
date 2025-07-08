@@ -67,3 +67,24 @@ The script summarises the major sections of a court decision into JSON.
 python app.py
 ```
 Open the browser at http://localhost:5000 to access entity extraction, relationship graph visualisation and decision parsing.
+
+# Import results into SQLite
+To collect data from many processed documents run:
+```bash
+python import_db.py --init-db legislation.db
+python import_db.py --import legislation.db
+```
+This creates `legislation.db` and imports all JSON files from the `output/` directory.
+
+Example SQL to list every case judged by a given person:
+```sql
+SELECT Documents.short_title, Entities.text
+FROM Entities
+JOIN Documents ON Entities.document_id = Documents.id
+WHERE Entities.type='JUDGE' AND Entities.text LIKE '%محمد%';
+```
+To inspect cross-document references you can export the relation graph:
+```bash
+python import_db.py --export-graph relations.graphml --db legislation.db
+```
+Load the generated GraphML file in networkx or Gephi for further analysis.
