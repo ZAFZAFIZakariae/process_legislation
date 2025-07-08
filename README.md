@@ -97,3 +97,16 @@ To inspect cross-document references you can export the relation graph:
 python import_db.py --export-graph relations.graphml --db legislation.db
 ```
 Load the generated GraphML file in networkx or Gephi for further analysis.
+
+## Querying the database from the UI
+
+Both the Flask and Streamlit interfaces include a page to run read‑only SQL
+statements. Start the web app and open `/query` (Flask) or use the "SQL Query"
+section in the Streamlit interface. Choose one of the predefined statements or
+enter a custom query and the results will be displayed in a table.
+
+Example using the built‑in query:
+
+```sql
+SELECT doc_type, COUNT(*) FROM Documents GROUP BY doc_type;
+```

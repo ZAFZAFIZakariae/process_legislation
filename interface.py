@@ -4,6 +4,7 @@ import json
 import re
 import tempfile
 import pandas as pd
+import sqlite3
 import streamlit as st
 import streamlit.components.v1 as components
 from highlight import canonical_num, highlight_text
@@ -83,6 +84,19 @@ def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
 
 
 LAW_ARTICLES = load_law_articles()
+
+# Path to the SQLite database used for queries
+DB_PATH = os.environ.get("DB_PATH", "legislation.db")
+
+# Predefined queries shown in the interface
+PREDEFINED_QUERIES = {
+    "Cases judged by a person": (
+        "SELECT Documents.short_title, Entities.text "
+        "FROM Entities JOIN Documents ON Entities.document_id = Documents.id "
+        "WHERE Entities.type='JUDGE' AND Entities.text LIKE '%محمد%';"
+    ),
+    "Documents per type": "SELECT doc_type, COUNT(*) FROM Documents GROUP BY doc_type;",
+}
 
 try:
     from .ner import extract_entities, postprocess_result
@@ -347,3 +361,15 @@ if uploaded and st.button("Extract Entities"):
             st.info("Network graph requires networkx and pyvis packages")
 
     st.success("Extraction complete")
+
+st.header("SQL Query")
+preset = st.selectbox("Predefined queries", [""] + list(PREDEFINED_QUERIES))
+sql = st.text_area("SQL", value=PREDEFINED_QUERIES.get(preset, ""))
+if st.button("Run Query"):
+    try:
+        con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+        df = pd.read_sql_query(sql, con)
+        con.close()
+        st.dataframe(df)
+    except Exception as exc:
+        st.error(str(exc))
