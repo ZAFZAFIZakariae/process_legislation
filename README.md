@@ -36,9 +36,10 @@ AZURE_KEY – Key for the Azure Form Recognizer service.
 ```
 # OCR a PDF
 ```bash
-python ocr.py --input path/to/document.pdf
+python ocr.py --input path/to/document.pdf --output_dir data_txt
 ```
-The script saves the extracted Arabic text as <document>.txt next to the PDF.
+The script saves the extracted Arabic text as `<document>.txt` inside the chosen
+directory (`data_txt` by default).
 
 # Parse legislation with GPT
 ```bash
