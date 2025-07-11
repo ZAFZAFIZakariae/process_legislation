@@ -51,6 +51,11 @@ def main():
         required=True,
         help="Path to a single PDF file."
     )
+    parser.add_argument(
+        "--output_dir",
+        default="data_txt",
+        help="Directory to save the resulting .txt file (default: %(default)s)"
+    )
     args = parser.parse_args()
 
     pdf_path = args.input
@@ -60,7 +65,9 @@ def main():
 
     arabic_text = pdf_to_arabic_text(pdf_path)
     base = os.path.basename(pdf_path).rsplit(".", 1)[0]
-    txt_path = os.path.join(os.path.dirname(pdf_path), f"{base}.txt")
+    out_dir = args.output_dir
+    os.makedirs(out_dir, exist_ok=True)
+    txt_path = os.path.join(out_dir, f"{base}.txt")
 
     with open(txt_path, "w", encoding="utf-8") as fout:
         fout.write(arabic_text)
