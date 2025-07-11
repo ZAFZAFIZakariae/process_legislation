@@ -245,7 +245,8 @@ def fix_entity_offsets(text: str, result: Dict[str, Any]) -> None:
             start = -1
             end = -1
 
-        if not ent_text:
+        if not ent_text or start < 0 or end < 0:
+            # entities created from ranges may have unknown offsets
             continue
         if start == -1 or end == -1:
             # skip entities with unknown offsets
