@@ -514,10 +514,38 @@ def remove_empty_duplicate_articles(tree: list) -> None:
         )
         best_node, best_parent, _ = entries[best_idx]
 
+        def is_descendant(parent: dict, child: dict) -> bool:
+            """Return True if *child* exists anywhere under *parent*."""
+            for c in parent.get("children", []):
+                if c is child or is_descendant(c, child):
+                    return True
+            return False
+
         for idx, (node, parent, _) in enumerate(entries):
             if idx == best_idx:
                 continue
 
+            # Avoid creating cycles when a duplicate node is an ancestor of
+            # the node we keep. Merging such a parent would reattach the best
+            # node inside its own children, leading to infinite recursion.
+            if is_descendant(node, best_node):
+                if node.get("text"):
+                    if best_node.get("text"):
+                        existing = best_node["text"]
+                        new = node["text"]
+                        if existing and not existing.endswith("\n") and not new.startswith("\n"):
+                            best_node["text"] = existing + "\n" + new
+                        else:
+                            best_node["text"] = existing + new
+                    else:
+                        best_node["text"] = node["text"]
+                for child in list(node.get("children", [])):
+                    if child is best_node:
+                        continue
+                    merge_chunk_structure(best_node.setdefault("children", []), [child])
+                parent.remove(node)
+                continue
+                    
             if node.get("text"):
                 if best_node.get("text"):
                     existing = best_node["text"]
