@@ -521,6 +521,13 @@ def remove_empty_duplicate_articles(tree: list) -> None:
                     return True
             return False
 
+        def prune_target(node: dict, target: dict) -> None:
+            """Remove all references to *target* from *node*'s subtree."""
+            children = node.get("children", [])
+            node["children"] = [c for c in children if c is not target]
+            for c in node["children"]:
+                prune_target(c, target)
+
         for idx, (node, parent, _) in enumerate(entries):
             if idx == best_idx:
                 continue
@@ -539,11 +546,15 @@ def remove_empty_duplicate_articles(tree: list) -> None:
                             best_node["text"] = existing + new
                     else:
                         best_node["text"] = node["text"]
+
+                prune_target(node, best_node)
                 for child in list(node.get("children", [])):
-                    if child is best_node:
-                        continue
                     merge_chunk_structure(best_node.setdefault("children", []), [child])
-                parent.remove(node)
+
+                if best_node in best_parent:
+                    best_parent.remove(best_node)
+                idx_in_parent = parent.index(node)
+                parent[idx_in_parent] = best_node
                 continue
                     
             if node.get("text"):
