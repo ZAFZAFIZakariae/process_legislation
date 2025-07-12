@@ -595,8 +595,10 @@ def sort_sections(tree: list) -> None:
 # ----------------------------------------------------------------------
 # 13) Insert placeholder articles for missing numbers
 # ----------------------------------------------------------------------
-def fill_missing_articles(nodes: list) -> None:
+def fill_missing_articles(nodes: list, seen: set[int] | None = None) -> None:
     """Ensure sequential article numbers by inserting empty placeholders."""
+    if seen is None:
+        seen = set()
     i = 0
     if nodes:
         first = nodes[0]
@@ -650,13 +652,19 @@ def fill_missing_articles(nodes: list) -> None:
 
     for node in nodes:
         if node.get("children"):
-            fill_missing_articles(node["children"])
+            node_id = id(node)
+            if node_id in seen:
+                continue
+            seen.add(node_id)
+            fill_missing_articles(node["children"], seen)
 
 # ----------------------------------------------------------------------
 # 14) Insert placeholder sections for missing numbers
 # ----------------------------------------------------------------------
-def fill_missing_sections(nodes: list) -> None:
+def fill_missing_sections(nodes: list, seen: set[int] | None = None) -> None:
     """Recursively insert blank sections when numbering skips within a level."""
+    if seen is None:
+        seen = set()
     i = 0
     if nodes:
         first = nodes[0]
@@ -710,7 +718,11 @@ def fill_missing_sections(nodes: list) -> None:
 
     for node in nodes:
         if node.get("children"):
-            fill_missing_sections(node["children"])
+            node_id = id(node)
+            if node_id in seen:
+                continue
+            seen.add(node_id)
+            fill_missing_sections(node["children"], seen)
 
 # ----------------------------------------------------------------------
 # 15) Drop blank non-article nodes
