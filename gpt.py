@@ -102,6 +102,9 @@ ARTICLE_TYPE_MAP = {
 }
 ARTICLE_TYPES = set(ARTICLE_TYPE_MAP.keys())
 
+# Translation table for Arabic-Indic digits → Western digits
+_DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+
 # Map common Arabic ordinal words to digit strings
 _ORDINAL_MAP = {
     "الأول": "1",
@@ -439,11 +442,23 @@ def clean_number(node: dict) -> None:
             node["number"] = str(num)
             return
         if isinstance(num, str):
-            num = re.sub(r"^(?:الفصل|فصل|المادة|مادة|الباب|باب|القسم|قسم|الجزء|جزء)\s*", "", num).strip()
+            num = re.sub(
+                r"^(?:الفصل|فصل|المادة|مادة|الباب|باب|القسم|قسم|الجزء|جزء)\s*",
+                "",
+                num,
+            ).strip()
+            num = num.translate(_DIGIT_TRANS)
             if num == "تمهيدي":
-                node["number"] = "0"
+                num = "0"
+            num = _ORDINAL_MAP.get(num, num)
+            digits = re.search(r"\d+", num)
+            if digits:
+                node["number"] = str(int(digits.group(0)))
             else:
-                node["number"] = _ORDINAL_MAP.get(num, num)
+                try:
+                    node["number"] = str(int(num))
+                except Exception:
+                    node["number"] = num
 
 
 def clean_text(text: str) -> str:
@@ -777,6 +792,12 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
                         match["text"] = new
             if node.get("children"):
                 merge_chunk_structure(match["children"], node["children"])
+
+    # Ensure numbering gaps are filled and ordering is normalized
+    fill_missing_articles(full_tree)
+    fill_missing_sections(full_tree)
+    finalize_structure(full_tree)
+    sort_sections(full_tree)
 
 # ----------------------------------------------------------------------
 # 14) Main processing: OCR (if PDF) or read .txt, Pass 1, Pass 2, merge, save JSON
