@@ -845,8 +845,9 @@ def merge_chunk_structure(full_tree: list, chunk_array: list):
                 merge_chunk_structure(match["children"], node["children"])
 
     # Ensure numbering gaps are filled and ordering is normalized
-    fill_missing_articles(full_tree)
-    fill_missing_sections(full_tree)
+    #fill_missing_articles(full_tree)
+    #fill_missing_sections(full_tree)
+    # Normalize and sort after merging
     finalize_structure(full_tree)
     sort_sections(full_tree)
 
