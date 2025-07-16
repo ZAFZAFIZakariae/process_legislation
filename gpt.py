@@ -99,6 +99,8 @@ ARTICLE_TYPE_MAP = {
     "باب": "باب",
     "الجزء": "جزء",
     "جزء": "جزء",
+    "الفرع": "فرع",
+    "فرع": "فرع",
 }
 ARTICLE_TYPES = set(ARTICLE_TYPE_MAP.keys())
 
@@ -785,18 +787,38 @@ RANK_MAP = {
     "جزء": 0,
     "باب": 1,
     "فصل": 2,
-    "مادة": 2,
+    "فرع": 3,
+    "مادة": 4,
 }
 
 
-def fix_hierarchy(nodes: list) -> None:
+def compute_rank_map(nodes: list) -> dict[str, int]:
+    """Determine ranking order based on first appearance of each type."""
+    order: list[str] = []
+
+    def walk(nlist: list) -> None:
+        for n in nlist:
+            typ = canonical_type(n.get("type", ""))
+            if typ and typ not in order:
+                order.append(typ)
+            if n.get("children"):
+                walk(n["children"])
+
+    walk(nodes)
+    return {t: i for i, t in enumerate(order)} or RANK_MAP
+
+
+def fix_hierarchy(nodes: list, rank_map: dict[str, int] | None = None) -> None:
     """Reattach nodes according to their hierarchical rank."""
+    if rank_map is None:
+        rank_map = compute_rank_map(nodes)
+
     stack: list[tuple[dict, int]] = []
     new_root: list[dict] = []
 
     for node in nodes:
         typ = canonical_type(node.get("type", ""))
-        rank = RANK_MAP.get(typ, max(RANK_MAP.values()) + 1)
+        rank = rank_map.get(typ, max(rank_map.values()) + 1)
         node.setdefault("children", [])
 
         while stack and rank <= stack[-1][1]:
@@ -814,7 +836,7 @@ def fix_hierarchy(nodes: list) -> None:
     nodes[:] = new_root
     for n in nodes:
         if n.get("children"):
-            fix_hierarchy(n["children"])
+            fix_hierarchy(n["children"], rank_map)
 
 # ----------------------------------------------------------------------
 # 13) Merge a chunk’s section‑array into the full tree
@@ -1040,7 +1062,8 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
             continue
 
     # -------- Save final JSON --------
-    fix_hierarchy(structure_tree)
+    rank_map = compute_rank_map(structure_tree)
+    fix_hierarchy(structure_tree, rank_map)
     finalize_structure(structure_tree)
     if has_preamble_heading and find_node(structure_tree, "قسم", "0") is None:
         structure_tree.insert(0, {"type": "قسم", "number": "0", "title": "", "text": "", "children": []})
