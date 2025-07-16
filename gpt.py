@@ -750,6 +750,34 @@ def drop_empty_non_article_nodes(nodes: list) -> None:
             drop_empty_non_article_nodes(node["children"])
 
 # ----------------------------------------------------------------------
+# Deduplicate article numbers globally
+# ----------------------------------------------------------------------
+def deduplicate_articles(nodes: list) -> None:
+    """Ensure each article number appears only once in the tree."""
+    mapping: dict[str, dict] = {}
+
+    def visit(parent_list: list) -> None:
+        for node in list(parent_list):
+            typ = canonical_type(node.get("type"))
+            if typ == "مادة":
+                num = str(node.get("number"))
+                if num in mapping:
+                    best = mapping[num]
+                    # Prefer the node that has longer text
+                    if len(node.get("text", "")) > len(best.get("text", "")):
+                        best["text"] = node.get("text", "")
+                    if node.get("children"):
+                        merge_chunk_structure(best.setdefault("children", []), node["children"])
+                    parent_list.remove(node)
+                    continue
+                else:
+                    mapping[num] = node
+            if node.get("children"):
+                visit(node["children"])
+
+    visit(nodes)
+
+# ----------------------------------------------------------------------
 # Helper: Repair hierarchy based on canonical ranks
 # ----------------------------------------------------------------------
 RANK_MAP = {
@@ -1028,6 +1056,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     # Ensure sections are in numeric order
     sort_sections(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
+    deduplicate_articles(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
         json.dump(full_obj, fout, ensure_ascii=False, indent=2)
