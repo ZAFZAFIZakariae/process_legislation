@@ -10,6 +10,7 @@ import sys
 import json
 import argparse
 import re
+import copy
 
 import tiktoken
 import openai
@@ -497,6 +498,30 @@ def finalize_structure(tree: list, seen: set | None = None) -> None:
             finalize_structure(node["children"], seen)
 
 
+def break_cycles(nodes: list, active: set[int] | None = None, seen: set[int] | None = None) -> None:
+    """Remove or duplicate nodes to avoid circular references."""
+    if active is None:
+        active = set()
+    if seen is None:
+        seen = set()
+
+    for i, node in enumerate(list(nodes)):
+        nid = id(node)
+        if nid in active:
+            # Drop the reference that creates a cycle
+            nodes.pop(i)
+            continue
+        if nid in seen:
+            node = copy.deepcopy(node)
+            nodes[i] = node
+            nid = id(node)
+        seen.add(nid)
+        active.add(nid)
+        if node.get("children"):
+            break_cycles(node["children"], active, seen)
+        active.remove(nid)
+
+
 def remove_empty_duplicate_articles(tree: list) -> None:
     """Merge or drop duplicate article nodes across the tree."""
     mapping: dict[tuple[str, str], list[tuple[dict, list, int]]] = {}
@@ -586,8 +611,11 @@ def remove_empty_duplicate_articles(tree: list) -> None:
 # ----------------------------------------------------------------------
 # 12) Sort sections numerically and recursively
 # ----------------------------------------------------------------------
-def sort_sections(tree: list) -> None:
-    """Recursively sort sections by numeric order."""
+def sort_sections(tree: list, seen: set[int] | None = None) -> None:
+    """Recursively sort sections by numeric order while avoiding cycles."""
+
+    if seen is None:
+        seen = set()
 
     def try_int(val):
         if isinstance(val, str):
@@ -600,11 +628,15 @@ def sort_sections(tree: list) -> None:
             return None
 
     for node in tree:
+        if id(node) in seen:
+            continue
+        seen.add(id(node))
+
         num_int = try_int(node.get("number"))
         if num_int is not None:
             node["number"] = num_int
         if node.get("children"):
-            sort_sections(node["children"])
+            sort_sections(node["children"], seen)
 
     def sort_key(n):
         val = try_int(n.get("number"))
@@ -1087,6 +1119,7 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     sort_sections(structure_tree)
     remove_empty_duplicate_articles(structure_tree)
     deduplicate_articles(structure_tree)
+    break_cycles(structure_tree)
     full_obj["structure"] = structure_tree
     with open(out_json, "w", encoding="utf-8") as fout:
         json.dump(full_obj, fout, ensure_ascii=False, indent=2)
