@@ -586,8 +586,11 @@ def remove_empty_duplicate_articles(tree: list) -> None:
 # ----------------------------------------------------------------------
 # 12) Sort sections numerically and recursively
 # ----------------------------------------------------------------------
-def sort_sections(tree: list) -> None:
-    """Recursively sort sections by numeric order."""
+def sort_sections(tree: list, seen: set[int] | None = None) -> None:
+    """Recursively sort sections by numeric order while avoiding cycles."""
+
+    if seen is None:
+        seen = set()
 
     def try_int(val):
         if isinstance(val, str):
@@ -600,11 +603,15 @@ def sort_sections(tree: list) -> None:
             return None
 
     for node in tree:
+        if id(node) in seen:
+            continue
+        seen.add(id(node))
+
         num_int = try_int(node.get("number"))
         if num_int is not None:
             node["number"] = num_int
         if node.get("children"):
-            sort_sections(node["children"])
+            sort_sections(node["children"], seen)
 
     def sort_key(n):
         val = try_int(n.get("number"))
