@@ -474,9 +474,16 @@ def clean_text(text: str) -> str:
     return text.strip()
 
 
-def finalize_structure(tree: list) -> None:
+def finalize_structure(tree: list, seen: set | None = None) -> None:
     """Clean numbers/text and ensure only articles contain text."""
+    if seen is None:
+        seen = set()
+
     for node in tree:
+        if id(node) in seen:
+            continue
+        seen.add(id(node))
+
         node.pop("_placeholder", None)
         node["type"] = canonical_type(node.get("type", ""))
         if node.get("type") in ARTICLE_TYPES and node.get("number") is not None:
@@ -487,7 +494,7 @@ def finalize_structure(tree: list) -> None:
         else:
             node["text"] = clean_text(node.get("text", ""))
         if node.get("children"):
-            finalize_structure(node["children"])
+            finalize_structure(node["children"], seen)
 
 
 def remove_empty_duplicate_articles(tree: list) -> None:
