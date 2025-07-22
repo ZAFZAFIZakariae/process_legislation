@@ -3,10 +3,7 @@ import sys
 import json
 import argparse
 
-try:
-    from .. import gpt
-except Exception:
-    import gpt
+from . import gpt_helpers as gpt
 
 
 def finalize_from_file(raw_json_path: str, output_path: str) -> None:
