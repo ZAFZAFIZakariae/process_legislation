@@ -1,15 +1,33 @@
 import os
 import sys
 import argparse
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.formrecognizer import DocumentAnalysisClient
 
-try:
-    from ..ocr import pdf_to_arabic_text
-except Exception:
-    try:
-        from ocr import pdf_to_arabic_text
-    except Exception:
-        def pdf_to_arabic_text(path: str) -> str:
-            raise RuntimeError("OCR functionality is unavailable in this environment")
+AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT")
+AZURE_KEY = os.getenv("AZURE_KEY")
+
+if not AZURE_ENDPOINT or not AZURE_KEY:
+    print("❌ Missing Azure credentials. Please set the AZURE_ENDPOINT and AZURE_KEY environment variables.")
+    sys.exit(1)
+
+
+def pdf_to_arabic_text(pdf_path: str) -> str:
+    """Use Azure Form Recognizer to OCR a PDF and return all Arabic text."""
+    client = DocumentAnalysisClient(
+        endpoint=AZURE_ENDPOINT,
+        credential=AzureKeyCredential(AZURE_KEY),
+    )
+
+    with open(pdf_path, "rb") as f:
+        poller = client.begin_analyze_document(model_id="prebuilt-read", document=f)
+        result = poller.result()
+
+    all_lines = []
+    for page in result.pages:
+        for line in page.lines:
+            all_lines.append(line.content)
+    return "\n".join(all_lines)
 
 
 def convert_to_text(input_path: str, output_dir: str) -> str:
