@@ -6,10 +6,7 @@ import re
 
 import tiktoken
 
-try:
-    from .. import gpt
-except Exception:
-    import gpt
+from . import gpt_helpers as gpt
 
 
 def run_passes(txt_path: str, model: str) -> dict:
