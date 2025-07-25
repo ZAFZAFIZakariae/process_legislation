@@ -47,6 +47,21 @@ python gpt.py --input path/to/document.pdf --output_dir output
 ```
 If the input is a PDF it is OCRed first. The result is a JSON file (<document>.json) describing the legislation’s structure. A different model can be selected using --model.
 
+## Multi-step pipeline
+The scripts in `pipeline/` expose the same functionality as a series of steps. Use these when you need finer control over intermediate files:
+
+```bash
+# Extract structure in two passes
+python -m pipeline.extract_chunks --input path/to/text.txt --output structure_raw.json --model gpt-4o
+
+# Post-process the raw output
+python -m pipeline.post_process --input structure_raw.json --output structure_final.json
+
+# Run the entire process in one command
+python -m pipeline.run_pipeline --input path/to/document.pdf --output_dir output
+```
+Running them with `-m` ensures relative imports resolve correctly when executed from the repository root.
+
 # Named‑entity extraction
 ```bash
 python ner.py --input path/to/text.txt --output_dir ner_out
