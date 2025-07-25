@@ -49,7 +49,19 @@ def adjust_for_model(name: str) -> None:
 # ------------------------------------------------------------
 
 def load_prompts() -> tuple[str, str]:
-    base = os.path.join(os.path.dirname(__file__), "prompts")
+    """Return the contents of prompt_1.txt and prompt_2.txt.
+
+    When the pipeline modules are executed directly, the current file lives
+    inside ``pipeline/`` while the prompts folder sits at the repository
+    root. We therefore try ``pipeline/prompts`` first and fall back to the
+    parent directory if the files are missing.
+    """
+
+    here = os.path.dirname(__file__)
+    base = os.path.join(here, "prompts")
+    if not os.path.exists(os.path.join(base, "prompt_1.txt")):
+        base = os.path.join(here, "..", "prompts")
+
     with open(os.path.join(base, "prompt_1.txt"), "r", encoding="utf-8") as f1:
         p1 = f1.read()
     with open(os.path.join(base, "prompt_2.txt"), "r", encoding="utf-8") as f2:
