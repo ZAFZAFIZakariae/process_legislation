@@ -3,7 +3,13 @@ import sys
 import json
 import argparse
 
-from . import gpt_helpers as gpt
+try:  # Prefer relative import when running as a package
+    from . import gpt_helpers as gpt
+except Exception:  # Allow running as a script
+    try:
+        import gpt_helpers as gpt  # type: ignore
+    except Exception as exc:  # pragma: no cover - missing dependency
+        raise ImportError("gpt_helpers module is required") from exc
 
 
 def finalize_from_file(raw_json_path: str, output_path: str) -> None:

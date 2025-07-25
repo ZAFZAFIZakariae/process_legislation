@@ -6,7 +6,13 @@ import re
 
 import tiktoken
 
-from . import gpt_helpers as gpt
+try:  # Prefer relative import when running as a package
+    from . import gpt_helpers as gpt
+except Exception:  # Allow running as a script
+    try:
+        import gpt_helpers as gpt  # type: ignore
+    except Exception as exc:  # pragma: no cover - missing dependency
+        raise ImportError("gpt_helpers module is required") from exc
 
 
 def run_passes(txt_path: str, model: str) -> dict:
