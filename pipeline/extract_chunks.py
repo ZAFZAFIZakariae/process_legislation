@@ -83,7 +83,10 @@ def run_passes(txt_path: str, model: str) -> dict:
                 structure_tree.append(parent)
             target_tree = parent.get("children", [])
 
-        gpt.merge_chunk_structure(target_tree, chunk_array)
+        # gpt.merge_chunk_structure(target_tree, chunk_array)
+        # Append chunk data without merging so the output preserves each chunk
+        # exactly as extracted
+        target_tree.extend(chunk_array)
 
         enc = tiktoken.encoding_for_model(gpt.GPT_MODEL)
         tok = enc.encode(chunk)
