@@ -2,9 +2,17 @@ import argparse
 import os
 import json
 
-from .ocr_to_text import convert_to_text
-from .extract_chunks import run_passes
-from .post_process import finalize_from_file
+try:  # Prefer relative imports when running as a package
+    from .ocr_to_text import convert_to_text
+    from .extract_chunks import run_passes
+    from .post_process import finalize_from_file
+except Exception:  # Allow running as a script
+    try:
+        from ocr_to_text import convert_to_text  # type: ignore
+        from extract_chunks import run_passes  # type: ignore
+        from post_process import finalize_from_file  # type: ignore
+    except Exception as exc:  # pragma: no cover - missing dependency
+        raise ImportError("pipeline modules are required") from exc
 
 
 def run_pipeline(input_path: str, output_dir: str, model: str) -> str:
