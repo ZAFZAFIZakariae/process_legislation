@@ -30,6 +30,7 @@ def finalize_from_file(raw_json_path: str, output_path: str) -> None:
     gpt.drop_empty_non_article_nodes(structure_tree)
     gpt.fill_missing_articles(structure_tree)
     gpt.fill_missing_sections(structure_tree)
+    gpt.drop_empty_non_article_nodes(structure_tree)
     gpt.finalize_structure(structure_tree)
     gpt.sort_sections(structure_tree)
     gpt.remove_empty_duplicate_articles(structure_tree)

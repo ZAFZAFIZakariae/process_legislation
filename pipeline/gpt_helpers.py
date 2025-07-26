@@ -399,6 +399,8 @@ def clean_text(text: str) -> str:
 
 
 def finalize_structure(tree: list, seen: set | None = None) -> None:
+    """Normalise numbers and keep text for all nodes."""
+
     if seen is None:
         seen = set()
     for node in tree:
@@ -410,10 +412,12 @@ def finalize_structure(tree: list, seen: set | None = None) -> None:
         if node.get("type") in ARTICLE_TYPES and node.get("number") is not None:
             node["number"] = str(node.get("number"))
         clean_number(node)
-        if node.get("type") not in ARTICLE_TYPES:
-            node["text"] = ""
-        else:
-            node["text"] = clean_text(node.get("text", ""))
+        if "text" in node:
+            cleaned = clean_text(node["text"])
+            if cleaned:
+                node["text"] = cleaned
+            else:
+                node.pop("text")
         if node.get("children"):
             finalize_structure(node["children"], seen)
 
@@ -707,18 +711,23 @@ RANK_MAP = {
 
 
 def compute_rank_map(nodes: list) -> dict[str, int]:
-    order: list[str] = []
+    """Return a canonical ranking for the section types present in ``nodes``."""
+
+    present: set[str] = set()
 
     def walk(nlist: list) -> None:
         for n in nlist:
             typ = canonical_type(n.get("type", ""))
-            if typ and typ not in order:
-                order.append(typ)
+            if typ:
+                present.add(typ)
             if n.get("children"):
                 walk(n["children"])
 
     walk(nodes)
-    return {t: i for i, t in enumerate(order)} or RANK_MAP
+
+    ordered = [t for t in RANK_MAP if t in present]
+    ordered.extend(t for t in present if t not in RANK_MAP)
+    return {t: i for i, t in enumerate(ordered)}
 
 
 def fix_hierarchy(nodes: list, rank_map: dict[str, int] | None = None) -> None:
