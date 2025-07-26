@@ -476,7 +476,11 @@ def clean_text(text: str) -> str:
 
 
 def finalize_structure(tree: list, seen: set | None = None) -> None:
-    """Clean numbers/text and ensure only articles contain text."""
+    """Normalise numbering and clean text for all nodes.
+
+    Text is kept for every level instead of being wiped from non-article nodes
+    so that any headings or explanatory paragraphs present in the source are
+    preserved in the output."""
     if seen is None:
         seen = set()
 
@@ -490,10 +494,12 @@ def finalize_structure(tree: list, seen: set | None = None) -> None:
         if node.get("type") in ARTICLE_TYPES and node.get("number") is not None:
             node["number"] = str(node.get("number"))
         clean_number(node)
-        if node.get("type") not in ARTICLE_TYPES:
-            node["text"] = ""
-        else:
-            node["text"] = clean_text(node.get("text", ""))
+        if "text" in node:
+            cleaned = clean_text(node["text"])
+            if cleaned:
+                node["text"] = cleaned
+            else:
+                node.pop("text")
         if node.get("children"):
             finalize_structure(node["children"], seen)
 
@@ -832,19 +838,30 @@ RANK_MAP = {
 
 
 def compute_rank_map(nodes: list) -> dict[str, int]:
-    """Determine ranking order based on first appearance of each type."""
-    order: list[str] = []
+    """Return a hierarchy ranking based on canonical order.
+
+    We first collect all section types present in the parsed data and then sort
+    them using ``RANK_MAP`` so that missing levels simply do not appear in the
+    resulting order.  This avoids the previous behaviour where the order was
+    derived from the first appearance of a type, which could mistakenly rank an
+    early ``مادة`` above a later ``قسم`` and force an incorrect hierarchy.
+    """
+
+    present: set[str] = set()
 
     def walk(nlist: list) -> None:
         for n in nlist:
             typ = canonical_type(n.get("type", ""))
-            if typ and typ not in order:
-                order.append(typ)
+            if typ:
+                present.add(typ)
             if n.get("children"):
                 walk(n["children"])
 
     walk(nodes)
-    return {t: i for i, t in enumerate(order)} or RANK_MAP
+
+    ordered = [t for t in RANK_MAP if t in present]
+    ordered.extend(t for t in present if t not in RANK_MAP)
+    return {t: i for i, t in enumerate(ordered)}
 
 
 def fix_hierarchy(nodes: list, rank_map: dict[str, int] | None = None) -> None:
@@ -1113,6 +1130,8 @@ def process_single_arabic(txt_path: str, output_dir: str) -> None:
     fill_missing_articles(structure_tree)
     # Insert placeholders for skipped section numbers
     fill_missing_sections(structure_tree)
+    # Remove placeholders introduced above
+    drop_empty_non_article_nodes(structure_tree)
     # Clean up placeholder markers and normalize numbers/text
     finalize_structure(structure_tree)
     # Ensure sections are in numeric order
