@@ -227,7 +227,7 @@ def remove_empty_duplicate_articles(tree: list) -> None:
         def prune_target(node: dict, target: dict) -> None:
             children = node.get("children", [])
             node["children"] = [c for c in children if c is not target]
-            for c in node["children"]:
+            for c in node.get("children", []):
                 prune_target(c, target)
 
         for idx, (node, parent, _) in enumerate(entries):
@@ -246,7 +246,7 @@ def remove_empty_duplicate_articles(tree: list) -> None:
                         best_node["text"] = node["text"]
                 prune_target(node, best_node)
                 for child in list(node.get("children", [])):
-                    best_node.setdefault("children", []).append(child)
+                    merge_chunk_structure(best_node.setdefault("children", []), [child])
                 if best_node in best_parent:
                     best_parent.remove(best_node)
                 idx_in_parent = parent.index(node)
@@ -263,7 +263,8 @@ def remove_empty_duplicate_articles(tree: list) -> None:
                 else:
                     best_node["text"] = node["text"]
             if node.get("children"):
-                best_node.setdefault("children", []).extend(node["children"])
+                best_node.setdefault("children", [])
+                merge_chunk_structure(best_node["children"], node["children"])
             parent.remove(node)
 
 
@@ -296,6 +297,49 @@ def sort_sections(tree: list, seen: set[int] | None = None) -> None:
         return (0, val) if val is not None else (1, str(n.get("number")))
 
     tree.sort(key=sort_key)
+
+
+def merge_chunk_structure(full_tree: list, chunk_array: list) -> None:
+    for node in chunk_array:
+        if not isinstance(node, dict) or "number" not in node:
+            print(f"[Debug] Skipping malformed node: {node}")
+            continue
+        node.setdefault("children", [])
+        node["type"] = canonical_type(node.get("type", ""))
+        match = next(
+            (
+                n
+                for n in full_tree
+                if canonical_type(n.get("type")) == node.get("type")
+                and str(n.get("number")) == str(node["number"])
+            ),
+            None,
+        )
+        if match is None:
+            node.setdefault("children", [])
+            if canonical_type(node.get("type")) not in ARTICLE_TYPES:
+                node["text"] = ""
+            clean_number(node)
+            if canonical_type(node.get("type")) in ARTICLE_TYPES and node.get("text"):
+                node["text"] = clean_text(node["text"])
+            full_tree.append(node)
+        else:
+            match.setdefault("children", [])
+            if canonical_type(match.get("type")) in ARTICLE_TYPES:
+                new = clean_text(node.get("text", ""))
+                if new:
+                    existing = match.get("text", "")
+                    if existing:
+                        if not existing.endswith("\n") and not new.startswith("\n"):
+                            match["text"] = existing + "\n" + new
+                        else:
+                            match["text"] = existing + new
+                    else:
+                        match["text"] = new
+            if node.get("children"):
+                merge_chunk_structure(match["children"], node["children"])
+    finalize_structure(full_tree)
+    sort_sections(full_tree)
 
 
 def fill_missing_articles(nodes: list, seen: set[int] | None = None) -> None:
@@ -486,12 +530,13 @@ def process(raw_json_path: str, output_path: str) -> None:
     if has_preamble_heading and find_node(tree, "قسم", "0") is None:
         tree.insert(0, {"type": "قسم", "number": "0", "title": "", "text": "", "children": []})
         finalize_structure(tree)
-    # We skip the complex duplicate-merging step used in gpt_helpers
+    remove_empty_duplicate_articles(tree)
     drop_empty_non_article_nodes(tree)
     fill_missing_articles(tree)
     fill_missing_sections(tree)
     finalize_structure(tree)
     sort_sections(tree)
+    remove_empty_duplicate_articles(tree)
     deduplicate_articles(tree)
     break_cycles(tree)
 
