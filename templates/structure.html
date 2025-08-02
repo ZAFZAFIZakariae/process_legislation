@@ -6,23 +6,43 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
+<header>
+    <div class="logo">Legal AI Assistant</div>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('index') }}">Entities</a>
+        <a href="{{ url_for('extract_structure') }}">Structure</a>
+        <a href="{{ url_for('parse_decision_route') }}">Decision</a>
+        <a href="{{ url_for('run_query') }}">SQL</a>
+    </nav>
+</header>
+<main class="container">
     <h1>Structure Extraction</h1>
-    <form action="{{ url_for('extract_structure') }}" method="post" enctype="multipart/form-data">
+    <form class="card" action="{{ url_for('extract_structure') }}" method="post" enctype="multipart/form-data">
         <label>Upload PDF or text file:
             <input type="file" name="file" required>
         </label>
         <label>Model:
-            <input type="text" name="model" value="gpt-3.5-turbo-16k">
+            <input list="models" name="model" value="gpt-3.5-turbo-16k">
+            <datalist id="models">
+                <option value="gpt-3.5-turbo-16k">
+                <option value="gpt-4o">
+            </datalist>
         </label>
         <button type="submit">Build Structure</button>
     </form>
     {% if error %}
-        <p>{{ error }}</p>
+        <section class="card">
+            <p>{{ error }}</p>
+        </section>
     {% endif %}
     {% if result_json %}
-        <h2>Result</h2>
-        <pre>{{ result_json }}</pre>
-        <a href="data:application/json;charset=utf-8,{{ result_json | urlencode }}" download="structure.json">Download structure.json</a>
+        <section class="card">
+            <h2>Result</h2>
+            <pre>{{ result_json }}</pre>
+            <a class="button" href="data:application/json;charset=utf-8,{{ result_json | urlencode }}" download="structure.json">Download structure.json</a>
+        </section>
     {% endif %}
+</main>
 </body>
 </html>
