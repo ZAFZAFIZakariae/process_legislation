@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Structure Extraction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+    <h1>Structure Extraction</h1>
+    <form action="{{ url_for('extract_structure') }}" method="post" enctype="multipart/form-data">
+        <label>Upload PDF or text file:
+            <input type="file" name="file" required>
+        </label>
+        <label>Model:
+            <input type="text" name="model" value="gpt-3.5-turbo-16k">
+        </label>
+        <button type="submit">Build Structure</button>
+    </form>
+    {% if error %}
+        <p>{{ error }}</p>
+    {% endif %}
+    {% if result_json %}
+        <h2>Result</h2>
+        <pre>{{ result_json }}</pre>
+        <a href="data:application/json;charset=utf-8,{{ result_json | urlencode }}" download="structure.json">Download structure.json</a>
+    {% endif %}
+</body>
+</html>
