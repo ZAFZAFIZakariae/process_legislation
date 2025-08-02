@@ -60,10 +60,27 @@ def postprocess_structure(flat_structure: List[Dict[str, Any]]) -> List[Dict[str
 
 
 def merge_duplicates(children: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Merge nodes with the same type/number while normalising their fields.
+
+    The raw structure often contains duplicate entries for the same article or
+    section where one node only carries the number and another carries the
+    actual text.  These entries can also have slight variations in their type
+    strings (for example ``"المادة"`` versus ``"مادة"``) or represent numbers
+    using different types.  To guarantee that such duplicates are merged
+    correctly we canonicalise both the ``type`` and ``number`` fields before
+    using them as a key.
+    """
+
     seen: Dict[tuple, Dict[str, Any]] = {}
     result: List[Dict[str, Any]] = []
+
     for node in children:
-        key = (node.get("type"), str(node.get("number")))
+        node_type = canonical_type(node.get("type", ""))
+        node["type"] = node_type
+        number = str(node.get("number", "")).strip()
+        node["number"] = number
+        key = (node_type, number)
+
         if key in seen:
             existing = seen[key]
             if not existing.get("text") and node.get("text"):
@@ -80,6 +97,7 @@ def merge_duplicates(children: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     for node in result:
         if node.get("children"):
             node["children"] = merge_duplicates(node["children"])
+
     return result
 
 
