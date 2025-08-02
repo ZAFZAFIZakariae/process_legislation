@@ -197,6 +197,21 @@ def attach_stray_articles(children: List[Dict[str, Any]]) -> None:
         node_type = canonical_type(node.get("type", ""))
 
         if node_type in {"قسم", "باب", "فصل"}:
+            # Occasionally a ``فصل`` heading is emitted at the same hierarchical
+            # level as its preceding ``باب``.  When this happens we should nest
+            # the chapter under the most recent ``باب`` instead of leaving it as
+            # a sibling.  This mirrors the logic used for stray article nodes
+            # below.
+            if (
+                node_type == "فصل"
+                and last_struct is not None
+                and canonical_type(last_struct.get("type", "")) == "باب"
+            ):
+                last_struct.setdefault("children", []).append(node)
+                children.pop(i)
+                attach_stray_articles(node.get("children", []))
+                continue
+
             attach_stray_articles(node.get("children", []))
             last_struct = node
             i += 1
