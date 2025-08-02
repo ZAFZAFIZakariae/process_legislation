@@ -114,6 +114,62 @@ def sort_children(children: List[Dict[str, Any]]) -> None:
             sort_children(node["children"])
 
 
+def flatten_articles(children: List[Dict[str, Any]]) -> None:
+    """Promote article nodes from being nested inside other articles.
+
+    When the raw structure is produced some articles are erroneously captured as
+    children of the preceding article.  Articles should always be siblings under
+    a section or chapter heading.  This function walks the tree and, whenever an
+    article has article children, it moves those children to be siblings of the
+    parent article.
+    """
+
+    i = 0
+    while i < len(children):
+        node = children[i]
+        node_type = canonical_type(node.get("type", ""))
+        if node_type == "مادة" and node.get("children"):
+            children[i + 1 : i + 1] = node["children"]
+            node["children"] = []
+            # continue processing including the inserted nodes
+        else:
+            if node.get("children"):
+                flatten_articles(node["children"])
+        i += 1
+
+
+def remove_duplicate_articles(children: List[Dict[str, Any]],
+                               seen: Dict[str, Dict[str, Any]] | None = None) -> None:
+    """Remove duplicated articles while keeping the most informative version.
+
+    Articles (مادة) are uniquely numbered within a document.  If the parser
+    emits multiple nodes with the same number we keep the one with the longest
+    text and merge any children from the duplicates into it.
+    """
+
+    if seen is None:
+        seen = {}
+
+    i = 0
+    while i < len(children):
+        node = children[i]
+        node_type = canonical_type(node.get("type", ""))
+        if node_type == "مادة":
+            num = str(node.get("number", ""))
+            existing = seen.get(num)
+            if existing is not None:
+                if len(node.get("text", "")) > len(existing.get("text", "")):
+                    existing["text"] = node.get("text", "")
+                existing.setdefault("children", []).extend(node.get("children", []))
+                children.pop(i)
+                continue
+            else:
+                seen[num] = node
+        if node.get("children"):
+            remove_duplicate_articles(node["children"], seen)
+        i += 1
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Reconstruct hierarchical structure")
     parser.add_argument("--input", required=True, help="Path to structure_raw.json")
@@ -125,7 +181,9 @@ def main() -> None:
 
     flat_structure = data.get("structure", [])
     hier = postprocess_structure(flat_structure)
+    flatten_articles(hier)
     hier = merge_duplicates(hier)
+    remove_duplicate_articles(hier)
     sort_children(hier)
 
     data["structure"] = hier
