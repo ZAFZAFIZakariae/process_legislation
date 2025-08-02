@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Structure Extraction</title>
+    <title>Structure Pipeline</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
@@ -17,7 +17,7 @@
     </nav>
 </header>
 <main class="container">
-    <h1>Structure Extraction</h1>
+    <h1>Chunking &amp; Post-processing</h1>
     <form class="card" action="{{ url_for('extract_structure') }}" method="post" enctype="multipart/form-data">
         <label>Upload PDF or text file:
             <input type="file" name="file" required>
@@ -29,7 +29,7 @@
                 <option value="gpt-4o">
             </datalist>
         </label>
-        <button type="submit">Build Structure</button>
+        <button type="submit">Run Pipeline</button>
     </form>
     {% if error %}
         <section class="card">
