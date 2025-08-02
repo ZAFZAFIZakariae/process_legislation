@@ -179,6 +179,44 @@ def remove_duplicate_articles(children: List[Dict[str, Any]],
         i += 1
 
 
+def attach_stray_articles(children: List[Dict[str, Any]]) -> None:
+    """Attach article nodes that appear alongside structural siblings.
+
+    In some raw structures articles (``مادة``) are emitted as direct children of a
+    section or chapter even though subsequent nodes introduce a new structural
+    level such as a ``فصل``.  These articles logically belong to the preceding
+    structural node (e.g. the last ``باب``/``فصل``).  This function walks the
+    tree and whenever it encounters such stray articles it moves them beneath the
+    most recent structural ancestor.
+    """
+
+    i = 0
+    last_struct: Dict[str, Any] | None = None
+    while i < len(children):
+        node = children[i]
+        node_type = canonical_type(node.get("type", ""))
+
+        if node_type in {"قسم", "باب", "فصل"}:
+            attach_stray_articles(node.get("children", []))
+            last_struct = node
+            i += 1
+            continue
+
+        if node_type == "مادة" and last_struct is not None:
+            target = last_struct
+            if canonical_type(target.get("type", "")) in {"قسم", "باب"}:
+                sub = target.get("children", [])
+                if sub and canonical_type(sub[-1].get("type", "")) == "فصل":
+                    target = sub[-1]
+            target.setdefault("children", []).append(node)
+            children.pop(i)
+            continue
+
+        if node.get("children"):
+            attach_stray_articles(node["children"])
+        i += 1
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Reconstruct hierarchical structure")
     parser.add_argument("--input", required=True, help="Path to structure_raw.json")
@@ -193,6 +231,7 @@ def main() -> None:
     flatten_articles(hier)
     hier = merge_duplicates(hier)
     remove_duplicate_articles(hier)
+    attach_stray_articles(hier)
     sort_children(hier)
 
     data["structure"] = hier
