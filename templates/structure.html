@@ -14,6 +14,7 @@
         <a href="{{ url_for('extract_structure') }}">Structure</a>
         <a href="{{ url_for('parse_decision_route') }}">Decision</a>
         <a href="{{ url_for('run_query') }}">SQL</a>
+        <a href="{{ url_for('view_legislation') }}">Moroccan Legislation</a>
     </nav>
 </header>
 <main class="container">
@@ -36,12 +37,47 @@
             <p>{{ error }}</p>
         </section>
     {% endif %}
-    {% if result_json %}
+    {% if result %}
         <section class="card">
             <h2>Result</h2>
-            <pre>{{ result_json }}</pre>
-            <a class="button" href="data:application/json;charset=utf-8,{{ result_json | urlencode }}" download="structure.json">Download structure.json</a>
+            <div id="json-tree" class="json-tree"></div>
+            <a class="button" href="{{ url_for('view_legislation', file=saved_file) }}">Open saved file</a>
+            <a class="button" href="data:application/json;charset=utf-8,{{ result | tojson | urlencode }}" download="{{ saved_file }}">Download {{ saved_file }}</a>
         </section>
+        <script>
+        const data = {{ result | tojson }};
+        function render(container, obj) {
+            if (Array.isArray(obj)) {
+                const ul = document.createElement('ul');
+                obj.forEach(item => {
+                    const li = document.createElement('li');
+                    render(li, item);
+                    ul.appendChild(li);
+                });
+                container.appendChild(ul);
+            } else if (typeof obj === 'object' && obj !== null) {
+                const ul = document.createElement('ul');
+                for (const [key, value] of Object.entries(obj)) {
+                    const li = document.createElement('li');
+                    if (typeof value === 'object' && value !== null) {
+                        const details = document.createElement('details');
+                        const summary = document.createElement('summary');
+                        summary.textContent = key;
+                        details.appendChild(summary);
+                        render(details, value);
+                        li.appendChild(details);
+                    } else {
+                        li.textContent = key + ': ' + value;
+                    }
+                    ul.appendChild(li);
+                }
+                container.appendChild(ul);
+            } else {
+                container.textContent = obj;
+            }
+        }
+        render(document.getElementById('json-tree'), data);
+        </script>
     {% endif %}
 </main>
 </body>
