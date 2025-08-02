@@ -22,6 +22,19 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     parse_decision = None
 
+try:  # Optional pipeline for structure extraction
+    from pipeline.extract_chunks import run_passes
+    from pipeline.hierarchy_builder import (
+        attach_stray_articles,
+        flatten_articles,
+        merge_duplicates,
+        postprocess_structure,
+        remove_duplicate_articles,
+        sort_children,
+    )
+except Exception:  # pragma: no cover - missing dependency
+    run_passes = None
+
 app = Flask(__name__)
 
 # Path to the SQLite database used for querying
@@ -263,6 +276,40 @@ def index():
                 graph_html=graph_html,
             )
     return render_template('index.html')
+
+
+@app.route('/structure', methods=['GET', 'POST'])
+def extract_structure():
+    if run_passes is None:
+        return render_template('structure.html', error='Structure pipeline not available')
+    if request.method == 'POST':
+        uploaded = request.files.get('file')
+        model = request.form.get('model', 'gpt-3.5-turbo-16k')
+        if uploaded:
+            if uploaded.filename.lower().endswith('.pdf'):
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+                    uploaded.save(tmp.name)
+                    text = pdf_to_arabic_text(tmp.name)
+                os.unlink(tmp.name)
+            else:
+                text = uploaded.read().decode('utf-8')
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='w', encoding='utf-8') as tmp_txt:
+                tmp_txt.write(text)
+                txt_path = tmp_txt.name
+            try:
+                result = run_passes(txt_path, model)
+                hier = postprocess_structure(result.get('structure', []))
+                flatten_articles(hier)
+                hier = merge_duplicates(hier)
+                remove_duplicate_articles(hier)
+                attach_stray_articles(hier)
+                sort_children(hier)
+                result['structure'] = hier
+                json_str = json.dumps(result, ensure_ascii=False, indent=2)
+                return render_template('structure.html', result_json=json_str)
+            finally:
+                os.unlink(txt_path)
+    return render_template('structure.html')
 
 @app.route('/decision', methods=['GET', 'POST'])
 def parse_decision_route():
