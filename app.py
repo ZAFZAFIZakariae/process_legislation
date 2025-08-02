@@ -24,10 +24,7 @@ except Exception:  # pragma: no cover - optional dependency
     parse_decision = None
 
 try:  # Optional pipeline for structure extraction
-    if os.getenv("AZURE_ENDPOINT") and os.getenv("AZURE_KEY"):
-        from pipeline.ocr_to_text import convert_to_text
-    else:  # pragma: no cover - credentials missing
-        convert_to_text = None
+    from pipeline.ocr_to_text import convert_to_text
     from pipeline.extract_chunks import run_passes
     from pipeline.hierarchy_builder import (
         attach_stray_articles,
@@ -316,6 +313,8 @@ def extract_structure():
                 with open(out_path, 'w', encoding='utf-8') as f:
                     json.dump(result, f, ensure_ascii=False, indent=2)
                 return render_template('structure.html', result=result, saved_file=os.path.basename(out_path))
+            except Exception as exc:  # pragma: no cover - display error
+                return render_template('structure.html', error=str(exc))
             finally:
                 os.unlink(input_path)
     return render_template('structure.html')

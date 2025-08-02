@@ -1,19 +1,25 @@
 import os
 import sys
 import argparse
-from azure.core.credentials import AzureKeyCredential
-from azure.ai.formrecognizer import DocumentAnalysisClient
+try:  # optional dependency
+    from azure.core.credentials import AzureKeyCredential
+    from azure.ai.formrecognizer import DocumentAnalysisClient
+except Exception:  # pragma: no cover - azure not installed
+    AzureKeyCredential = None
+    DocumentAnalysisClient = None
 
 AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT")
 AZURE_KEY = os.getenv("AZURE_KEY")
 
-if not AZURE_ENDPOINT or not AZURE_KEY:
-    print("❌ Missing Azure credentials. Please set the AZURE_ENDPOINT and AZURE_KEY environment variables.")
-    sys.exit(1)
-
 
 def pdf_to_arabic_text(pdf_path: str) -> str:
     """Use Azure Form Recognizer to OCR a PDF and return all Arabic text."""
+    if DocumentAnalysisClient is None or AzureKeyCredential is None:
+        raise RuntimeError("Azure Form Recognizer client is not available")
+    if not AZURE_ENDPOINT or not AZURE_KEY:
+        raise RuntimeError(
+            "Missing Azure credentials. Please set AZURE_ENDPOINT and AZURE_KEY."
+        )
     client = DocumentAnalysisClient(
         endpoint=AZURE_ENDPOINT,
         credential=AzureKeyCredential(AZURE_KEY),
