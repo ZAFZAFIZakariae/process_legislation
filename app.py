@@ -3,6 +3,7 @@ import html
 import json
 import re
 import tempfile
+import shutil
 import pandas as pd
 import sqlite3
 from flask import Flask, render_template, request
@@ -23,6 +24,7 @@ except Exception:  # pragma: no cover - optional dependency
     parse_decision = None
 
 try:  # Optional pipeline for structure extraction
+    from pipeline.run_pipeline import run_pipeline as run_full_pipeline
     from pipeline.extract_chunks import run_passes
     from pipeline.hierarchy_builder import (
         attach_stray_articles,
@@ -33,6 +35,7 @@ try:  # Optional pipeline for structure extraction
         sort_children,
     )
 except Exception:  # pragma: no cover - missing dependency
+    run_full_pipeline = None
     run_passes = None
 
 app = Flask(__name__)
@@ -280,35 +283,49 @@ def index():
 
 @app.route('/structure', methods=['GET', 'POST'])
 def extract_structure():
-    if run_passes is None:
+    if run_full_pipeline is None and run_passes is None:
         return render_template('structure.html', error='Structure pipeline not available')
     if request.method == 'POST':
         uploaded = request.files.get('file')
         model = request.form.get('model', 'gpt-3.5-turbo-16k')
         if uploaded:
-            if uploaded.filename.lower().endswith('.pdf'):
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
-                    uploaded.save(tmp.name)
-                    text = pdf_to_arabic_text(tmp.name)
-                os.unlink(tmp.name)
-            else:
-                text = uploaded.read().decode('utf-8')
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='w', encoding='utf-8') as tmp_txt:
-                tmp_txt.write(text)
-                txt_path = tmp_txt.name
+            suffix = '.pdf' if uploaded.filename.lower().endswith('.pdf') else '.txt'
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                uploaded.save(tmp.name)
+                input_path = tmp.name
             try:
-                result = run_passes(txt_path, model)
-                hier = postprocess_structure(result.get('structure', []))
-                flatten_articles(hier)
-                hier = merge_duplicates(hier)
-                remove_duplicate_articles(hier)
-                attach_stray_articles(hier)
-                sort_children(hier)
-                result['structure'] = hier
+                if run_full_pipeline:
+                    out_dir = tempfile.mkdtemp()
+                    try:
+                        final_path = run_full_pipeline(input_path, out_dir, model)
+                        with open(final_path, 'r', encoding='utf-8') as f:
+                            result = json.load(f)
+                    finally:
+                        shutil.rmtree(out_dir, ignore_errors=True)
+                else:
+                    if suffix == '.pdf':
+                        text = pdf_to_arabic_text(input_path)
+                    else:
+                        with open(input_path, 'r', encoding='utf-8') as f:
+                            text = f.read()
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='w', encoding='utf-8') as tmp_txt:
+                        tmp_txt.write(text)
+                        txt_path = tmp_txt.name
+                    try:
+                        result = run_passes(txt_path, model)
+                        hier = postprocess_structure(result.get('structure', []))
+                        flatten_articles(hier)
+                        hier = merge_duplicates(hier)
+                        remove_duplicate_articles(hier)
+                        attach_stray_articles(hier)
+                        sort_children(hier)
+                        result['structure'] = hier
+                    finally:
+                        os.unlink(txt_path)
                 json_str = json.dumps(result, ensure_ascii=False, indent=2)
                 return render_template('structure.html', result_json=json_str)
             finally:
-                os.unlink(txt_path)
+                os.unlink(input_path)
     return render_template('structure.html')
 
 @app.route('/decision', methods=['GET', 'POST'])
