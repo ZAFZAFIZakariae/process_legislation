@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Moroccan Legislation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+<header>
+    <div class="logo">Legal AI Assistant</div>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('index') }}">Entities</a>
+        <a href="{{ url_for('extract_structure') }}">Structure</a>
+        <a href="{{ url_for('parse_decision_route') }}">Decision</a>
+        <a href="{{ url_for('run_query') }}">SQL</a>
+        <a href="{{ url_for('view_legislation') }}">Moroccan Legislation</a>
+    </nav>
+</header>
+<main class="container">
+    <h1>Moroccan Legislation</h1>
+    <section class="card">
+        <ul class="menu">
+        {% for f in files %}
+            <li><a href="{{ url_for('view_legislation', file=f) }}">{{ f }}</a></li>
+        {% else %}
+            <li>No JSON files found.</li>
+        {% endfor %}
+        </ul>
+    </section>
+    {% if data %}
+    <section class="card">
+        <h2>{{ selected }}</h2>
+        <div id="json-tree" class="json-tree"></div>
+    </section>
+    <script>
+    const data = {{ data | tojson }};
+    function render(container, obj) {
+        if (Array.isArray(obj)) {
+            const ul = document.createElement('ul');
+            obj.forEach(item => {
+                const li = document.createElement('li');
+                render(li, item);
+                ul.appendChild(li);
+            });
+            container.appendChild(ul);
+        } else if (typeof obj === 'object' && obj !== null) {
+            const ul = document.createElement('ul');
+            for (const [key, value] of Object.entries(obj)) {
+                const li = document.createElement('li');
+                if (typeof value === 'object' && value !== null) {
+                    const details = document.createElement('details');
+                    const summary = document.createElement('summary');
+                    summary.textContent = key;
+                    details.appendChild(summary);
+                    render(details, value);
+                    li.appendChild(details);
+                } else {
+                    li.textContent = key + ': ' + value;
+                }
+                ul.appendChild(li);
+            }
+            container.appendChild(ul);
+        } else {
+            container.textContent = obj;
+        }
+    }
+    render(document.getElementById('json-tree'), data);
+    </script>
+    {% endif %}
+</main>
+</body>
+</html>

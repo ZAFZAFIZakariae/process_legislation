@@ -24,7 +24,10 @@ except Exception:  # pragma: no cover - optional dependency
     parse_decision = None
 
 try:  # Optional pipeline for structure extraction
-    from pipeline.run_pipeline import run_pipeline as run_full_pipeline
+    if os.getenv("AZURE_ENDPOINT") and os.getenv("AZURE_KEY"):
+        from pipeline.ocr_to_text import convert_to_text
+    else:  # pragma: no cover - credentials missing
+        convert_to_text = None
     from pipeline.extract_chunks import run_passes
     from pipeline.hierarchy_builder import (
         attach_stray_articles,
@@ -34,8 +37,8 @@ try:  # Optional pipeline for structure extraction
         remove_duplicate_articles,
         sort_children,
     )
-except Exception:  # pragma: no cover - missing dependency
-    run_full_pipeline = None
+except BaseException:  # pragma: no cover - missing dependency
+    convert_to_text = None
     run_passes = None
 
 app = Flask(__name__)
@@ -283,47 +286,36 @@ def index():
 
 @app.route('/structure', methods=['GET', 'POST'])
 def extract_structure():
-    if run_full_pipeline is None and run_passes is None:
+    if run_passes is None or convert_to_text is None:
         return render_template('structure.html', error='Structure pipeline not available')
     if request.method == 'POST':
         uploaded = request.files.get('file')
         model = request.form.get('model', 'gpt-3.5-turbo-16k')
         if uploaded:
-            suffix = '.pdf' if uploaded.filename.lower().endswith('.pdf') else '.txt'
+            suffix = os.path.splitext(uploaded.filename)[1]
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
                 uploaded.save(tmp.name)
                 input_path = tmp.name
             try:
-                if run_full_pipeline:
-                    out_dir = tempfile.mkdtemp()
-                    try:
-                        final_path = run_full_pipeline(input_path, out_dir, model)
-                        with open(final_path, 'r', encoding='utf-8') as f:
-                            result = json.load(f)
-                    finally:
-                        shutil.rmtree(out_dir, ignore_errors=True)
-                else:
-                    if suffix == '.pdf':
-                        text = pdf_to_arabic_text(input_path)
-                    else:
-                        with open(input_path, 'r', encoding='utf-8') as f:
-                            text = f.read()
-                    with tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='w', encoding='utf-8') as tmp_txt:
-                        tmp_txt.write(text)
-                        txt_path = tmp_txt.name
-                    try:
-                        result = run_passes(txt_path, model)
-                        hier = postprocess_structure(result.get('structure', []))
-                        flatten_articles(hier)
-                        hier = merge_duplicates(hier)
-                        remove_duplicate_articles(hier)
-                        attach_stray_articles(hier)
-                        sort_children(hier)
-                        result['structure'] = hier
-                    finally:
-                        os.unlink(txt_path)
-                json_str = json.dumps(result, ensure_ascii=False, indent=2)
-                return render_template('structure.html', result_json=json_str)
+                tmp_dir = tempfile.mkdtemp()
+                try:
+                    txt_path = convert_to_text(input_path, tmp_dir)
+                    result = run_passes(txt_path, model)
+                    hier = postprocess_structure(result.get('structure', []))
+                    flatten_articles(hier)
+                    hier = merge_duplicates(hier)
+                    remove_duplicate_articles(hier)
+                    attach_stray_articles(hier)
+                    sort_children(hier)
+                    result['structure'] = hier
+                finally:
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
+                base = os.path.basename(uploaded.filename).rsplit('.', 1)[0]
+                os.makedirs('output', exist_ok=True)
+                out_path = os.path.join('output', f'{base}.json')
+                with open(out_path, 'w', encoding='utf-8') as f:
+                    json.dump(result, f, ensure_ascii=False, indent=2)
+                return render_template('structure.html', result=result, saved_file=os.path.basename(out_path))
             finally:
                 os.unlink(input_path)
     return render_template('structure.html')
@@ -345,6 +337,18 @@ def parse_decision_route():
             pretty = json.dumps(result, ensure_ascii=False, indent=2)
             return render_template('decision.html', result_json=pretty)
     return render_template('decision.html', result_json=None)
+
+
+@app.route('/legislation')
+def view_legislation():
+    files = [f for f in os.listdir('output') if f.endswith('.json')]
+    name = request.args.get('file')
+    data = None
+    if name and name in files:
+        path = os.path.join('output', name)
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    return render_template('legislation.html', files=files, selected=name, data=data)
 
 
 @app.route('/query', methods=['GET', 'POST'])

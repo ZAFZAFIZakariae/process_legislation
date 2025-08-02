@@ -105,3 +105,14 @@ pre {
 .entity-mark.selected {
     background-color: orange;
 }
+
+.json-tree ul {
+    list-style: none;
+    margin-left: 20px;
+    padding-left: 15px;
+    border-left: 1px solid #ccc;
+}
+
+.json-tree details > summary {
+    cursor: pointer;
+}
