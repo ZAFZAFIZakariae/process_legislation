@@ -108,7 +108,16 @@ def sort_children(children: List[Dict[str, Any]]) -> None:
         except Exception:
             return str(n)
 
-    children.sort(key=lambda x: parse_num(x.get("number")))
+    # Determine the different node types present amongst the children.  When a
+    # mixture of structural elements exists (for example ``فرع`` nodes alongside
+    # ``مادة`` nodes) we should not reorder them globally as that would disturb
+    # the original document flow.  In such cases we keep the existing order and
+    # only sort recursively inside each child.  If all children share the same
+    # type we sort them numerically by their ``number`` field.
+    types = {canonical_type(child.get("type", "")) for child in children}
+    if len(types) == 1:
+        children.sort(key=lambda x: parse_num(x.get("number")))
+
     for node in children:
         if node.get("children"):
             sort_children(node["children"])
