@@ -22,11 +22,10 @@ Rules:
    free text before the first new heading to that parent's "text". Start your
    reply with the same `Inherited context:` line followed by a newline before
    the JSON array so the caller can merge the text correctly.
-2. Recognise headings that start with words such as "الباب", "القسم", "الفصل", "المادة",
-   or lines where a number is followed by a dash or bracket. Determine the level
-   by comparing the numbering with the current parent.
-3. Keep the original line breaks inside "text". If no headings are present and
+2. Recognise headings that start with words such as "الباب", "القسم", "الفصل", "المادة", or lines where a number is followed by a dash or bracket. Determine the level, but ignore other lines that resemble headings.
+3. If you encounter commentary or judicial notes, output them as objects with type "ملحق" and place their content in "text".
+4. Keep the original line breaks inside "text". If no headings are present and
    there is no inherited context, return an empty array [].
-4. Keep the sections in the same order they appear in the input.
+5. Keep the sections in the same order they appear in the input.
 
 <--- START ARABIC SECOND CHUNK:
