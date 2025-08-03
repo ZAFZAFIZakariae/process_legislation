@@ -171,7 +171,15 @@ def clean_ocr_lines(text: str) -> str:
         s = line.strip()
         if s in HEADER_LINES:
             continue
+        # Remove standalone page numbers like ``- 12 -`` or ``12``
         if re.match(r"^-?\s*\d+\s*-?$", s):
+            continue
+        # Drop lines that begin with a numeric footnote marker such as
+        # ``8 - تم تغيير ...``.  These annotations are not part of the
+        # legislative text and can confuse downstream parsing which may glue
+        # the footnote digit to the article number (e.g. producing ``814``
+        # instead of ``14``).
+        if re.match(r"^\d+\s*-\s+", s):
             continue
         cleaned.append(line)
     return "\n".join(cleaned)
