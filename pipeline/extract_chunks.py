@@ -31,6 +31,34 @@ def run_passes(txt_path: str, model: str) -> dict:
     structure_tree = full_obj.get("structure", [])
     gpt.finalize_structure(structure_tree)
 
+    def collect_annexes(nodes: list) -> tuple[list, list]:
+        remaining: list = []
+        annexes: list = []
+
+        for node in nodes:
+            typ = gpt.canonical_type(node.get("type", ""))
+            if typ not in gpt.ARTICLE_TYPES:
+                title_parts = [node.get("type", ""), str(node.get("number", "")), node.get("title", "")]
+                title = " ".join([p for p in title_parts if p]).strip()
+
+                texts: list[str] = []
+
+                def gather(n: dict) -> None:
+                    if n.get("text"):
+                        texts.append(n["text"])
+                    for ch in n.get("children", []) or []:
+                        gather(ch)
+
+                gather(node)
+                annexes.append({"annex_title": title, "annex_text": "\n".join(texts).strip()})
+            else:
+                if node.get("children"):
+                    node["children"], extra = collect_annexes(node["children"])
+                    annexes.extend(extra)
+                remaining.append(node)
+
+        return remaining, annexes
+
     # ---- Pass 2 ----
     pass2_chunks = gpt.split_for_pass2(arabic_text)
     inherited = ""
@@ -93,7 +121,9 @@ def run_passes(txt_path: str, model: str) -> dict:
         tail = tok[-100:] if len(tok) >= 100 else tok
         prev_tail = enc.decode(tail)
 
+    structure_tree, annex_list = collect_annexes(structure_tree)
     full_obj["structure"] = structure_tree
+    full_obj["annexes"] = annex_list
     full_obj["has_preamble_heading"] = has_preamble_heading
     return full_obj
 
