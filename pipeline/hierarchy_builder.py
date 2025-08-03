@@ -102,11 +102,11 @@ def merge_duplicates(children: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def sort_children(children: List[Dict[str, Any]]) -> None:
-    def parse_num(n: Any) -> Any:
+    def parse_num(n: Any) -> tuple[int, Any]:
         try:
-            return int(str(n))
+            return (0, int(str(n)))
         except Exception:
-            return str(n)
+            return (1, str(n))
 
     # Determine the different node types present amongst the children.  When a
     # mixture of structural elements exists (for example ``فرع`` nodes alongside
