@@ -9,7 +9,6 @@ from .hierarchy_builder import (
     merge_duplicates,
     remove_duplicate_articles,
     attach_stray_articles,
-    sort_children,
 )
 
 
@@ -22,7 +21,6 @@ def post_process_data(data: Dict[str, Any]) -> Dict[str, Any]:
     hier = merge_duplicates(hier)
     remove_duplicate_articles(hier)
     attach_stray_articles(hier)
-    sort_children(hier)
     data["structure"] = hier
     return data
 

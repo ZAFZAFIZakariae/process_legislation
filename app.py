@@ -32,7 +32,6 @@ try:  # Optional pipeline for structure extraction
         merge_duplicates,
         postprocess_structure,
         remove_duplicate_articles,
-        sort_children,
     )
 except BaseException:  # pragma: no cover - missing dependency
     convert_to_text = None
@@ -303,7 +302,6 @@ def extract_structure():
                     hier = merge_duplicates(hier)
                     remove_duplicate_articles(hier)
                     attach_stray_articles(hier)
-                    sort_children(hier)
                     result['structure'] = hier
                 finally:
                     shutil.rmtree(tmp_dir, ignore_errors=True)
