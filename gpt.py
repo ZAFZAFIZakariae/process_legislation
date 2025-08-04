@@ -306,15 +306,24 @@ def split_for_pass2(arabic_text: str) -> list[str]:
 
     while i < total:
         window = prev_tail + tokens[i : min(i + chunk_limit, total)]
+        if not window:
+            break
         combined_text = enc.decode(window)
 
         subchunks = smart_token_split(combined_text, chunk_limit, GPT_MODEL)
-        this_chunk = subchunks[0]
-
-        chunk_tokens = enc.encode(this_chunk)
-        if prev_tail:
-            chunk_tokens = chunk_tokens[len(prev_tail):]
+        if subchunks:
+            this_chunk = subchunks[0]
+            chunk_tokens = enc.encode(this_chunk)
+            if prev_tail:
+                chunk_tokens = chunk_tokens[len(prev_tail):]
+                this_chunk = enc.decode(chunk_tokens)
+        else:
+            # Fallback to using the raw window if smart split produced nothing
+            chunk_tokens = window[len(prev_tail):] if prev_tail else window
             this_chunk = enc.decode(chunk_tokens)
+
+        if not chunk_tokens:
+            break
 
         chunks.append(this_chunk)
 
