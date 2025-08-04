@@ -21,6 +21,9 @@ def post_process_data(data: Dict[str, Any]) -> Dict[str, Any]:
     hier = merge_duplicates(hier)
     remove_duplicate_articles(hier)
     attach_stray_articles(hier)
+    # Moving stray articles under their proper parents can surface new
+    # duplicates, so perform a final deduplication pass.
+    remove_duplicate_articles(hier)
     data["structure"] = hier
     return data
 
