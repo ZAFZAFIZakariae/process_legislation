@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 from typing import Any, List, Dict
 
 
@@ -59,16 +60,36 @@ def postprocess_structure(flat_structure: List[Dict[str, Any]]) -> List[Dict[str
     return root
 
 
+def normalize_numbers(children: List[Dict[str, Any]]) -> None:
+    """Clean up article numbers that may contain stray prefix digits.
+
+    OCR artifacts and footnotes occasionally introduce spurious leading digits
+    before the actual article number (e.g. ``814`` instead of ``14`` or ``923``
+    instead of ``23``).  This function trims such digits to restore the proper
+    numbering so downstream merging and sorting operate on the correct values.
+    The heuristic is conservative: if a purely numeric ``number`` field has more
+    than two digits and starts with ``8`` or ``9``, and the remainder forms a
+    valid number, we drop the first digit.
+    """
+
+    for node in children:
+        num = str(node.get("number", "")).strip()
+        if num.isdigit() and len(num) > 2 and num[0] in {"8", "9"}:
+            tail = num[1:]
+            if tail.isdigit():
+                node["number"] = tail
+        if node.get("children"):
+            normalize_numbers(node["children"])
+
+
 def merge_duplicates(children: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Merge nodes with the same type/number while normalising their fields.
 
-    The raw structure often contains duplicate entries for the same article or
-    section where one node only carries the number and another carries the
-    actual text.  These entries can also have slight variations in their type
-    strings (for example ``"المادة"`` versus ``"مادة"``) or represent numbers
-    using different types.  To guarantee that such duplicates are merged
-    correctly we canonicalise both the ``type`` and ``number`` fields before
-    using them as a key.
+    The raw structure often contains duplicate entries for headings where one
+    node only carries the number and another carries the actual text.  Articles
+    (``مادة``) are handled separately in :func:`remove_duplicate_articles` so we
+    deliberately avoid merging them here to preserve the position of the most
+    informative occurrence.
     """
 
     seen: Dict[tuple, Dict[str, Any]] = {}
@@ -80,6 +101,14 @@ def merge_duplicates(children: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         number = str(node.get("number", "")).strip()
         node["number"] = number
         key = (node_type, number)
+
+        if node_type == "مادة":
+            # Defer article deduplication to ``remove_duplicate_articles`` so
+            # that we can keep the occurrence that appears later in the
+            # document (often the one containing the real text rather than a
+            # stray footnote reference).
+            result.append(node)
+            continue
 
         if key in seen:
             existing = seen[key]
@@ -148,12 +177,13 @@ def flatten_articles(children: List[Dict[str, Any]]) -> None:
 
 
 def remove_duplicate_articles(children: List[Dict[str, Any]],
-                               seen: Dict[str, Dict[str, Any]] | None = None) -> None:
+                               seen: Dict[str, int] | None = None) -> None:
     """Remove duplicated articles while keeping the most informative version.
 
-    Articles (مادة) are uniquely numbered within a document.  If the parser
-    emits multiple nodes with the same number we keep the one with the longest
-    text and merge any children from the duplicates into it.
+    Articles (مادة) are uniquely numbered within a document.  When duplicates
+    occur—often because footnotes introduce spurious article references—we keep
+    the node with the longest text *at its original position* and discard the
+    others, merging any children into the retained node.
     """
 
     if seen is None:
@@ -165,15 +195,24 @@ def remove_duplicate_articles(children: List[Dict[str, Any]],
         node_type = canonical_type(node.get("type", ""))
         if node_type == "مادة":
             num = str(node.get("number", ""))
-            existing = seen.get(num)
-            if existing is not None:
-                if len(node.get("text", "")) > len(existing.get("text", "")):
-                    existing["text"] = node.get("text", "")
-                existing.setdefault("children", []).extend(node.get("children", []))
-                children.pop(i)
-                continue
+            prev_idx = seen.get(num)
+            if prev_idx is not None:
+                prev_node = children[prev_idx]
+                if len(node.get("text", "")) >= len(prev_node.get("text", "")):
+                    node.setdefault("children", []).extend(prev_node.get("children", []))
+                    children.pop(prev_idx)
+                    if prev_idx < i:
+                        i -= 1
+                    for key, idx in list(seen.items()):
+                        if idx > prev_idx:
+                            seen[key] = idx - 1
+                    seen[num] = i
+                else:
+                    prev_node.setdefault("children", []).extend(node.get("children", []))
+                    children.pop(i)
+                    continue
             else:
-                seen[num] = node
+                seen[num] = i
         if node.get("children"):
             remove_duplicate_articles(node["children"], seen)
         i += 1
@@ -244,10 +283,10 @@ def main() -> None:
     flat_structure = data.get("structure", [])
     hier = postprocess_structure(flat_structure)
     flatten_articles(hier)
+    normalize_numbers(hier)
     hier = merge_duplicates(hier)
     remove_duplicate_articles(hier)
     attach_stray_articles(hier)
-    sort_children(hier)
 
     data["structure"] = hier
     with open(args.output, "w", encoding="utf-8") as out:
