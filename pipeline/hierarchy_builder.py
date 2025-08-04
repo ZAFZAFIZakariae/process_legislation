@@ -306,6 +306,10 @@ def main() -> None:
     hier = merge_duplicates(hier)
     remove_duplicate_articles(hier)
     attach_stray_articles(hier)
+    # ``attach_stray_articles`` may move articles beneath new parents which can
+    # re-introduce duplicates.  Run a final deduplication pass to ensure only one
+    # instance of each article number remains within a section.
+    remove_duplicate_articles(hier)
 
     data["structure"] = hier
     with open(args.output, "w", encoding="utf-8") as out:
