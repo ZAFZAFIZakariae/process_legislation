@@ -176,14 +176,19 @@ def flatten_articles(children: List[Dict[str, Any]]) -> None:
         i += 1
 
 
-def remove_duplicate_articles(children: List[Dict[str, Any]],
-                               seen: Dict[str, int] | None = None) -> None:
+def remove_duplicate_articles(
+    children: List[Dict[str, Any]],
+    seen: Dict[str, tuple[List[Dict[str, Any]], int]] | None = None,
+) -> None:
     """Remove duplicated articles while keeping the most informative version.
 
-    Articles (مادة) are uniquely numbered within a document.  When duplicates
-    occur—often because footnotes introduce spurious article references—we keep
-    the node with the longest text *at its original position* and discard the
-    others, merging any children into the retained node.
+    Historically this function only deduplicated articles within the *immediate*
+    list of children passed to it.  Some documents however repeat article
+    numbers across different structural blocks (على سبيل المثال بين الأبواب)
+    داخل نفس القسم مما كان يؤدي إلى بقاء نسخ مختصرة وغير مفيدة من المواد.
+    لحل هذا المشكل نستمر في اعتبار الأرقام فريدة داخل كل «قسم» لكننا نتتبع
+    الأرقام خلال مستويات فرعية متعددة داخل القسم نفسه.  يتم الاحتفاظ بالنسخة
+    الأطول من المادة مع دمج الأبناء الخاصة بالنسخ المحذوفة.
     """
 
     if seen is None:
@@ -193,30 +198,42 @@ def remove_duplicate_articles(children: List[Dict[str, Any]],
     while i < len(children):
         node = children[i]
         node_type = canonical_type(node.get("type", ""))
+
         if node_type == "مادة":
             num = str(node.get("number", ""))
-            prev_idx = seen.get(num)
-            if prev_idx is not None:
-                prev_node = children[prev_idx]
+            prev = seen.get(num)
+            if prev is not None:
+                prev_parent, prev_idx = prev
+                prev_node = prev_parent[prev_idx]
+
                 if len(node.get("text", "")) >= len(prev_node.get("text", "")):
+                    # Keep current node, merge children from previous instance
                     node.setdefault("children", []).extend(prev_node.get("children", []))
-                    children.pop(prev_idx)
-                    if prev_idx < i:
+                    prev_parent.pop(prev_idx)
+                    if prev_parent is children and prev_idx < i:
                         i -= 1
-                    for key, idx in list(seen.items()):
-                        if idx > prev_idx:
-                            seen[key] = idx - 1
-                    seen[num] = i
+                    for key, (p, idx) in list(seen.items()):
+                        if p is prev_parent and idx > prev_idx:
+                            seen[key] = (p, idx - 1)
+                    seen[num] = (children, i)
                 else:
+                    # Retain previous node, fold current node's children into it
                     prev_node.setdefault("children", []).extend(node.get("children", []))
                     children.pop(i)
+                    for key, (p, idx) in list(seen.items()):
+                        if p is children and idx > i:
+                            seen[key] = (p, idx - 1)
                     continue
             else:
-                seen[num] = i
+                seen[num] = (children, i)
+
         if node.get("children"):
-            # Use a fresh ``seen`` map for each recursion level so that article
-            # numbers are considered unique within their local scope only.
-            remove_duplicate_articles(node["children"])
+            # Start a new ``seen`` map when entering a new section so that
+            # article numbers may legally restart.  Otherwise propagate the
+            # existing map to track duplicates across nested levels within the
+            # same section.
+            next_seen = {} if node_type == "قسم" else seen
+            remove_duplicate_articles(node["children"], next_seen)
         i += 1
 
 
