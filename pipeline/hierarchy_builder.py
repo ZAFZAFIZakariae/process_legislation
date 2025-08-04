@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 from typing import Any, List, Dict
 
 
@@ -57,6 +58,28 @@ def postprocess_structure(flat_structure: List[Dict[str, Any]]) -> List[Dict[str
             root.append(entry)
 
     return root
+
+
+def normalize_numbers(children: List[Dict[str, Any]]) -> None:
+    """Clean up article numbers that may contain stray prefix digits.
+
+    OCR artifacts and footnotes occasionally introduce spurious leading digits
+    before the actual article number (e.g. ``814`` instead of ``14`` or ``923``
+    instead of ``23``).  This function trims such digits to restore the proper
+    numbering so downstream merging and sorting operate on the correct values.
+    The heuristic is conservative: if a purely numeric ``number`` field has more
+    than two digits and starts with ``8`` or ``9``, and the remainder forms a
+    valid number, we drop the first digit.
+    """
+
+    for node in children:
+        num = str(node.get("number", "")).strip()
+        if num.isdigit() and len(num) > 2 and num[0] in {"8", "9"}:
+            tail = num[1:]
+            if tail.isdigit():
+                node["number"] = tail
+        if node.get("children"):
+            normalize_numbers(node["children"])
 
 
 def merge_duplicates(children: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -244,6 +267,7 @@ def main() -> None:
     flat_structure = data.get("structure", [])
     hier = postprocess_structure(flat_structure)
     flatten_articles(hier)
+    normalize_numbers(hier)
     hier = merge_duplicates(hier)
     remove_duplicate_articles(hier)
     attach_stray_articles(hier)

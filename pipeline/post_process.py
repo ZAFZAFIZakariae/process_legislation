@@ -5,6 +5,7 @@ from typing import Any, Dict
 from .hierarchy_builder import (
     postprocess_structure,
     flatten_articles,
+    normalize_numbers,
     merge_duplicates,
     remove_duplicate_articles,
     attach_stray_articles,
@@ -17,6 +18,7 @@ def post_process_data(data: Dict[str, Any]) -> Dict[str, Any]:
     flat = data.get("structure", [])
     hier = postprocess_structure(flat)
     flatten_articles(hier)
+    normalize_numbers(hier)
     hier = merge_duplicates(hier)
     remove_duplicate_articles(hier)
     attach_stray_articles(hier)
