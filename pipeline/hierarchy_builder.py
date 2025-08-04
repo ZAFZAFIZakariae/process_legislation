@@ -214,7 +214,9 @@ def remove_duplicate_articles(children: List[Dict[str, Any]],
             else:
                 seen[num] = i
         if node.get("children"):
-            remove_duplicate_articles(node["children"], seen)
+            # Use a fresh ``seen`` map for each recursion level so that article
+            # numbers are considered unique within their local scope only.
+            remove_duplicate_articles(node["children"])
         i += 1
 
 
