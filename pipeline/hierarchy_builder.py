@@ -291,7 +291,6 @@ def attach_stray_articles(children: List[Dict[str, Any]]) -> None:
                 last_struct.setdefault("children", []).append(node)
                 children.pop(i)
                 attach_stray_articles(node.get("children", []))
-                last_struct = node
                 continue
 
             attach_stray_articles(node.get("children", []))
