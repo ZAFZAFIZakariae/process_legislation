@@ -180,65 +180,82 @@ def flatten_articles(children: List[Dict[str, Any]]) -> None:
         i += 1
 
 
-def remove_duplicate_articles(
-    children: List[Dict[str, Any]],
-    seen: Dict[str, tuple[List[Dict[str, Any]], int]] | None = None,
-) -> None:
-    """Remove duplicated articles while keeping the most informative version.
+def remove_duplicate_articles(children: List[Dict[str, Any]]) -> None:
+    """Deduplicate article nodes while preserving global ordering.
 
-    Historically this function only deduplicated articles within the *immediate*
-    list of children passed to it.  Some documents however repeat article
-    numbers across different structural blocks (على سبيل المثال بين الأبواب)
-    داخل نفس القسم مما كان يؤدي إلى بقاء نسخ مختصرة وغير مفيدة من المواد.
-    لحل هذا المشكل نستمر في اعتبار الأرقام فريدة داخل كل «قسم» لكننا نتتبع
-    الأرقام خلال مستويات فرعية متعددة داخل القسم نفسه.  يتم الاحتفاظ بالنسخة
-    الأطول من المادة مع دمج الأبناء الخاصة بالنسخ المحذوفة.
+    Some source documents contain multiple occurrences of the same article
+    number scattered throughout different sections.  The authoritative version
+    is the one that best respects the overall sequential order of articles in the
+    document.  To determine this we collect every article along with its
+    traversal order, select a single occurrence for each number that appears
+    *after* the previous article's position, and merge any remaining duplicates
+    into that kept node.
     """
 
-    if seen is None:
-        seen = {}
+    # Collect all article occurrences with a global traversal index so we can
+    # later choose the occurrence that preserves the natural ordering of
+    # articles.
+    order = 0
+    occurrences: Dict[str, List[tuple[int, List[Dict[str, Any]], int, Dict[str, Any]]]] = {}
 
-    i = 0
-    while i < len(children):
-        node = children[i]
-        node_type = canonical_type(node.get("type", ""))
-
-        if node_type == "مادة":
-            num = str(node.get("number", ""))
-            prev = seen.get(num)
-            if prev is not None:
-                prev_parent, prev_idx = prev
-                prev_node = prev_parent[prev_idx]
-
-                if len(node.get("text", "")) >= len(prev_node.get("text", "")):
-                    # Keep current node, merge children from previous instance
-                    node.setdefault("children", []).extend(prev_node.get("children", []))
-                    prev_parent.pop(prev_idx)
-                    if prev_parent is children and prev_idx < i:
-                        i -= 1
-                    for key, (p, idx) in list(seen.items()):
-                        if p is prev_parent and idx > prev_idx:
-                            seen[key] = (p, idx - 1)
-                    seen[num] = (children, i)
-                else:
-                    # Retain previous node, fold current node's children into it
-                    prev_node.setdefault("children", []).extend(node.get("children", []))
-                    children.pop(i)
-                    for key, (p, idx) in list(seen.items()):
-                        if p is children and idx > i:
-                            seen[key] = (p, idx - 1)
+    def walk(nodes: List[Dict[str, Any]]):
+        nonlocal order
+        for idx, node in enumerate(nodes):
+            node_type = canonical_type(node.get("type", ""))
+            if node_type == "مادة":
+                num = str(node.get("number", "")).strip()
+                if not num.isdigit():
                     continue
-            else:
-                seen[num] = (children, i)
+                occurrences.setdefault(num, []).append((order, nodes, idx, node))
+                order += 1
+            if node.get("children"):
+                walk(node["children"])
 
-        if node.get("children"):
-            # Start a new ``seen`` map when entering a new section so that
-            # article numbers may legally restart.  Otherwise propagate the
-            # existing map to track duplicates across nested levels within the
-            # same section.
-            next_seen = {} if node_type == "قسم" else seen
-            remove_duplicate_articles(node["children"], next_seen)
-        i += 1
+    walk(children)
+
+    # Determine which occurrence of each article number to keep.  We iterate
+    # through the numbers in numeric order and for each pick the earliest
+    # occurrence whose traversal order comes after the previously selected
+    # article.  This ensures the final sequence of articles is monotonically
+    # increasing.
+    chosen: Dict[str, tuple[int, List[Dict[str, Any]], int, Dict[str, Any]]] = {}
+    last_order = -1
+    for num in sorted(occurrences, key=lambda x: int(str(x))):
+        occs = sorted(occurrences[num], key=lambda x: x[0])
+        selected = None
+        for occ in occs:
+            if occ[0] > last_order:
+                selected = occ
+                break
+        if selected is None:
+            selected = occs[-1]
+        chosen[num] = selected
+        last_order = selected[0]
+
+    # Merge duplicates into the chosen node and mark others for removal.
+    for num, occs in occurrences.items():
+        keep_order, keep_parent, keep_idx, keep_node = chosen[num]
+        for occ in occs:
+            order_idx, parent, idx, node = occ
+            if occ is chosen[num]:
+                continue
+            if len(node.get("text", "")) > len(keep_node.get("text", "")):
+                keep_node["text"] = node.get("text", "")
+            keep_node.setdefault("children", []).extend(node.get("children", []))
+            parent[idx] = None
+
+    def cleanup(nodes: List[Dict[str, Any]]):
+        i = 0
+        while i < len(nodes):
+            node = nodes[i]
+            if node is None:
+                nodes.pop(i)
+                continue
+            if node.get("children"):
+                cleanup(node["children"])
+            i += 1
+
+    cleanup(children)
 
 
 def attach_stray_articles(children: List[Dict[str, Any]]) -> None:
