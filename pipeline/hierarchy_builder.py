@@ -15,7 +15,14 @@ TYPE_MAP = {
 
 # Structural types we allow to keep in the final hierarchy.  Anything outside
 # this list is treated as noise and pruned during the cleanup phase.
-ALLOWED_TYPES = {"قسم", "باب", "فصل", "جزء", "فرع", "مادة"}
+STRUCTURE_TYPES = ["قسم", "باب", "جزء", "فصل", "فرع"]
+ALLOWED_TYPES = set(STRUCTURE_TYPES + ["مادة"])
+
+# Rank order for the different structural levels.  Lower numbers represent
+# higher-level containers.  Articles ("مادة") are assigned the lowest priority
+# so they sit at the leaf level and are popped from the stack when a new
+# structural element is encountered.
+LEVEL_RANK = {t: i for i, t in enumerate(STRUCTURE_TYPES + ["مادة"])}
 
 
 def canonical_type(t: str) -> str:
@@ -28,6 +35,14 @@ def canonical_type(t: str) -> str:
 
 
 def postprocess_structure(flat_structure: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Reconstruct a hierarchical tree from the flat model output.
+
+    The language model emits a simple list of headings and articles.  This
+    function rebuilds the nested structure by using a rank for each structural
+    level.  Unknown types are appended at the root and ignored during later
+    pruning.
+    """
+
     stack: List[Dict[str, Any]] = []
     root: List[Dict[str, Any]] = []
 
@@ -36,30 +51,20 @@ def postprocess_structure(flat_structure: List[Dict[str, Any]]) -> List[Dict[str
         entry["type"] = level
         entry.setdefault("children", [])
 
-        if level == "قسم":
-            stack = [entry]
+        rank = LEVEL_RANK.get(level)
+        if rank is None:
             root.append(entry)
-        elif level == "باب":
-            while stack and stack[-1].get("type") != "قسم":
-                stack.pop()
-            if stack:
-                stack[-1].setdefault("children", []).append(entry)
-            stack.append(entry)
-        elif level == "فصل":
-            while stack and stack[-1].get("type") not in ["باب", "قسم"]:
-                stack.pop()
-            if stack:
-                stack[-1].setdefault("children", []).append(entry)
-            stack.append(entry)
-        elif level in ["مادة", "المادة"]:
-            while stack and stack[-1].get("type") not in ["فصل", "باب", "قسم"]:
-                stack.pop()
-            if stack:
-                stack[-1].setdefault("children", []).append(entry)
-            else:
-                root.append(entry)
+            continue
+
+        while stack and LEVEL_RANK.get(stack[-1].get("type", ""), -1) >= rank:
+            stack.pop()
+
+        if stack:
+            stack[-1].setdefault("children", []).append(entry)
         else:
             root.append(entry)
+
+        stack.append(entry)
 
     return root
 
@@ -271,24 +276,25 @@ def attach_stray_articles(children: List[Dict[str, Any]]) -> None:
 
     i = 0
     last_struct: Dict[str, Any] | None = None
+    structural = set(STRUCTURE_TYPES)
+
     while i < len(children):
         node = children[i]
         node_type = canonical_type(node.get("type", ""))
 
-        if node_type in {"قسم", "باب", "فصل"}:
-            # Occasionally a ``فصل`` heading is emitted at the same hierarchical
-            # level as its preceding ``باب``.  When this happens we should nest
-            # the chapter under the most recent ``باب`` instead of leaving it as
-            # a sibling.  This mirrors the logic used for stray article nodes
-            # below.
+        if node_type in structural:
             if (
-                node_type == "فصل"
-                and last_struct is not None
-                and canonical_type(last_struct.get("type", "")) == "باب"
+                last_struct is not None
+                and LEVEL_RANK.get(node_type, 0)
+                > LEVEL_RANK.get(canonical_type(last_struct.get("type", "")), 0)
             ):
-                last_struct.setdefault("children", []).append(node)
+                parent = last_struct
+                parent.setdefault("children", []).append(node)
                 children.pop(i)
                 attach_stray_articles(node.get("children", []))
+                # keep ``last_struct`` pointing at the parent so that
+                # subsequent siblings of the same rank nest beneath it
+                last_struct = parent
                 continue
 
             attach_stray_articles(node.get("children", []))
@@ -298,10 +304,8 @@ def attach_stray_articles(children: List[Dict[str, Any]]) -> None:
 
         if node_type == "مادة" and last_struct is not None:
             target = last_struct
-            if canonical_type(target.get("type", "")) in {"قسم", "باب"}:
-                sub = target.get("children", [])
-                if sub and canonical_type(sub[-1].get("type", "")) == "فصل":
-                    target = sub[-1]
+            while target.get("children") and canonical_type(target.get("children")[-1].get("type", "")) in structural:
+                target = target.get("children")[-1]
             target.setdefault("children", []).append(node)
             children.pop(i)
             continue
@@ -365,6 +369,9 @@ def main() -> None:
     normalize_numbers(hier)
     hier = merge_duplicates(hier)
     remove_duplicate_articles(hier)
+    attach_stray_articles(hier)
+    # A second pass handles nodes that become re-parented under newly nested
+    # containers in the first pass (e.g. additional ``فرع`` nodes).
     attach_stray_articles(hier)
     # ``attach_stray_articles`` may move articles beneath new parents which can
     # re-introduce duplicates.  Run a final deduplication pass to ensure only one
