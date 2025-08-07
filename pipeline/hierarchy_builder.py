@@ -13,6 +13,10 @@ TYPE_MAP = {
     "الفرع": "فرع",
 }
 
+# Structural types we allow to keep in the final hierarchy.  Anything outside
+# this list is treated as noise and pruned during the cleanup phase.
+ALLOWED_TYPES = {"قسم", "باب", "فصل", "جزء", "فرع", "مادة"}
+
 
 def canonical_type(t: str) -> str:
     if not isinstance(t, str):
@@ -290,6 +294,57 @@ def attach_stray_articles(children: List[Dict[str, Any]]) -> None:
         i += 1
 
 
+def prune_structure(children: List[Dict[str, Any]], *, at_root: bool = False) -> List[Dict[str, Any]]:
+    """Remove spurious nodes and stray root-level articles.
+
+    ``extract_chunks`` sometimes yields miscellaneous commentary or OCR noise
+    that appears as sibling nodes within the hierarchy.  This function removes
+    any node whose ``type`` isn't recognised, strips entries with non-numeric
+    ``number`` fields, and drops articles that float at the document root.
+    """
+
+    # When top-level sections are present we discard any other structural types
+    # that might have leaked into the root (for example stray ``فرع`` blocks).
+    has_sections = False
+    if at_root:
+        for node in children:
+            if canonical_type(node.get("type", "")) == "قسم":
+                has_sections = True
+                break
+
+    pruned: List[Dict[str, Any]] = []
+    for node in children:
+        node_type = canonical_type(node.get("type", ""))
+        number = str(node.get("number", "")).strip()
+
+        # Ignore unknown structural types altogether
+        if node_type not in ALLOWED_TYPES:
+            continue
+
+        if at_root:
+            # Skip articles and, when sections exist, any other stray structural
+            # nodes at the root level.
+            if node_type == "مادة":
+                continue
+            if has_sections and node_type != "قسم":
+                continue
+
+        # If a node declares a number, ensure it is purely numeric.  Textual
+        # values such as "القسم" or footnote markers are discarded.
+        if number and not number.isdigit():
+            continue
+
+        node["type"] = node_type
+        node["number"] = number
+
+        if node.get("children"):
+            node["children"] = prune_structure(node["children"], at_root=False)
+
+        pruned.append(node)
+
+    return pruned
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Reconstruct hierarchical structure")
     parser.add_argument("--input", required=True, help="Path to structure_raw.json")
@@ -310,7 +365,7 @@ def main() -> None:
     # re-introduce duplicates.  Run a final deduplication pass to ensure only one
     # instance of each article number remains within a section.
     remove_duplicate_articles(hier)
-
+    hier = prune_structure(hier, at_root=True)
     data["structure"] = hier
     with open(args.output, "w", encoding="utf-8") as out:
         json.dump(data, out, ensure_ascii=False, indent=2)

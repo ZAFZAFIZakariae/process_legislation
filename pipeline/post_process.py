@@ -9,6 +9,7 @@ from .hierarchy_builder import (
     merge_duplicates,
     remove_duplicate_articles,
     attach_stray_articles,
+    prune_structure,
 )
 
 
@@ -24,7 +25,18 @@ def post_process_data(data: Dict[str, Any]) -> Dict[str, Any]:
     # Moving stray articles under their proper parents can surface new
     # duplicates, so perform a final deduplication pass.
     remove_duplicate_articles(hier)
+    hier = prune_structure(hier, at_root=True)
     data["structure"] = hier
+
+    # Drop placeholder tables and annexes that carry no meaningful content.
+    tables = []
+    for table in data.get("tables_and_schedules", []) or []:
+        if any(cell.strip() for row in table.get("rows", []) for cell in row.get("columns", [])):
+            tables.append(table)
+    data["tables_and_schedules"] = tables
+
+    data["annexes"] = [a for a in data.get("annexes", []) or [] if a.get("annex_text", "").strip()]
+
     return data
 
 
