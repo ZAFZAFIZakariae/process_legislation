@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Moroccan Legislation</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
@@ -22,7 +23,7 @@
     <section class="card">
         <ul class="menu">
         {% for f in files %}
-            <li><a href="{{ url_for('view_legislation', file=f) }}">{{ f }}</a></li>
+            <li><a class="button" href="{{ url_for('view_legislation', file=f) }}">{{ f }}</a></li>
         {% else %}
             <li>No JSON files found.</li>
         {% endfor %}
