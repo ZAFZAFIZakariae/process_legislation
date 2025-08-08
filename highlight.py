@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import re
 
 try:  # Allow using within package or standalone
     from .ner import parse_marked_text  # type: ignore
@@ -198,3 +199,41 @@ def highlight_text(
     parts.append(html.escape(text[last:]))
     html_str = "".join(parts)
     return popup + f'<div dir="rtl">{html_str}</div>'
+
+
+def _highlight_entities_simple(text: str, entities: list[dict]) -> str:
+    """Insert ``<mark>`` tags around entity substrings in *text*.
+
+    Offsets from the NER model are relative to the full document which makes
+    them hard to apply to individual article snippets.  For highlighting inside
+    structured JSON we simply search for entity texts within the snippet and
+    wrap each occurrence in ``<mark>`` tags.  Longer entity texts are matched
+    first to avoid partially highlighting nested names.
+    """
+
+    patterns = [re.escape(e.get("text", "")) for e in entities if e.get("text")]
+    if not patterns:
+        return text
+    # Match longer entities before shorter ones to minimise partial matches.
+    patterns.sort(key=len, reverse=True)
+    regex = re.compile("|".join(patterns))
+
+    def repl(match: re.Match[str]) -> str:
+        return f"<mark>{match.group(0)}</mark>"
+
+    return regex.sub(repl, text)
+
+
+def highlight_structure(structure: list[dict], entities: list[dict]) -> None:
+    """Recursively highlight entity mentions within *structure* in-place."""
+
+    for node in structure:
+        text = node.get("text")
+        if isinstance(text, str):
+            node["text"] = _highlight_entities_simple(text, entities)
+        title = node.get("title")
+        if isinstance(title, str):
+            node["title"] = _highlight_entities_simple(title, entities)
+        children = node.get("children")
+        if children:
+            highlight_structure(children, entities)

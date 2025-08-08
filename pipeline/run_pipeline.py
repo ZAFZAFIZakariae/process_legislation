@@ -8,10 +8,10 @@ from .post_process import post_process_data
 
 try:
     from ..ner import extract_entities, postprocess_result  # type: ignore
-    from ..highlight import render_ner_html  # type: ignore
+    from ..highlight import render_ner_html, highlight_structure  # type: ignore
 except Exception:  # pragma: no cover
     from ner import extract_entities, postprocess_result  # type: ignore
-    from highlight import render_ner_html  # type: ignore
+    from highlight import render_ner_html, highlight_structure  # type: ignore
 
 
 def main() -> None:
@@ -57,6 +57,13 @@ def main() -> None:
 
     print(f"[+] Saved NER result to: {ner_json}")
     print(f"[+] Saved NER HTML to: {html_path}")
+
+    # Save a copy of the structured JSON with entity mentions highlighted
+    highlight_structure(final_data.get("structure", []), ner_result.get("entities", []))
+    highlight_json = os.path.join(args.output_dir, f"{base}_highlight.json")
+    with open(highlight_json, "w", encoding="utf-8") as f:
+        json.dump(final_data, f, ensure_ascii=False, indent=2)
+    print(f"[+] Saved highlighted structure to: {highlight_json}")
 
 
 if __name__ == "__main__":
