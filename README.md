@@ -64,9 +64,11 @@ Running them with `-m` ensures relative imports resolve correctly when executed 
 
 # Named‑entity extraction
 ```bash
-python ner.py --input path/to/text.txt --output_dir ner_out
+python ner.py --input path/to/file.json --output_dir ner_out
 ```
-This creates entities.csv and relations.csv inside the output directory. Using a PDF file as input triggers automatic OCR.
+This creates entities.csv and relations.csv inside the output directory. The
+input can be a PDF, plain text, or a structured JSON file. Using a PDF file as
+input triggers automatic OCR.
 
 Pass `--annotate_text` to also save a copy of the input text where entity spans
 are wrapped in `[[ENT …]]` markers. The Streamlit and Flask interfaces accept
