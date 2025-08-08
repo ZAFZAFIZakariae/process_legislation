@@ -38,6 +38,12 @@
         </section>
     {% endif %}
     {% if result %}
+        {% if ner_html %}
+        <section class="card">
+            <h2>Named Entities</h2>
+            {{ ner_html | safe }}
+        </section>
+        {% endif %}
         <section class="card">
             <h2>Result</h2>
             <div id="json-tree" class="json-tree"></div>
@@ -78,12 +84,6 @@
         }
         render(document.getElementById('json-tree'), data);
         </script>
-        {% if ner_html %}
-        <section class="card">
-            <h2>Named Entities</h2>
-            {{ ner_html | safe }}
-        </section>
-        {% endif %}
     {% endif %}
 </main>
 </body>
