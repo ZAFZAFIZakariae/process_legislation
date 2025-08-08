@@ -588,11 +588,26 @@ def extract_entities(text: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
     return call_openai(prompt, model)
 
 
+def json_to_text(obj: Any) -> str:
+    """Recursively join all string values from a JSON-like *obj*."""
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, dict):
+        return "\n".join(filter(None, (json_to_text(v) for v in obj.values())))
+    if isinstance(obj, list):
+        return "\n".join(filter(None, (json_to_text(v) for v in obj)))
+    return ""
+
+
 def extract_from_file(
     path: str, model: str = DEFAULT_MODEL
 ) -> tuple[Dict[str, Any], str]:
     if path.lower().endswith(".pdf"):
         text = pdf_to_arabic_text(path)
+    elif path.lower().endswith(".json"):
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        text = json_to_text(data)
     else:
         with open(path, "r", encoding="utf-8") as f:
             text = f.read()
@@ -724,7 +739,7 @@ def main() -> None:
         description="Extract legal NER using OpenAI"
     )
     parser.add_argument(
-        "--input", required=True, help="Path to a PDF or text file"
+        "--input", required=True, help="Path to a PDF, text, or JSON file"
     )
     parser.add_argument(
         "--output_dir", required=True, help="Directory for CSV output"
