@@ -17,7 +17,7 @@ except Exception:  # pragma: no cover
 
 from ner import extract_entities, postprocess_result, parse_marked_text
 from ocr import pdf_to_arabic_text
-from highlight import canonical_num, highlight_text
+from highlight import canonical_num, highlight_text, render_ner_html
 try:
     from decision_parser import process_file as parse_decision
 except Exception:  # pragma: no cover - optional dependency
@@ -294,6 +294,7 @@ def extract_structure():
                 input_path = tmp.name
             try:
                 tmp_dir = tempfile.mkdtemp()
+                ner_html = None
                 try:
                     txt_path = convert_to_text(input_path, tmp_dir)
                     result = run_passes(txt_path, model)
@@ -303,14 +304,34 @@ def extract_structure():
                     remove_duplicate_articles(hier)
                     attach_stray_articles(hier)
                     result['structure'] = hier
+
+                    with open(txt_path, 'r', encoding='utf-8') as f:
+                        raw_text = f.read()
+                    ner_result = extract_entities(raw_text, model)
+                    postprocess_result(raw_text, ner_result)
+                    ner_html = render_ner_html(raw_text, ner_result)
+
+                    base = os.path.basename(uploaded.filename).rsplit('.', 1)[0]
+                    os.makedirs('output', exist_ok=True)
+                    out_path = os.path.join('output', f'{base}.json')
+                    with open(out_path, 'w', encoding='utf-8') as f:
+                        json.dump(result, f, ensure_ascii=False, indent=2)
+
+                    ner_json = os.path.join('output', f'{base}_ner.json')
+                    with open(ner_json, 'w', encoding='utf-8') as f:
+                        json.dump(ner_result, f, ensure_ascii=False, indent=2)
+
+                    ner_html_path = os.path.join('output', f'{base}_ner.html')
+                    with open(ner_html_path, 'w', encoding='utf-8') as f:
+                        f.write(ner_html)
                 finally:
                     shutil.rmtree(tmp_dir, ignore_errors=True)
-                base = os.path.basename(uploaded.filename).rsplit('.', 1)[0]
-                os.makedirs('output', exist_ok=True)
-                out_path = os.path.join('output', f'{base}.json')
-                with open(out_path, 'w', encoding='utf-8') as f:
-                    json.dump(result, f, ensure_ascii=False, indent=2)
-                return render_template('structure.html', result=result, saved_file=os.path.basename(out_path))
+                return render_template(
+                    'structure.html',
+                    result=result,
+                    saved_file=os.path.basename(out_path),
+                    ner_html=ner_html,
+                )
             except Exception as exc:  # pragma: no cover - display error
                 return render_template('structure.html', error=str(exc))
             finally:
