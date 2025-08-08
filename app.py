@@ -317,11 +317,13 @@ def extract_structure():
                     with open(out_path, 'w', encoding='utf-8') as f:
                         json.dump(result, f, ensure_ascii=False, indent=2)
 
-                    ner_json = os.path.join('output', f'{base}_ner.json')
+                    ner_dir = 'ner_output'
+                    os.makedirs(ner_dir, exist_ok=True)
+                    ner_json = os.path.join(ner_dir, f'{base}_ner.json')
                     with open(ner_json, 'w', encoding='utf-8') as f:
                         json.dump(ner_result, f, ensure_ascii=False, indent=2)
 
-                    ner_html_path = os.path.join('output', f'{base}_ner.html')
+                    ner_html_path = os.path.join(ner_dir, f'{base}_ner.html')
                     with open(ner_html_path, 'w', encoding='utf-8') as f:
                         f.write(ner_html)
                 finally:
@@ -362,11 +364,17 @@ def view_legislation():
     files = sorted(f for f in os.listdir('output') if f.endswith('.json'))
     name = request.args.get('file')
     data = None
+    ner_html = None
     if name and name in files:
         path = os.path.join('output', name)
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-    return render_template('legislation.html', files=files, selected=name, data=data)
+        base = os.path.splitext(name)[0]
+        ner_path = os.path.join('ner_output', f'{base}_ner.html')
+        if os.path.exists(ner_path):
+            with open(ner_path, 'r', encoding='utf-8') as f:
+                ner_html = f.read()
+    return render_template('legislation.html', files=files, selected=name, data=data, ner_html=ner_html)
 
 
 @app.route('/query', methods=['GET', 'POST'])
