@@ -338,7 +338,7 @@ def parse_decision_route():
 
 @app.route('/legislation')
 def view_legislation():
-    files = [f for f in os.listdir('output') if f.endswith('.json')]
+    files = sorted(f for f in os.listdir('output') if f.endswith('.json'))
     name = request.args.get('file')
     data = None
     if name and name in files:
