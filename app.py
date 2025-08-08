@@ -309,7 +309,8 @@ def extract_structure():
                         raw_text = f.read()
                     ner_result = extract_entities(raw_text, model)
                     postprocess_result(raw_text, ner_result)
-                    ner_html = render_ner_html(raw_text, ner_result)
+                ner_html = render_ner_html(raw_text, ner_result)
+                ner_entities = ner_result.get('entities', [])
 
                     base = os.path.basename(uploaded.filename).rsplit('.', 1)[0]
                     os.makedirs('output', exist_ok=True)
@@ -317,11 +318,13 @@ def extract_structure():
                     with open(out_path, 'w', encoding='utf-8') as f:
                         json.dump(result, f, ensure_ascii=False, indent=2)
 
-                    ner_json = os.path.join('output', f'{base}_ner.json')
+                    ner_dir = 'ner_output'
+                    os.makedirs(ner_dir, exist_ok=True)
+                    ner_json = os.path.join(ner_dir, f'{base}_ner.json')
                     with open(ner_json, 'w', encoding='utf-8') as f:
                         json.dump(ner_result, f, ensure_ascii=False, indent=2)
 
-                    ner_html_path = os.path.join('output', f'{base}_ner.html')
+                    ner_html_path = os.path.join(ner_dir, f'{base}_ner.html')
                     with open(ner_html_path, 'w', encoding='utf-8') as f:
                         f.write(ner_html)
                 finally:
@@ -330,7 +333,7 @@ def extract_structure():
                     'structure.html',
                     result=result,
                     saved_file=os.path.basename(out_path),
-                    ner_html=ner_html,
+                    ner_entities=ner_entities,
                 )
             except Exception as exc:  # pragma: no cover - display error
                 return render_template('structure.html', error=str(exc))
@@ -362,11 +365,18 @@ def view_legislation():
     files = sorted(f for f in os.listdir('output') if f.endswith('.json'))
     name = request.args.get('file')
     data = None
+    ner_entities = None
     if name and name in files:
         path = os.path.join('output', name)
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-    return render_template('legislation.html', files=files, selected=name, data=data)
+        base = os.path.splitext(name)[0]
+        ner_path = os.path.join('ner_output', f'{base}_ner.json')
+        if os.path.exists(ner_path):
+            with open(ner_path, 'r', encoding='utf-8') as f:
+                ner_data = json.load(f)
+                ner_entities = ner_data.get('entities', [])
+    return render_template('legislation.html', files=files, selected=name, data=data, ner_entities=ner_entities)
 
 
 @app.route('/query', methods=['GET', 'POST'])

@@ -47,6 +47,16 @@
     </section>
     <script>
     const data = {{ data | tojson }};
+    const entities = {{ ner_entities | default([]) | tojson | safe }};
+    function escapeRegExp(string){return string.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&');}
+    function highlightEntities(text){
+        let html=text;
+        entities.forEach(ent=>{
+            const pattern=new RegExp(escapeRegExp(ent.text),'g');
+            html=html.replace(pattern,`<span class="ner-span"><mark class="entity-mark" title="${ent.type}">${ent.text}</mark></span>`);
+        });
+        return html;
+    }
     function render(container, obj) {
         if (Array.isArray(obj)) {
             const ul = document.createElement('ul');
@@ -75,7 +85,7 @@
                     keySpan.textContent = key + ': ';
                     const valSpan = document.createElement('span');
                     valSpan.className = 'json-value';
-                    valSpan.textContent = value;
+                    valSpan.innerHTML = highlightEntities(String(value));
                     li.appendChild(keySpan);
                     li.appendChild(valSpan);
                 }
@@ -85,7 +95,7 @@
         } else {
             const valSpan = document.createElement('span');
             valSpan.className = 'json-value';
-            valSpan.textContent = obj;
+            valSpan.innerHTML = highlightEntities(String(obj));
             container.appendChild(valSpan);
         }
     }

@@ -46,6 +46,16 @@
         </section>
         <script>
         const data = {{ result | tojson }};
+        const entities = {{ ner_entities | default([]) | tojson | safe }};
+        function escapeRegExp(string){return string.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&');}
+        function highlightEntities(text){
+            let html=text;
+            entities.forEach(ent=>{
+                const pattern=new RegExp(escapeRegExp(ent.text),'g');
+                html=html.replace(pattern,`<span class="ner-span"><mark class="entity-mark" title="${ent.type}">${ent.text}</mark></span>`);
+            });
+            return html;
+        }
         function render(container, obj) {
             if (Array.isArray(obj)) {
                 const ul = document.createElement('ul');
@@ -67,23 +77,17 @@
                         render(details, value);
                         li.appendChild(details);
                     } else {
-                        li.textContent = key + ': ' + value;
+                        li.innerHTML = key + ': ' + highlightEntities(String(value));
                     }
                     ul.appendChild(li);
                 }
                 container.appendChild(ul);
             } else {
-                container.textContent = obj;
+                container.innerHTML = highlightEntities(String(obj));
             }
         }
         render(document.getElementById('json-tree'), data);
         </script>
-        {% if ner_html %}
-        <section class="card">
-            <h2>Named Entities</h2>
-            {{ ner_html | safe }}
-        </section>
-        {% endif %}
     {% endif %}
 </main>
 </body>
