@@ -33,6 +33,51 @@ def canonical_num(value: str) -> str | None:
     return result
 
 
+RELATION_LABELS = {
+    "enacted_by": "صادر بمقتضى",
+    "published_in": "نشر في",
+    "effective_on": "ساري المفعول اعتبارًا من",
+    "contains": "يضم",
+    "approved_by": "صودق عليه من طرف",
+    "signed_by": "وقعه",
+    "amended_by": "عُدّل بواسطة",
+    "implements": "يطبق",
+    "decides": "يبت في",
+    "judged_by": "حكم من طرف",
+    "represented_by": "يمثل بواسطة",
+    "clerk_for": "كاتب ضبط لدى",
+    "prosecuted_by": "تابعته",
+    "refers_to": "يشير إلى",
+    "jumps_to": "يحيل على",
+}
+
+
+def render_ner_html(text: str, result: dict) -> str:
+    """Return highlighted HTML for *text* given a NER *result* dict."""
+    entities = result.get("entities", [])
+    relations = result.get("relations", [])
+    ref_targets: dict[str, list[str]] = {}
+    tooltips: dict[str, str] = {}
+    id_to_text = {str(e.get("id")): e.get("text", "") for e in entities}
+    for rel in relations:
+        src = str(rel.get("source_id"))
+        tgt = str(rel.get("target_id"))
+        typ = rel.get("type")
+        if src and tgt:
+            ref_targets.setdefault(src, []).append(tgt)
+            if typ:
+                s_txt = id_to_text.get(src, "")
+                t_txt = id_to_text.get(tgt, "")
+                rel_label = RELATION_LABELS.get(typ, typ)
+                msg = f"{s_txt} {rel_label} {t_txt}".strip()
+                existing = tooltips.get(src)
+                if existing:
+                    tooltips[src] = "<br/>".join([existing, msg])
+                else:
+                    tooltips[src] = msg
+    return highlight_text(text, entities, None, ref_targets, tooltips, None)
+
+
 # HTML construction logic shared by interfaces
 
 def highlight_text(
