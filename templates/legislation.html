@@ -41,12 +41,6 @@
     });
     </script>
     {% if data %}
-    {% if ner_html %}
-    <section class="card">
-        <h2>Named Entities</h2>
-        {{ ner_html | safe }}
-    </section>
-    {% endif %}
     <section class="card">
         <h2>{{ selected }}</h2>
         <div id="json-tree" class="json-tree"></div>
@@ -56,9 +50,23 @@
     function render(container, obj) {
         if (Array.isArray(obj)) {
             const ul = document.createElement('ul');
-            obj.forEach(item => {
+            obj.forEach((item, idx) => {
                 const li = document.createElement('li');
-                render(li, item);
+                if (typeof item === 'object' && item !== null) {
+                    const details = document.createElement('details');
+                    const summary = document.createElement('summary');
+                    summary.classList.add('json-key');
+                    let label = item.text || item.title || item.number || item.id || idx;
+                    if (typeof label === 'string' && label.length > 40) {
+                        label = label.slice(0, 40) + '...';
+                    }
+                    summary.textContent = label;
+                    details.appendChild(summary);
+                    render(details, item);
+                    li.appendChild(details);
+                } else {
+                    render(li, item);
+                }
                 ul.appendChild(li);
             });
             container.appendChild(ul);

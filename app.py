@@ -4,7 +4,10 @@ import json
 import re
 import tempfile
 import shutil
-import pandas as pd
+try:
+    import pandas as pd
+except Exception:  # pragma: no cover
+    pd = None
 import sqlite3
 from flask import Flask, render_template, request
 
@@ -364,17 +367,41 @@ def view_legislation():
     files = sorted(f for f in os.listdir('output') if f.endswith('.json'))
     name = request.args.get('file')
     data = None
-    ner_html = None
     if name and name in files:
         path = os.path.join('output', name)
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        base = os.path.splitext(name)[0]
-        ner_path = os.path.join('ner_output', f'{base}_ner.html')
-        if os.path.exists(ner_path):
-            with open(ner_path, 'r', encoding='utf-8') as f:
-                ner_html = f.read()
-    return render_template('legislation.html', files=files, selected=name, data=data, ner_html=ner_html)
+        base = name.rsplit('.', 1)[0]
+
+        ner_candidates = [
+            os.path.join('ner_output', f'{base}_ner.json'),
+            os.path.join('output', f'{base}_ner.json'),
+        ]
+        ner_path = next((p for p in ner_candidates if os.path.exists(p)), None)
+        if ner_path:
+            with open(ner_path, 'r', encoding='utf-8') as nf:
+                ner_data = json.load(nf)
+            entities = ner_data.get('entities', [])
+            relations = ner_data.get('relations', [])
+            ent_map = {str(e.get('id')): e for e in entities}
+            for rel in relations:
+                src = str(rel.get('source_id'))
+                tgt = str(rel.get('target_id'))
+                typ = rel.get('type')
+                label = RELATION_LABELS.get(typ, typ)
+                s_txt = ent_map.get(src, {}).get('text', '')
+                t_txt = ent_map.get(tgt, {}).get('text', '')
+                msg = f"{s_txt} {label} {t_txt}".strip()
+                cat = 'references' if typ in {'refers_to', 'jumps_to'} else 'relations'
+                if src in ent_map:
+                    ent_map[src].setdefault(cat, []).append(msg)
+                if tgt in ent_map:
+                    ent_map[tgt].setdefault(cat, []).append(msg)
+            if entities:
+                data['entities'] = list(ent_map.values())
+            if relations:
+                data['relations'] = relations
+    return render_template('legislation.html', files=files, selected=name, data=data)
 
 
 @app.route('/query', methods=['GET', 'POST'])
