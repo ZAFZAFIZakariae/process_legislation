@@ -362,19 +362,35 @@ def parse_decision_route():
     return render_template('decision.html', result_json=None)
 
 
+def _collect_documents() -> dict[str, dict[str, str]]:
+    """Return mapping of base names to structure and NER paths."""
+    docs: dict[str, dict[str, str]] = {}
+    if os.path.isdir('output'):
+        for f in os.listdir('output'):
+            if f.endswith('.json'):
+                base = f.rsplit('.', 1)[0]
+                docs.setdefault(base, {})['structure'] = os.path.join('output', f)
+    if os.path.isdir('ner_output'):
+        for f in os.listdir('ner_output'):
+            if f.endswith('_ner.json'):
+                base = f[:-8]  # remove '_ner.json'
+                docs.setdefault(base, {})['ner'] = os.path.join('ner_output', f)
+    return docs
+
+
 @app.route('/legislation')
 def view_legislation():
-    files = sorted(f for f in os.listdir('output') if f.endswith('.json'))
+    docs = _collect_documents()
+    files = sorted(docs.keys())
     name = request.args.get('file')
     data = None
     entities = None
-    if name and name in files:
-        path = os.path.join('output', name)
-        with open(path, 'r', encoding='utf-8') as f:
+    doc = docs.get(name)
+    if doc:
+        with open(doc['structure'], 'r', encoding='utf-8') as f:
             data = json.load(f)
-        base = name.rsplit('.', 1)[0]
-        ner_path = os.path.join('ner_output', f'{base}_ner.json')
-        if os.path.exists(ner_path):
+        ner_path = doc.get('ner')
+        if ner_path and os.path.exists(ner_path):
             with open(ner_path, 'r', encoding='utf-8') as nf:
                 ner_data = json.load(nf)
             entities = ner_data.get('entities', [])
