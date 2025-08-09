@@ -6,24 +6,46 @@ from typing import Any, Dict, List
 from ner import extract_entities, postprocess_result, json_to_text
 
 
+def _replace_outside_tags(text: str, search: str, repl: str) -> str:
+    """Return *text* with all occurrences of ``search`` replaced by ``repl``
+    while skipping regions already wrapped in ``<>`` tags."""
+    result: List[str] = []
+    i = 0
+    slen = len(search)
+    while i < len(text):
+        idx = text.find(search, i)
+        if idx == -1:
+            result.append(text[i:])
+            break
+        # check if we're inside an existing tag
+        before = text[:idx]
+        if before.rfind("<") > before.rfind(">"):
+            # inside a tag – skip this occurrence
+            result.append(text[i: idx + slen])
+            i = idx + slen
+            continue
+        result.append(text[i:idx])
+        result.append(repl)
+        i = idx + slen
+    return "".join(result)
+
+
 def _insert_brackets(text: str, entities: List[Dict[str, Any]]) -> str:
-    """Wrap entity mentions in *text* with ``[TYPE:TEXT]`` markers."""
-    # Deduplicate entity texts to avoid repeated nested markers
+    """Wrap entity mentions in *text* with ``<TEXT, id:ID>`` markers."""
     seen = set()
-    patterns = []
+    patterns: List[tuple[str, str]] = []
     for e in entities:
         ent_text = e.get("text", "")
-        ent_type = e.get("type", "")
-        if ent_text and (ent_text, ent_type) not in seen:
-            patterns.append((ent_text, ent_type))
-            seen.add((ent_text, ent_type))
+        ent_id = e.get("id", "")
+        if ent_text and ent_id and (ent_text, ent_id) not in seen:
+            patterns.append((ent_text, ent_id))
+            seen.add((ent_text, ent_id))
     if not patterns:
         return text
     patterns.sort(key=lambda x: len(x[0]), reverse=True)
-    for ent_text, ent_type in patterns:
-        pattern = re.escape(ent_text)
-        replacement = f"[{ent_type}:{ent_text}]" if ent_type else f"[{ent_text}]"
-        text = re.sub(pattern, replacement, text)
+    for ent_text, ent_id in patterns:
+        replacement = f"<{ent_text}, id:{ent_id}>"
+        text = _replace_outside_tags(text, ent_text, replacement)
     return text
 
 
@@ -60,6 +82,10 @@ def main() -> None:
     )
     parser.add_argument("--input", required=True, help="Path to input JSON file")
     parser.add_argument("--output", required=True, help="Path to output JSON file")
+    parser.add_argument(
+        "--entities-output",
+        help="Optional path to save raw NER result (entities and relations)",
+    )
     parser.add_argument("--model", default="gpt-4o", help="OpenAI model to use")
     args = parser.parse_args()
 
@@ -71,12 +97,25 @@ def main() -> None:
     postprocess_result(text, ner_result)
     entities = ner_result.get("entities", [])
     relations = ner_result.get("relations", [])
+
+    # remove positional information before saving/annotating
+    for ent in entities:
+        ent.pop("start_char", None)
+        ent.pop("end_char", None)
+
     annotate_json(data, entities)
     if relations:
         data["relations"] = relations
 
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+    if args.entities_output:
+        ner_out = {"entities": entities}
+        if relations:
+            ner_out["relations"] = relations
+        with open(args.entities_output, "w", encoding="utf-8") as f:
+            json.dump(ner_out, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":
