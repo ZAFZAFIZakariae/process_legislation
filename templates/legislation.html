@@ -156,6 +156,26 @@
         }
     }
     render(document.getElementById('json-tree'), data);
+
+    // allow entity links to both open the structure and scroll to entity details
+    document.querySelectorAll('.entity-link').forEach(link => {
+        link.addEventListener('click', ev => {
+            ev.preventDefault();
+            const parentDetails = link.closest('details');
+            if (parentDetails) {
+                parentDetails.open = true;
+            }
+            const id = link.getAttribute('href').substring(1);
+            const summaryEl = document.getElementById(id);
+            if (summaryEl) {
+                const entDetails = summaryEl.closest('details');
+                if (entDetails) {
+                    entDetails.open = true;
+                }
+                summaryEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    });
     </script>
     {% endif %}
 </main>
