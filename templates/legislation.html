@@ -71,18 +71,46 @@
         </ul>
     </section>
     {% endif %}
+    <div id="popup" style="display:none;position:fixed;top:10%;left:10%;width:80%;max-height:80%;overflow:auto;background:white;border:1px solid #888;padding:10px;z-index:1000;">
+        <button id="popup-close" style="float:left;">X</button>
+        <div id="popup-content"></div>
+    </div>
     <script>
     const data = {{ data | tojson }};
     const entitiesData = {{ entities | tojson | default('null', true) }};
     const entityMap = {};
+    const articleTargets = {};
     if (entitiesData) {
-        entitiesData.forEach(e => { entityMap[e.id] = e; });
+        entitiesData.forEach(e => {
+            entityMap[e.id] = e;
+            if (e.type === 'ARTICLE') {
+                const num = canonicalNum(e.normalized || e.text);
+                if (num) {
+                    articleTargets[e.id] = `node-${num}`;
+                }
+            }
+        });
     }
 
     function escapeHtml(str) {
         return str.replace(/[&<>"']/g, function(c) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
+    }
+
+    function canonicalNum(value) {
+        if (!value) return null;
+        const trans = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
+        let s = String(value).replace(/[٠-٩]/g, d => trans[d]);
+        const m = s.match(/\d+(?:[./]+[^\d]*\d+)*/);
+        if (!m) return null;
+        const digits = m[0].match(/\d+/g);
+        const seps = m[0].match(/[./]+/g) || [];
+        let result = digits[0];
+        for (let i = 1; i < digits.length; i++) {
+            result += seps[i-1][0] + digits[i];
+        }
+        return result;
     }
 
     function formatText(value) {
@@ -92,8 +120,13 @@
         return value.replace(/<([^,<>]+), id:(\d+)>/g, function(_m, txt, id) {
             const ent = entityMap[id];
             const bold = `<strong>${escapeHtml(txt)}</strong>`;
+            const target = articleTargets[id];
+            if (target) {
+                return `<a href="#${target}" class="entity-link" data-target="${target}">${bold}</a>`;
+            }
             if (ent && ((ent.relations && ent.relations.length) || (ent.references && ent.references.length))) {
-                return `<a href="#entity-${id}" class="entity-link">${bold}</a>`;
+                const info = [...(ent.relations || []), ...(ent.references || [])].join('<br/>');
+                return `<a href="javascript:void(0)" class="entity-link" data-popup="${escapeHtml(info)}">${bold}</a>`;
             }
             return bold;
         });
@@ -111,6 +144,12 @@
                     let label = item.text || item.title || item.number || item.id || idx;
                     if (typeof label === 'string' && label.length > 40) {
                         label = label.slice(0, 40) + '...';
+                    }
+                    if (item.number) {
+                        const num = canonicalNum(item.number);
+                        if (num) {
+                            summary.id = `node-${num}`;
+                        }
                     }
                     summary.innerHTML = formatText(label);
                     details.appendChild(summary);
@@ -157,24 +196,34 @@
     }
     render(document.getElementById('json-tree'), data);
 
-    // allow entity links to both open the structure and scroll to entity details
     document.querySelectorAll('.entity-link').forEach(link => {
         link.addEventListener('click', ev => {
             ev.preventDefault();
-            const parentDetails = link.closest('details');
-            if (parentDetails) {
-                parentDetails.open = true;
-            }
-            const id = link.getAttribute('href').substring(1);
-            const summaryEl = document.getElementById(id);
-            if (summaryEl) {
-                const entDetails = summaryEl.closest('details');
-                if (entDetails) {
-                    entDetails.open = true;
+            const target = link.getAttribute('data-target');
+            if (target) {
+                const el = document.getElementById(target);
+                if (el) {
+                    let parent = el.closest('details');
+                    while (parent) {
+                        parent.open = true;
+                        parent = parent.parentElement.closest('details');
+                    }
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-                summaryEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                const content = link.getAttribute('data-popup');
+                if (content) {
+                    const popup = document.getElementById('popup');
+                    const pc = document.getElementById('popup-content');
+                    if (pc) pc.innerHTML = content;
+                    if (popup) popup.style.display = 'block';
+                }
             }
         });
+    });
+
+    document.getElementById('popup-close').addEventListener('click', () => {
+        document.getElementById('popup').style.display = 'none';
     });
     </script>
     {% endif %}
