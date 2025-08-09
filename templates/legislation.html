@@ -112,7 +112,7 @@
                     if (typeof label === 'string' && label.length > 40) {
                         label = label.slice(0, 40) + '...';
                     }
-                    summary.textContent = label;
+                    summary.innerHTML = formatText(label);
                     details.appendChild(summary);
                     render(details, item);
                     li.appendChild(details);
