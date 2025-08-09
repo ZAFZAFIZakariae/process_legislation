@@ -6,13 +6,6 @@ from .ocr_to_text import convert_to_text
 from .extract_chunks import run_passes
 from .post_process import post_process_data
 
-try:
-    from ..ner import extract_entities, postprocess_result  # type: ignore
-    from ..highlight import render_ner_html, highlight_structure  # type: ignore
-except Exception:  # pragma: no cover
-    from ner import extract_entities, postprocess_result  # type: ignore
-    from highlight import render_ner_html, highlight_structure  # type: ignore
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -40,30 +33,6 @@ def main() -> None:
 
     print(f"[+] Saved raw structure to: {raw_json}")
     print(f"[+] Saved final structure to: {final_json}")
-
-    with open(txt_path, "r", encoding="utf-8") as f:
-        raw_text = f.read()
-
-    ner_result = extract_entities(raw_text, args.model)
-    postprocess_result(raw_text, ner_result)
-    ner_json = os.path.join(args.output_dir, f"{base}_ner.json")
-    with open(ner_json, "w", encoding="utf-8") as f:
-        json.dump(ner_result, f, ensure_ascii=False, indent=2)
-
-    html = render_ner_html(raw_text, ner_result)
-    html_path = os.path.join(args.output_dir, f"{base}_ner.html")
-    with open(html_path, "w", encoding="utf-8") as f:
-        f.write(html)
-
-    print(f"[+] Saved NER result to: {ner_json}")
-    print(f"[+] Saved NER HTML to: {html_path}")
-
-    # Save a copy of the structured JSON with entity mentions highlighted
-    highlight_structure(final_data.get("structure", []), ner_result.get("entities", []))
-    highlight_json = os.path.join(args.output_dir, f"{base}_highlight.json")
-    with open(highlight_json, "w", encoding="utf-8") as f:
-        json.dump(final_data, f, ensure_ascii=False, indent=2)
-    print(f"[+] Saved highlighted structure to: {highlight_json}")
 
 
 if __name__ == "__main__":
