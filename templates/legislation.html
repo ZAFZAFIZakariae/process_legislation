@@ -45,6 +45,32 @@
         <h2>{{ selected }}</h2>
         <div id="json-tree" class="json-tree"></div>
     </section>
+    {% if entities %}
+    <section class="card">
+        <h2>Entities</h2>
+        <ul class="entity-list">
+        {% for ent in entities %}
+            <li>
+                <details>
+                    <summary>{{ ent.text }} (id: {{ ent.id }})</summary>
+                    {% if ent.relations %}
+                        <p><strong>Relations</strong></p>
+                        <ul>
+                        {% for r in ent.relations %}<li>{{ r }}</li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if ent.references %}
+                        <p><strong>References</strong></p>
+                        <ul>
+                        {% for ref in ent.references %}<li>{{ ref }}</li>{% endfor %}
+                        </ul>
+                    {% endif %}
+                </details>
+            </li>
+        {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
     <script>
     const data = {{ data | tojson }};
     function render(container, obj) {
