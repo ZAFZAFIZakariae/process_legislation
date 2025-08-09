@@ -367,6 +367,7 @@ def view_legislation():
     files = sorted(f for f in os.listdir('output') if f.endswith('.json'))
     name = request.args.get('file')
     data = None
+    entities = None
     if name and name in files:
         path = os.path.join('output', name)
         with open(path, 'r', encoding='utf-8') as f:
@@ -392,10 +393,14 @@ def view_legislation():
                     ent_map[src].setdefault(cat, []).append(msg)
                 if tgt in ent_map:
                     ent_map[tgt].setdefault(cat, []).append(msg)
-            data['entities'] = list(ent_map.values())
-            if relations:
-                data['relations'] = relations
-    return render_template('legislation.html', files=files, selected=name, data=data)
+            entities = list(ent_map.values())
+    return render_template(
+        'legislation.html',
+        files=files,
+        selected=name,
+        data=data,
+        entities=entities,
+    )
 
 
 @app.route('/query', methods=['GET', 'POST'])
