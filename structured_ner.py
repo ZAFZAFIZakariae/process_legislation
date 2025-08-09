@@ -8,7 +8,15 @@ from ner import extract_entities, postprocess_result, json_to_text
 
 def _insert_brackets(text: str, entities: List[Dict[str, Any]]) -> str:
     """Wrap entity mentions in *text* with ``[TYPE:TEXT]`` markers."""
-    patterns = [(e.get("text", ""), e.get("type", "")) for e in entities if e.get("text")]
+    # Deduplicate entity texts to avoid repeated nested markers
+    seen = set()
+    patterns = []
+    for e in entities:
+        ent_text = e.get("text", "")
+        ent_type = e.get("type", "")
+        if ent_text and (ent_text, ent_type) not in seen:
+            patterns.append((ent_text, ent_type))
+            seen.add((ent_text, ent_type))
     if not patterns:
         return text
     patterns.sort(key=lambda x: len(x[0]), reverse=True)
@@ -33,6 +41,19 @@ def annotate_structure(structure: List[Dict[str, Any]], entities: List[Dict[str,
             annotate_structure(children, entities)
 
 
+def annotate_json(obj: Any, entities: List[Dict[str, Any]]) -> Any:
+    """Recursively insert entity markers into all string fields of *obj*."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            obj[k] = annotate_json(v, entities)
+        return obj
+    if isinstance(obj, list):
+        return [annotate_json(item, entities) for item in obj]
+    if isinstance(obj, str):
+        return _insert_brackets(obj, entities)
+    return obj
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run NER over structured JSON and embed entity mentions in brackets.",
@@ -48,7 +69,8 @@ def main() -> None:
     text = json_to_text(data)
     ner_result = extract_entities(text, args.model)
     postprocess_result(text, ner_result)
-    annotate_structure(data.get("structure", []), ner_result.get("entities", []))
+    entities = ner_result.get("entities", [])
+    annotate_json(data, entities)
 
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
