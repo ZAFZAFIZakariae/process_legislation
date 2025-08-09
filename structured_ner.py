@@ -70,7 +70,10 @@ def main() -> None:
     ner_result = extract_entities(text, args.model)
     postprocess_result(text, ner_result)
     entities = ner_result.get("entities", [])
+    relations = ner_result.get("relations", [])
     annotate_json(data, entities)
+    if relations:
+        data["relations"] = relations
 
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
