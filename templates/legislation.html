@@ -52,7 +52,7 @@
         {% for ent in entities %}
             <li>
                 <details>
-                    <summary>{{ ent.text }} (id: {{ ent.id }})</summary>
+                    <summary id="entity-{{ ent.id }}">{{ ent.text }} (id: {{ ent.id }})</summary>
                     {% if ent.relations %}
                         <p><strong>Relations</strong></p>
                         <ul>
@@ -73,6 +73,32 @@
     {% endif %}
     <script>
     const data = {{ data | tojson }};
+    const entitiesData = {{ entities | tojson | default('null', true) }};
+    const entityMap = {};
+    if (entitiesData) {
+        entitiesData.forEach(e => { entityMap[e.id] = e; });
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>"']/g, function(c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function formatText(value) {
+        if (typeof value !== 'string') {
+            return escapeHtml(String(value));
+        }
+        return value.replace(/<([^,<>]+), id:(\d+)>/g, function(_m, txt, id) {
+            const ent = entityMap[id];
+            const bold = `<strong>${escapeHtml(txt)}</strong>`;
+            if (ent && ((ent.relations && ent.relations.length) || (ent.references && ent.references.length))) {
+                return `<a href="#entity-${id}" class="entity-link">${bold}</a>`;
+            }
+            return bold;
+        });
+    }
+
     function render(container, obj) {
         if (Array.isArray(obj)) {
             const ul = document.createElement('ul');
@@ -115,7 +141,7 @@
                     keySpan.textContent = key + ': ';
                     const valSpan = document.createElement('span');
                     valSpan.className = 'json-value';
-                    valSpan.textContent = value;
+                    valSpan.innerHTML = formatText(value);
                     li.appendChild(keySpan);
                     li.appendChild(valSpan);
                 }
@@ -125,7 +151,7 @@
         } else {
             const valSpan = document.createElement('span');
             valSpan.className = 'json-value';
-            valSpan.textContent = obj;
+            valSpan.innerHTML = formatText(obj);
             container.appendChild(valSpan);
         }
     }
