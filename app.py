@@ -372,7 +372,7 @@ def _collect_documents() -> dict[str, dict[str, str]]:
     if os.path.isdir('ner_output'):
         for f in os.listdir('ner_output'):
             if f.endswith('_ner.json'):
-                base = f[:-8]  # remove '_ner.json'
+                base = f[:-9]  # remove '_ner.json'
                 docs.setdefault(base, {})['ner'] = os.path.join('ner_output', f)
     return docs
 
