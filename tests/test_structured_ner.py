@@ -1,7 +1,7 @@
 import json
 import sys
-import structured_ner
-from structured_ner import _insert_brackets, annotate_structure, annotate_json
+from pipeline import structured_ner
+from pipeline.structured_ner import _insert_brackets, annotate_structure, annotate_json
 
 
 def test_insert_brackets_simple():

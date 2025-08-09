@@ -36,9 +36,11 @@ try:  # Optional pipeline for structure extraction
         postprocess_structure,
         remove_duplicate_articles,
     )
+    from pipeline.structured_ner import run_structured_ner
 except BaseException:  # pragma: no cover - missing dependency
     convert_to_text = None
     run_passes = None
+    run_structured_ner = None
 
 app = Flask(__name__)
 
@@ -285,7 +287,7 @@ def index():
 
 @app.route('/structure', methods=['GET', 'POST'])
 def extract_structure():
-    if run_passes is None or convert_to_text is None:
+    if run_passes is None or convert_to_text is None or run_structured_ner is None:
         return render_template('structure.html', error='Structure pipeline not available')
     if request.method == 'POST':
         uploaded = request.files.get('file')
@@ -308,11 +310,8 @@ def extract_structure():
                     attach_stray_articles(hier)
                     result['structure'] = hier
 
-                    with open(txt_path, 'r', encoding='utf-8') as f:
-                        raw_text = f.read()
-                    ner_result = extract_entities(raw_text, model)
-                    postprocess_result(raw_text, ner_result)
-                    ner_html = render_ner_html(raw_text, ner_result)
+                    result, ner_saved, raw_text, ner_raw = run_structured_ner(result, model)
+                    ner_html = render_ner_html(raw_text, ner_raw)
 
                     base = os.path.basename(uploaded.filename).rsplit('.', 1)[0]
                     os.makedirs('output', exist_ok=True)
@@ -324,7 +323,7 @@ def extract_structure():
                     os.makedirs(ner_dir, exist_ok=True)
                     ner_json = os.path.join(ner_dir, f'{base}_ner.json')
                     with open(ner_json, 'w', encoding='utf-8') as f:
-                        json.dump(ner_result, f, ensure_ascii=False, indent=2)
+                        json.dump(ner_saved, f, ensure_ascii=False, indent=2)
 
                     ner_html_path = os.path.join(ner_dir, f'{base}_ner.html')
                     with open(ner_html_path, 'w', encoding='utf-8') as f:

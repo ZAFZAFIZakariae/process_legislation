@@ -1,9 +1,12 @@
 import argparse
 import json
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
-from ner import extract_entities, postprocess_result, json_to_text
+try:  # Prefer relative import when available
+    from ..ner import extract_entities, postprocess_result, json_to_text
+except Exception:  # Allow running as a script
+    from ner import extract_entities, postprocess_result, json_to_text  # type: ignore
 
 
 def _replace_outside_tags(text: str, search: str, repl: str) -> str:
@@ -21,7 +24,7 @@ def _replace_outside_tags(text: str, search: str, repl: str) -> str:
         before = text[:idx]
         if before.rfind("<") > before.rfind(">"):
             # inside a tag – skip this occurrence
-            result.append(text[i: idx + slen])
+            result.append(text[i : idx + slen])
             i = idx + slen
             continue
         result.append(text[i:idx])
@@ -76,6 +79,41 @@ def annotate_json(obj: Any, entities: List[Dict[str, Any]]) -> Any:
     return obj
 
 
+def run_structured_ner(
+    data: Dict[str, Any], model: str = "gpt-4o"
+) -> Tuple[Dict[str, Any], Dict[str, Any], str, Dict[str, Any]]:
+    """Run NER on *data* and annotate it with entity brackets.
+
+    Returns a tuple ``(annotated_data, ner_clean, text, ner_raw)`` where:
+    - ``annotated_data`` is the input data annotated in place,
+    - ``ner_clean`` contains entities/relations without positional info suitable for saving,
+    - ``text`` is the linearised text used for NER,
+    - ``ner_raw`` is the full NER result with positional info for HTML rendering.
+    """
+
+    text = json_to_text(data)
+    ner_raw = extract_entities(text, model)
+    postprocess_result(text, ner_raw)
+
+    entities = ner_raw.get("entities", [])
+    relations = ner_raw.get("relations", [])
+
+    stripped: List[Dict[str, Any]] = []
+    for ent in entities:
+        e = {k: v for k, v in ent.items() if k not in {"start_char", "end_char"}}
+        stripped.append(e)
+
+    annotate_json(data, stripped)
+    if relations:
+        data["relations"] = relations
+
+    ner_clean: Dict[str, Any] = {"entities": stripped}
+    if relations:
+        ner_clean["relations"] = relations
+
+    return data, ner_clean, text, ner_raw
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run NER over structured JSON and embed entity mentions in brackets.",
@@ -92,30 +130,14 @@ def main() -> None:
     with open(args.input, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    text = json_to_text(data)
-    ner_result = extract_entities(text, args.model)
-    postprocess_result(text, ner_result)
-    entities = ner_result.get("entities", [])
-    relations = ner_result.get("relations", [])
-
-    # remove positional information before saving/annotating
-    for ent in entities:
-        ent.pop("start_char", None)
-        ent.pop("end_char", None)
-
-    annotate_json(data, entities)
-    if relations:
-        data["relations"] = relations
+    annotated, ner_clean, _, _ = run_structured_ner(data, args.model)
 
     with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(annotated, f, ensure_ascii=False, indent=2)
 
     if args.entities_output:
-        ner_out = {"entities": entities}
-        if relations:
-            ner_out["relations"] = relations
         with open(args.entities_output, "w", encoding="utf-8") as f:
-            json.dump(ner_out, f, ensure_ascii=False, indent=2)
+            json.dump(ner_clean, f, ensure_ascii=False, indent=2)
 
 
 if __name__ == "__main__":
