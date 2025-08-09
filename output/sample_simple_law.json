@@ -1,0 +1,26 @@
+{
+  "metadata": {
+    "document_type": "قانون",
+    "document_number": "0.00",
+    "official_title": "<قانون تجريبي رقم 0.00, id:100> بشأن مثال مبسط",
+    "short_title": "",
+    "issuer": {},
+    "status": "",
+    "dates": {},
+    "version_history": []
+  },
+  "structure": [
+    {
+      "type": "مادة",
+      "number": "1",
+      "text": "يطبق هذا القانون وفق أحكام ال<مادة 2, id:200> التالية.",
+      "title": ""
+    },
+    {
+      "type": "مادة",
+      "number": "2",
+      "text": "تحدد التفاصيل بمرسوم تطبيقي.",
+      "title": ""
+    }
+  ]
+}
