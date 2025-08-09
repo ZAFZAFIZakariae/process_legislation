@@ -1,0 +1,1308 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "type": "DECRET",
+      "text": "ظهير شريف رقم 1.23.60",
+      "normalized": "1.23.60 الظهير الشريف"
+    },
+    {
+      "id": 2,
+      "type": "DATE",
+      "text": "23 من محرم 1445",
+      "normalized": "2023-08-10"
+    },
+    {
+      "id": 3,
+      "type": "DATE",
+      "text": "10 أغسطس 2023",
+      "normalized": "2023-08-10"
+    },
+    {
+      "id": 4,
+      "type": "LAW",
+      "text": "القانون رقم 37.22",
+      "normalized": "37.22 القانون"
+    },
+    {
+      "id": 5,
+      "type": "OFFICIAL_JOURNAL",
+      "text": "7228",
+      "normalized": "7228"
+    },
+    {
+      "id": 6,
+      "type": "DATE",
+      "text": "7 سبتمبر 2023",
+      "normalized": "2023-09-07"
+    },
+    {
+      "id": 7,
+      "type": "LAW",
+      "text": "القانون التنظيمي رقم 106.13",
+      "normalized": "106.13 القانون التنظيمي"
+    },
+    {
+      "id": 8,
+      "type": "LAW",
+      "text": "النظام الأساسي للقضاة",
+      "normalized": "النظام الأساسي للقضاة"
+    },
+    {
+      "id": 9,
+      "type": "DECRET",
+      "text": "ظهير شريف رقم 1.02.240",
+      "normalized": "1.02.240 الظهير الشريف"
+    },
+    {
+      "id": 10,
+      "type": "DATE",
+      "text": "25 من رجب 1423",
+      "normalized": "2002-10-03"
+    },
+    {
+      "id": 11,
+      "type": "DATE",
+      "text": "3 أكتوبر 2002",
+      "normalized": "2002-10-03"
+    },
+    {
+      "id": 12,
+      "type": "LAW",
+      "text": "القانون التنظيمي رقم 100.13",
+      "normalized": "100.13 القانون التنظيمي"
+    },
+    {
+      "id": 13,
+      "type": "GOVERNMENT_BODY",
+      "text": "المجلس الأعلى للسلطة القضائية",
+      "normalized": "المجلس الأعلى للسلطة القضائية"
+    },
+    {
+      "id": 14,
+      "type": "PERSON",
+      "text": "محمد بن الحسن بن محمد بن يوسف",
+      "normalized": "محمد بن الحسن بن محمد بن يوسف"
+    },
+    {
+      "id": 15,
+      "type": "CHAPTER",
+      "text": "قسم 1",
+      "normalized": "1 القسم"
+    },
+    {
+      "id": 16,
+      "type": "SECTION",
+      "text": "أحكام عامة",
+      "normalized": "أحكام عامة"
+    },
+    {
+      "id": 17,
+      "type": "ARTICLE",
+      "text": "مادة 1",
+      "normalized": "1 المادة"
+    },
+    {
+      "id": 18,
+      "type": "ARTICLE",
+      "text": "مادة 2",
+      "normalized": "2 المادة"
+    },
+    {
+      "id": 19,
+      "type": "ARTICLE",
+      "text": "مادة 3",
+      "normalized": "3 المادة"
+    },
+    {
+      "id": 20,
+      "type": "CHAPTER",
+      "text": "قسم 2",
+      "normalized": "2 القسم"
+    },
+    {
+      "id": 21,
+      "type": "SECTION",
+      "text": "مهام المعهد وقواعد تنظيمه وكيفيات تسييره",
+      "normalized": "مهام المعهد وقواعد تنظيمه وكيفيات تسييره"
+    },
+    {
+      "id": 22,
+      "type": "CHAPTER",
+      "text": "باب 1",
+      "normalized": "1 الباب"
+    },
+    {
+      "id": 23,
+      "type": "SECTION",
+      "text": "مهام المعهد",
+      "normalized": "مهام المعهد"
+    },
+    {
+      "id": 24,
+      "type": "ARTICLE",
+      "text": "مادة 4",
+      "normalized": "4 المادة"
+    },
+    {
+      "id": 25,
+      "type": "ARTICLE",
+      "text": "مادة 5",
+      "normalized": "5 المادة"
+    },
+    {
+      "id": 26,
+      "type": "ARTICLE",
+      "text": "مادة 6",
+      "normalized": "6 المادة"
+    },
+    {
+      "id": 27,
+      "type": "ARTICLE",
+      "text": "مادة 7",
+      "normalized": "7 المادة"
+    },
+    {
+      "id": 28,
+      "type": "CHAPTER",
+      "text": "باب 2",
+      "normalized": "2 الباب"
+    },
+    {
+      "id": 29,
+      "type": "SECTION",
+      "text": "التنظيم والتسيير",
+      "normalized": "التنظيم والتسيير"
+    },
+    {
+      "id": 30,
+      "type": "ARTICLE",
+      "text": "مادة 8",
+      "normalized": "8 المادة"
+    },
+    {
+      "id": 31,
+      "type": "ARTICLE",
+      "text": "مادة 9",
+      "normalized": "9 المادة"
+    },
+    {
+      "id": 32,
+      "type": "ARTICLE",
+      "text": "مادة 10",
+      "normalized": "10 المادة"
+    },
+    {
+      "id": 33,
+      "type": "ARTICLE",
+      "text": "مادة 11",
+      "normalized": "11 المادة"
+    },
+    {
+      "id": 34,
+      "type": "ARTICLE",
+      "text": "مادة 12",
+      "normalized": "12 المادة"
+    },
+    {
+      "id": 35,
+      "type": "ARTICLE",
+      "text": "مادة 13",
+      "normalized": "13 المادة"
+    },
+    {
+      "id": 36,
+      "type": "ARTICLE",
+      "text": "مادة 15",
+      "normalized": "15 المادة"
+    },
+    {
+      "id": 37,
+      "type": "ARTICLE",
+      "text": "مادة 16",
+      "normalized": "16 المادة"
+    },
+    {
+      "id": 38,
+      "type": "ARTICLE",
+      "text": "مادة 17",
+      "normalized": "17 المادة"
+    },
+    {
+      "id": 39,
+      "type": "ARTICLE",
+      "text": "مادة 18",
+      "normalized": "18 المادة"
+    },
+    {
+      "id": 40,
+      "type": "ARTICLE",
+      "text": "مادة 19",
+      "normalized": "19 المادة"
+    },
+    {
+      "id": 41,
+      "type": "ARTICLE",
+      "text": "مادة 20",
+      "normalized": "20 المادة"
+    },
+    {
+      "id": 42,
+      "type": "ARTICLE",
+      "text": "مادة 21",
+      "normalized": "21 المادة"
+    },
+    {
+      "id": 43,
+      "type": "CHAPTER",
+      "text": "باب 3",
+      "normalized": "3 الباب"
+    },
+    {
+      "id": 44,
+      "type": "SECTION",
+      "text": "التنظيم الإداري والمالي للمعهد",
+      "normalized": "التنظيم الإداري والمالي للمعهد"
+    },
+    {
+      "id": 45,
+      "type": "ARTICLE",
+      "text": "مادة 22",
+      "normalized": "22 المادة"
+    },
+    {
+      "id": 46,
+      "type": "ARTICLE",
+      "text": "مادة 23",
+      "normalized": "23 المادة"
+    },
+    {
+      "id": 47,
+      "type": "ARTICLE",
+      "text": "مادة 24",
+      "normalized": "24 المادة"
+    },
+    {
+      "id": 48,
+      "type": "ARTICLE",
+      "text": "مادة 25",
+      "normalized": "25 المادة"
+    },
+    {
+      "id": 49,
+      "type": "CHAPTER",
+      "text": "باب 4",
+      "normalized": "4 الباب"
+    },
+    {
+      "id": 50,
+      "type": "SECTION",
+      "text": "الموارد البشرية للمعهد",
+      "normalized": "الموارد البشرية للمعهد"
+    },
+    {
+      "id": 51,
+      "type": "ARTICLE",
+      "text": "مادة 26",
+      "normalized": "26 المادة"
+    },
+    {
+      "id": 52,
+      "type": "ARTICLE",
+      "text": "مادة 27",
+      "normalized": "27 المادة"
+    },
+    {
+      "id": 53,
+      "type": "CHAPTER",
+      "text": "قسم 3",
+      "normalized": "3 القسم"
+    },
+    {
+      "id": 54,
+      "type": "SECTION",
+      "text": "الولوج للمعهد ومجالات التكوين",
+      "normalized": "الولوج للمعهد ومجالات التكوين"
+    },
+    {
+      "id": 55,
+      "type": "CHAPTER",
+      "text": "باب 1",
+      "normalized": "1 الباب"
+    },
+    {
+      "id": 56,
+      "type": "SECTION",
+      "text": "الملحقون القضائيون",
+      "normalized": "الملحقون القضائيون"
+    },
+    {
+      "id": 57,
+      "type": "ARTICLE",
+      "text": "مادة 28",
+      "normalized": "28 المادة"
+    },
+    {
+      "id": 58,
+      "type": "ARTICLE",
+      "text": "مادة 29",
+      "normalized": "29 المادة"
+    },
+    {
+      "id": 59,
+      "type": "ARTICLE",
+      "text": "مادة 30",
+      "normalized": "30 المادة"
+    },
+    {
+      "id": 60,
+      "type": "ARTICLE",
+      "text": "مادة 31",
+      "normalized": "31 المادة"
+    },
+    {
+      "id": 61,
+      "type": "ARTICLE",
+      "text": "مادة 32",
+      "normalized": "32 المادة"
+    },
+    {
+      "id": 62,
+      "type": "ARTICLE",
+      "text": "مادة 33",
+      "normalized": "33 المادة"
+    },
+    {
+      "id": 63,
+      "type": "ARTICLE",
+      "text": "مادة 34",
+      "normalized": "34 المادة"
+    },
+    {
+      "id": 64,
+      "type": "ARTICLE",
+      "text": "مادة 35",
+      "normalized": "35 المادة"
+    },
+    {
+      "id": 65,
+      "type": "ARTICLE",
+      "text": "مادة 36",
+      "normalized": "36 المادة"
+    },
+    {
+      "id": 66,
+      "type": "ARTICLE",
+      "text": "مادة 37",
+      "normalized": "37 المادة"
+    },
+    {
+      "id": 67,
+      "type": "ARTICLE",
+      "text": "مادة 38",
+      "normalized": "38 المادة"
+    },
+    {
+      "id": 68,
+      "type": "ARTICLE",
+      "text": "مادة 39",
+      "normalized": "39 المادة"
+    },
+    {
+      "id": 69,
+      "type": "ARTICLE",
+      "text": "مادة 40",
+      "normalized": "40 المادة"
+    },
+    {
+      "id": 70,
+      "type": "ARTICLE",
+      "text": "مادة 41",
+      "normalized": "41 المادة"
+    },
+    {
+      "id": 71,
+      "type": "ARTICLE",
+      "text": "مادة 42",
+      "normalized": "42 المادة"
+    },
+    {
+      "id": 72,
+      "type": "ARTICLE",
+      "text": "مادة 43",
+      "normalized": "43 المادة"
+    },
+    {
+      "id": 73,
+      "type": "ARTICLE",
+      "text": "مادة 44",
+      "normalized": "44 المادة"
+    },
+    {
+      "id": 74,
+      "type": "ARTICLE",
+      "text": "مادة 45",
+      "normalized": "45 المادة"
+    },
+    {
+      "id": 75,
+      "type": "ARTICLE",
+      "text": "مادة 46",
+      "normalized": "46 المادة"
+    },
+    {
+      "id": 76,
+      "type": "ARTICLE",
+      "text": "مادة 47",
+      "normalized": "47 المادة"
+    },
+    {
+      "id": 77,
+      "type": "ARTICLE",
+      "text": "مادة 48",
+      "normalized": "48 المادة"
+    },
+    {
+      "id": 78,
+      "type": "ARTICLE",
+      "text": "مادة 49",
+      "normalized": "49 المادة"
+    },
+    {
+      "id": 79,
+      "type": "ARTICLE",
+      "text": "مادة 50",
+      "normalized": "50 المادة"
+    },
+    {
+      "id": 80,
+      "type": "CHAPTER",
+      "text": "باب 2",
+      "normalized": "2 الباب"
+    },
+    {
+      "id": 81,
+      "type": "SECTION",
+      "text": "المهنيون والموظفون",
+      "normalized": "المهنيون والموظفون"
+    },
+    {
+      "id": 82,
+      "type": "ARTICLE",
+      "text": "مادة 51",
+      "normalized": "51 المادة"
+    },
+    {
+      "id": 83,
+      "type": "ARTICLE",
+      "text": "مادة 52",
+      "normalized": "52 المادة"
+    },
+    {
+      "id": 84,
+      "type": "ARTICLE",
+      "text": "مادة 53",
+      "normalized": "53 المادة"
+    },
+    {
+      "id": 85,
+      "type": "ARTICLE",
+      "text": "مادة 54",
+      "normalized": "54 المادة"
+    },
+    {
+      "id": 86,
+      "type": "CHAPTER",
+      "text": "باب 3",
+      "normalized": "3 الباب"
+    },
+    {
+      "id": 87,
+      "type": "SECTION",
+      "text": "مجالات التكوين",
+      "normalized": "مجالات التكوين"
+    },
+    {
+      "id": 88,
+      "type": "ARTICLE",
+      "text": "مادة 55",
+      "normalized": "55 المادة"
+    },
+    {
+      "id": 89,
+      "type": "ARTICLE",
+      "text": "مادة 56",
+      "normalized": "56 المادة"
+    },
+    {
+      "id": 90,
+      "type": "ARTICLE",
+      "text": "مادة 57",
+      "normalized": "57 المادة"
+    },
+    {
+      "id": 91,
+      "type": "ARTICLE",
+      "text": "مادة 58",
+      "normalized": "58 المادة"
+    },
+    {
+      "id": 92,
+      "type": "ARTICLE",
+      "text": "مادة 59",
+      "normalized": "59 المادة"
+    },
+    {
+      "id": 93,
+      "type": "ARTICLE",
+      "text": "مادة 60",
+      "normalized": "60 المادة"
+    },
+    {
+      "id": 94,
+      "type": "ARTICLE",
+      "text": "مادة 61",
+      "normalized": "61 المادة"
+    },
+    {
+      "id": 95,
+      "type": "ARTICLE",
+      "text": "مادة 62",
+      "normalized": "62 المادة"
+    },
+    {
+      "id": 96,
+      "type": "ARTICLE",
+      "text": "مادة 63",
+      "normalized": "63 المادة"
+    },
+    {
+      "id": 97,
+      "type": "ARTICLE",
+      "text": "مادة 64",
+      "normalized": "64 المادة"
+    },
+    {
+      "id": 98,
+      "type": "ARTICLE",
+      "text": "مادة 65",
+      "normalized": "65 المادة"
+    },
+    {
+      "id": 99,
+      "type": "ARTICLE",
+      "text": "مادة 66",
+      "normalized": "66 المادة"
+    },
+    {
+      "id": 100,
+      "type": "ARTICLE",
+      "text": "مادة 67",
+      "normalized": "67 المادة"
+    },
+    {
+      "id": 101,
+      "type": "CHAPTER",
+      "text": "قسم 4",
+      "normalized": "4 القسم"
+    },
+    {
+      "id": 102,
+      "type": "SECTION",
+      "text": "أحكام انتقالية وختامية",
+      "normalized": "أحكام انتقالية وختامية"
+    },
+    {
+      "id": 103,
+      "type": "ARTICLE",
+      "text": "مادة 68",
+      "normalized": "68 المادة"
+    },
+    {
+      "id": 104,
+      "type": "ARTICLE",
+      "text": "مادة 69",
+      "normalized": "69 المادة"
+    },
+    {
+      "id": 105,
+      "type": "ARTICLE",
+      "text": "مادة 70",
+      "normalized": "70 المادة"
+    },
+    {
+      "id": 106,
+      "type": "ARTICLE",
+      "text": "مادة 71",
+      "normalized": "71 المادة"
+    },
+    {
+      "id": 107,
+      "type": "ARTICLE",
+      "text": "مادة 72",
+      "normalized": "72 المادة"
+    },
+    {
+      "id": 108,
+      "type": "ARTICLE",
+      "text": "مادة 73",
+      "normalized": "73 المادة"
+    },
+    {
+      "id": 109,
+      "type": "PERSON",
+      "text": "عزيز اخنوش",
+      "normalized": "عزيز اخنوش"
+    },
+    {
+      "id": 110,
+      "type": "GOVERNMENT_BODY",
+      "text": "رئيس الحكومة",
+      "normalized": "رئيس الحكومة"
+    },
+    {
+      "id": 111,
+      "type": "INTERNAL_REF",
+      "text": "من 29 إلى 32",
+      "normalized": "الفصل 29-32"
+    },
+    {
+      "id": 112,
+      "type": "INTERNAL_REF",
+      "text": "من 4 إلى 12",
+      "normalized": "الفصل 4-12"
+    },
+    {
+      "id": 113,
+      "type": "INTERNAL_REF",
+      "text": "الفصلين 42 و50",
+      "normalized": "الفصل 42_50"
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": 1,
+      "type": "enacted_by",
+      "source_id": 4,
+      "target_id": 1
+    },
+    {
+      "relation_id": 2,
+      "type": "effective_on",
+      "source_id": 1,
+      "target_id": 2
+    },
+    {
+      "relation_id": 3,
+      "type": "effective_on",
+      "source_id": 1,
+      "target_id": 3
+    },
+    {
+      "relation_id": 4,
+      "type": "published_in",
+      "source_id": 4,
+      "target_id": 5
+    },
+    {
+      "relation_id": 5,
+      "type": "approved_by",
+      "source_id": 4,
+      "target_id": 13
+    },
+    {
+      "relation_id": 6,
+      "type": "signed_by",
+      "source_id": 1,
+      "target_id": 14
+    },
+    {
+      "relation_id": 7,
+      "type": "amended_by",
+      "source_id": 4,
+      "target_id": 7
+    },
+    {
+      "relation_id": 8,
+      "type": "contains",
+      "source_id": 15,
+      "target_id": 17
+    },
+    {
+      "relation_id": 9,
+      "type": "contains",
+      "source_id": 15,
+      "target_id": 18
+    },
+    {
+      "relation_id": 10,
+      "type": "contains",
+      "source_id": 15,
+      "target_id": 19
+    },
+    {
+      "relation_id": 11,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 30
+    },
+    {
+      "relation_id": 12,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 31
+    },
+    {
+      "relation_id": 13,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 32
+    },
+    {
+      "relation_id": 14,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 33
+    },
+    {
+      "relation_id": 15,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 34
+    },
+    {
+      "relation_id": 16,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 35
+    },
+    {
+      "relation_id": 17,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 36
+    },
+    {
+      "relation_id": 18,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 37
+    },
+    {
+      "relation_id": 19,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 38
+    },
+    {
+      "relation_id": 20,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 39
+    },
+    {
+      "relation_id": 21,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 40
+    },
+    {
+      "relation_id": 22,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 41
+    },
+    {
+      "relation_id": 23,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 42
+    },
+    {
+      "relation_id": 24,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 43
+    },
+    {
+      "relation_id": 25,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 44
+    },
+    {
+      "relation_id": 26,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 45
+    },
+    {
+      "relation_id": 27,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 46
+    },
+    {
+      "relation_id": 28,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 47
+    },
+    {
+      "relation_id": 29,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 48
+    },
+    {
+      "relation_id": 30,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 49
+    },
+    {
+      "relation_id": 31,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 50
+    },
+    {
+      "relation_id": 32,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 51
+    },
+    {
+      "relation_id": 33,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 52
+    },
+    {
+      "relation_id": 34,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 53
+    },
+    {
+      "relation_id": 35,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 54
+    },
+    {
+      "relation_id": 36,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 55
+    },
+    {
+      "relation_id": 37,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 56
+    },
+    {
+      "relation_id": 38,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 57
+    },
+    {
+      "relation_id": 39,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 58
+    },
+    {
+      "relation_id": 40,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 59
+    },
+    {
+      "relation_id": 41,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 60
+    },
+    {
+      "relation_id": 42,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 61
+    },
+    {
+      "relation_id": 43,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 62
+    },
+    {
+      "relation_id": 44,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 63
+    },
+    {
+      "relation_id": 45,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 64
+    },
+    {
+      "relation_id": 46,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 65
+    },
+    {
+      "relation_id": 47,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 66
+    },
+    {
+      "relation_id": 48,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 67
+    },
+    {
+      "relation_id": 49,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 68
+    },
+    {
+      "relation_id": 50,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 69
+    },
+    {
+      "relation_id": 51,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 70
+    },
+    {
+      "relation_id": 52,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 71
+    },
+    {
+      "relation_id": 53,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 72
+    },
+    {
+      "relation_id": 54,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 73
+    },
+    {
+      "relation_id": 55,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 74
+    },
+    {
+      "relation_id": 56,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 75
+    },
+    {
+      "relation_id": 57,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 76
+    },
+    {
+      "relation_id": 58,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 77
+    },
+    {
+      "relation_id": 59,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 78
+    },
+    {
+      "relation_id": 60,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 79
+    },
+    {
+      "relation_id": 61,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 80
+    },
+    {
+      "relation_id": 62,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 81
+    },
+    {
+      "relation_id": 63,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 82
+    },
+    {
+      "relation_id": 64,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 83
+    },
+    {
+      "relation_id": 65,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 84
+    },
+    {
+      "relation_id": 66,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 85
+    },
+    {
+      "relation_id": 67,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 86
+    },
+    {
+      "relation_id": 68,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 87
+    },
+    {
+      "relation_id": 69,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 88
+    },
+    {
+      "relation_id": 70,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 89
+    },
+    {
+      "relation_id": 71,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 90
+    },
+    {
+      "relation_id": 72,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 91
+    },
+    {
+      "relation_id": 73,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 92
+    },
+    {
+      "relation_id": 74,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 93
+    },
+    {
+      "relation_id": 75,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 94
+    },
+    {
+      "relation_id": 76,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 95
+    },
+    {
+      "relation_id": 77,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 96
+    },
+    {
+      "relation_id": 78,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 97
+    },
+    {
+      "relation_id": 79,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 98
+    },
+    {
+      "relation_id": 80,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 99
+    },
+    {
+      "relation_id": 81,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 100
+    },
+    {
+      "relation_id": 82,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 101
+    },
+    {
+      "relation_id": 83,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 102
+    },
+    {
+      "relation_id": 84,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 103
+    },
+    {
+      "relation_id": 85,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 104
+    },
+    {
+      "relation_id": 86,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 105
+    },
+    {
+      "relation_id": 87,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 106
+    },
+    {
+      "relation_id": 88,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 107
+    },
+    {
+      "relation_id": 89,
+      "type": "contains",
+      "source_id": 20,
+      "target_id": 108
+    },
+    {
+      "relation_id": 90,
+      "type": "refers_to",
+      "source_id": 111,
+      "target_id": 58
+    },
+    {
+      "relation_id": 91,
+      "type": "refers_to",
+      "source_id": 111,
+      "target_id": 59
+    },
+    {
+      "relation_id": 92,
+      "type": "refers_to",
+      "source_id": 111,
+      "target_id": 60
+    },
+    {
+      "relation_id": 93,
+      "type": "refers_to",
+      "source_id": 111,
+      "target_id": 61
+    },
+    {
+      "relation_id": 94,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 24
+    },
+    {
+      "relation_id": 95,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 25
+    },
+    {
+      "relation_id": 96,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 26
+    },
+    {
+      "relation_id": 97,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 27
+    },
+    {
+      "relation_id": 98,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 30
+    },
+    {
+      "relation_id": 99,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 31
+    },
+    {
+      "relation_id": 100,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 32
+    },
+    {
+      "relation_id": 101,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 33
+    },
+    {
+      "relation_id": 102,
+      "type": "refers_to",
+      "source_id": 112,
+      "target_id": 34
+    },
+    {
+      "relation_id": 103,
+      "type": "refers_to",
+      "source_id": 113,
+      "target_id": 71
+    },
+    {
+      "relation_id": 104,
+      "type": "refers_to",
+      "source_id": 113,
+      "target_id": 79
+    }
+  ]
+}
