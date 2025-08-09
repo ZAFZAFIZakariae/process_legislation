@@ -92,7 +92,7 @@
         return value.replace(/<([^,<>]+), id:(\d+)>/g, function(_m, txt, id) {
             const ent = entityMap[id];
             const bold = `<strong>${escapeHtml(txt)}</strong>`;
-            if (ent && ((ent.relations && ent.relations.length) || (ent.references && ent.references.length))) {
+            if (ent) {
                 return `<a href="#entity-${id}" class="entity-link">${bold}</a>`;
             }
             return bold;
@@ -156,6 +156,29 @@
         }
     }
     render(document.getElementById('json-tree'), data);
+
+    // allow entity links to both open the structure and scroll to entity details
+    document.querySelectorAll('.entity-link').forEach(link => {
+        link.addEventListener('click', ev => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            let parent = link.closest('details');
+            while (parent) {
+                parent.open = true;
+                parent = parent.parentElement && parent.parentElement.closest('details');
+            }
+            const id = link.getAttribute('href').substring(1);
+            const summaryEl = document.getElementById(id);
+            if (summaryEl) {
+                let entDetails = summaryEl.closest('details');
+                while (entDetails) {
+                    entDetails.open = true;
+                    entDetails = entDetails.parentElement && entDetails.parentElement.closest('details');
+                }
+                summaryEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    });
     </script>
     {% endif %}
 </main>
