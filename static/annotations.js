@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const updNorm = document.getElementById('upd-norm');
     const updStart = document.getElementById('upd-start');
     const updEnd = document.getElementById('upd-end');
+    const nudgeStartBtns = document.querySelectorAll('.nudge-start');
+    const nudgeEndBtns = document.querySelectorAll('.nudge-end');
     const repStart = document.getElementById('rep-start');
     const repEnd = document.getElementById('rep-end');
 
@@ -15,6 +17,34 @@ document.addEventListener('DOMContentLoaded', () => {
         range.selectNodeContents(textDiv);
         range.setEnd(node, offset);
         return range.toString().length;
+    }
+
+    function setSelectionRange(start, end) {
+        const walker = document.createTreeWalker(textDiv, NodeFilter.SHOW_TEXT);
+        let count = 0;
+        let sNode = null, sOffset = 0, eNode = null, eOffset = 0;
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            const len = node.textContent.length;
+            if (!sNode && start <= count + len) {
+                sNode = node;
+                sOffset = start - count;
+            }
+            if (!eNode && end <= count + len) {
+                eNode = node;
+                eOffset = end - count;
+                break;
+            }
+            count += len;
+        }
+        if (sNode && eNode) {
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.setStart(sNode, sOffset);
+            range.setEnd(eNode, eOffset);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
     }
 
     textDiv.addEventListener('mouseup', () => {
@@ -28,6 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
         addEnd.value = end;
         repStart.value = start;
         repEnd.value = end;
+        const selected = document.querySelector('.entity-mark.selected');
+        if (selected) {
+            updStart.value = start;
+            updEnd.value = end;
+        }
     });
 
     document.querySelectorAll('.entity-mark').forEach(span => {
@@ -39,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updNorm.value = span.dataset.norm || '';
             updStart.value = span.dataset.start;
             updEnd.value = span.dataset.end;
+            setSelectionRange(parseInt(span.dataset.start), parseInt(span.dataset.end));
         });
     });
 
@@ -54,6 +90,30 @@ document.addEventListener('DOMContentLoaded', () => {
             updNorm.value = tr.dataset.norm || '';
             updStart.value = tr.dataset.start;
             updEnd.value = tr.dataset.end;
+            setSelectionRange(parseInt(tr.dataset.start), parseInt(tr.dataset.end));
+        });
+    });
+
+    nudgeStartBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const delta = parseInt(btn.dataset.delta, 10) || 0;
+            let start = parseInt(updStart.value || '0', 10) + delta;
+            let end = parseInt(updEnd.value || '0', 10);
+            if (start < 0) start = 0;
+            if (start > end) start = end;
+            updStart.value = start;
+            setSelectionRange(start, end);
+        });
+    });
+
+    nudgeEndBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const delta = parseInt(btn.dataset.delta, 10) || 0;
+            let start = parseInt(updStart.value || '0', 10);
+            let end = parseInt(updEnd.value || '0', 10) + delta;
+            if (end < start) end = start;
+            updEnd.value = end;
+            setSelectionRange(start, end);
         });
     });
 });
