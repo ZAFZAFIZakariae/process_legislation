@@ -98,7 +98,7 @@
     </form>
 </main>
 <script>
-    const data = {{ data | tojson }};
+    const rawData = {{ data | tojson }};
     const entitiesData = {{ entities | tojson }};
     const entityMap = {};
     entitiesData.forEach(e => { entityMap[e.id] = e; });
@@ -147,6 +147,31 @@
         }
         container.appendChild(details);
     }
+
+    function toNode(key, value) {
+        if (value === null || typeof value !== 'object') {
+            return { type: key, text: String(value) };
+        }
+        if (Array.isArray(value)) {
+            return { type: key, children: value.map((v, i) => toNode(String(i), v)) };
+        }
+        if (value.type) {
+            const node = { type: value.type };
+            if (value.number) node.number = value.number;
+            if (value.title) node.title = value.title;
+            if (value.text) node.text = value.text;
+            if (Array.isArray(value.children)) {
+                node.children = value.children.map((c, i) => toNode(String(i), c));
+            }
+            return node;
+        }
+        return {
+            type: key,
+            children: Object.entries(value).map(([k, v]) => toNode(k, v)),
+        };
+    }
+
+    const data = toNode('{{ file }}', rawData);
 
     function render(container, obj) {
         if (Array.isArray(obj)) {
