@@ -121,9 +121,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const startTop = window.scrollY + startRect.top + (startRect.height - handleH) / 2;
         const endTop = window.scrollY + endRect.top + (endRect.height - handleH) / 2;
         startHandle.style.top = `${startTop}px`;
-        startHandle.style.left = `${window.scrollX + startRect.left}px`;
         endHandle.style.top = `${endTop}px`;
-        endHandle.style.left = `${window.scrollX + endRect.right - endHandle.offsetWidth}px`;
+
+        // Determine which side represents the start/end based on text direction
+        const direction = span ? window.getComputedStyle(span).direction : 'ltr';
+        if (direction === 'rtl') {
+            startHandle.style.left = `${window.scrollX + startRect.right - startHandle.offsetWidth}px`;
+            endHandle.style.left = `${window.scrollX + endRect.left}px`;
+        } else {
+            startHandle.style.left = `${window.scrollX + startRect.left}px`;
+            endHandle.style.left = `${window.scrollX + endRect.right - endHandle.offsetWidth}px`;
+        }
+
         startHandle.style.display = 'block';
         endHandle.style.display = 'block';
     }
@@ -180,7 +189,14 @@ document.addEventListener('DOMContentLoaded', () => {
         handle.addEventListener('mousedown', startDrag);
         handle.addEventListener('pointerdown', startDrag);
         handle.addEventListener('click', ev => {
-            if (wasDragging) { wasDragging = false; return; }
+            if (wasDragging) {
+                wasDragging = false;
+                // Prevent the document-level click handler from firing
+                // after a drag operation, which would otherwise hide the
+                // handles and clear the current selection.
+                ev.stopPropagation();
+                return;
+            }
             pendingHandle = handle === startHandle ? 'start' : 'end';
             ev.stopPropagation();
         });
@@ -220,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('pointerup', endDrag);
 
     document.addEventListener('click', ev => {
-        if (!ev.target.closest('.entity-mark')) {
+        if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             hideHandles();
         }
