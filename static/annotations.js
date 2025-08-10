@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function positionHandles(span) {
-        if (!span) {
+        if (!editMode || !span) {
             hideHandles();
             return;
         }
@@ -343,14 +343,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             span.classList.add('selected');
             currentSpan = span;
-            const start = parseInt(span.dataset.start, 10);
-            const end = parseInt(span.dataset.end, 10);
-            if (!Number.isNaN(start) && !Number.isNaN(end)) {
-                setSelectionRange(start, end);
-                positionHandles(span);
-            } else {
-                hideHandles();
-            }
+            editMode = false;
+            // Remove any existing text selection to prevent the browser from
+            // highlighting text when entities are clicked.
+            const sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
+            hideHandles();
             showTypePopup(span);
         });
     });
