@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const rect = span.getBoundingClientRect();
         const handleH = startHandle.offsetHeight || 20;
-        const top = window.scrollY + rect.top - handleH;
+        const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
         startHandle.style.top = `${top}px`;
         startHandle.style.left = `${window.scrollX + rect.left}px`;
         endHandle.style.top = `${top}px`;
