@@ -83,29 +83,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function positionHandles(span) {
-        // Prefer to position handles based on the active text selection so
-        // they track the live offsets as the user drags the markers. If there
-        // is no selection (e.g. before an entity is chosen), fall back to the
-        // span's bounding box.
+        // Place the draggable handles at the precise start/end character
+        // positions of the current text selection so that the brackets appear
+        // to wrap the entity. If there is no active selection (for example,
+        // before an entity has been chosen) fall back to the span's bounding
+        // box so the handles still appear near the entity text.
         const sel = window.getSelection();
-        let rect = null;
-        if (sel && sel.rangeCount > 0 && textDiv.contains(sel.anchorNode)) {
-            rect = sel.getRangeAt(0).getBoundingClientRect();
-        } else if (span) {
-            rect = span.getBoundingClientRect();
+        let startRect = null;
+        let endRect = null;
+
+        if (sel && sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            if (textDiv.contains(range.startContainer) && textDiv.contains(range.endContainer)) {
+                const startRange = range.cloneRange();
+                startRange.collapse(true);
+                startRect = startRange.getBoundingClientRect();
+                const endRange = range.cloneRange();
+                endRange.collapse(false);
+                endRect = endRange.getBoundingClientRect();
+            }
         }
 
-        if (!rect) {
+        // If we couldn't derive rectangles from the selection, use the span
+        // itself as a fallback so handles appear in a sensible location.
+        if ((!startRect || !endRect) && span) {
+            const rect = span.getBoundingClientRect();
+            startRect = rect;
+            endRect = rect;
+        }
+
+        if (!startRect || !endRect) {
             hideHandles();
             return;
         }
 
         const handleH = startHandle.offsetHeight || 20;
-        const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
-        startHandle.style.top = `${top}px`;
-        startHandle.style.left = `${window.scrollX + rect.left}px`;
-        endHandle.style.top = `${top}px`;
-        endHandle.style.left = `${window.scrollX + rect.right - endHandle.offsetWidth}px`;
+        const startTop = window.scrollY + startRect.top + (startRect.height - handleH) / 2;
+        const endTop = window.scrollY + endRect.top + (endRect.height - handleH) / 2;
+        startHandle.style.top = `${startTop}px`;
+        startHandle.style.left = `${window.scrollX + startRect.left}px`;
+        endHandle.style.top = `${endTop}px`;
+        endHandle.style.left = `${window.scrollX + endRect.right - endHandle.offsetWidth}px`;
         startHandle.style.display = 'block';
         endHandle.style.display = 'block';
     }
