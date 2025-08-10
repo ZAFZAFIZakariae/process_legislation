@@ -155,22 +155,14 @@ pre {
     background-color: orange;
 }
 
-/* Floating arrows for adjusting entity boundaries */
+/* Floating handles for adjusting entity boundaries */
 .entity-handle {
     position: absolute;
-    background: #fff;
-    border: 1px solid #888;
-    border-radius: 4px;
-    padding: 2px;
     z-index: 100;
-}
-
-.entity-handle button {
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 0 2px;
-    font-size: 12px;
+    font-weight: bold;
+    cursor: ew-resize;
+    user-select: none;
+    color: red;
 }
 
 table {
