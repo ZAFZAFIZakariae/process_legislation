@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const rect = span.getBoundingClientRect();
         const handleH = startHandle.offsetHeight || 20;
-        const top = window.scrollY + rect.top - handleH;
+        const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
         startHandle.style.top = `${top}px`;
         startHandle.style.left = `${window.scrollX + rect.left}px`;
         endHandle.style.top = `${top}px`;
@@ -49,16 +49,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let dragTarget = null;
 
     function getOffsetFromCoords(x, y) {
+        // Temporarily hide the handles so caret lookup uses the underlying text
+        const prevVisStart = startHandle.style.visibility;
+        const prevVisEnd = endHandle.style.visibility;
+        startHandle.style.visibility = 'hidden';
+        endHandle.style.visibility = 'hidden';
+
         let range;
         if (document.caretPositionFromPoint) {
             const pos = document.caretPositionFromPoint(x, y);
-            if (!pos) return null;
-            range = document.createRange();
-            range.setStart(pos.offsetNode, pos.offset);
+            if (pos) {
+                range = document.createRange();
+                range.setStart(pos.offsetNode, pos.offset);
+            }
         } else if (document.caretRangeFromPoint) {
             range = document.caretRangeFromPoint(x, y);
         }
+
+        startHandle.style.visibility = prevVisStart;
+        endHandle.style.visibility = prevVisEnd;
         if (!range) return null;
+
         const node = range.startContainer;
         const offset = range.startOffset;
         if (!textDiv.contains(node)) return null;
