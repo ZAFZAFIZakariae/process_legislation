@@ -163,6 +163,7 @@ pre {
     cursor: ew-resize;
     user-select: none;
     color: red;
+    touch-action: none;
 }
 
 /* Popup for changing annotation type */
