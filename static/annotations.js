@@ -137,6 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
             dragTarget = handle === startHandle ? 'start' : 'end';
             pendingHandle = null;
             wasDragging = false;
+            // Disable text selection while dragging the handles so the
+            // mouse movement adjusts entity offsets instead of creating a
+            // new selection range in the document.
+            textDiv.style.userSelect = 'none';
             if (handle.setPointerCapture && ev.pointerId !== undefined) {
                 handle.setPointerCapture(ev.pointerId);
             }
@@ -155,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dragTarget) return;
         const selected = document.querySelector('.entity-mark.selected');
         if (!selected) return;
+        ev.preventDefault();
         const offset = getOffsetFromCoords(ev.clientX, ev.clientY);
         if (offset == null) return;
         let start = parseInt(updStart.value || '0', 10);
@@ -176,7 +181,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('mousemove', moveHandler);
     document.addEventListener('pointermove', moveHandler);
 
-    const endDrag = () => { dragTarget = null; };
+    const endDrag = () => {
+        dragTarget = null;
+        // Re-enable text selection after the drag completes.
+        textDiv.style.userSelect = '';
+    };
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('pointerup', endDrag);
 
