@@ -169,7 +169,38 @@ def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    """Dashboard landing page."""
+    return render_template('dashboard.html')
+
+
+@app.route('/corpus')
+def corpus():
+    return render_template('corpus.html')
+
+
+@app.route('/document')
+def document():
+    return render_template('document.html')
+
+
+@app.route('/graph')
+def graph_page():
+    return render_template('graph.html')
+
+
+@app.route('/pipelines')
+def pipelines_page():
+    return render_template('pipelines.html')
+
+
+@app.route('/sql')
+def sql_lab():
+    return render_template('sql.html')
+
+
+@app.route('/settings')
+def settings_page():
+    return render_template('settings.html')
 
 @app.route('/entities', methods=['GET', 'POST'])
 def index():
