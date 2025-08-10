@@ -132,61 +132,90 @@
         });
     }
 
+    function renderNode(node, container) {
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.classList.add('json-key');
+        let label = '';
+        if (node.type) label += escapeHtml(node.type);
+        if (node.number) {
+            label += (label ? ' ' : '') + escapeHtml(node.number);
+            const num = canonicalNum(node.number);
+            if (num) summary.id = `node-${num}`;
+        }
+        if (node.title) {
+            label += (label ? ': ' : '') + formatText(node.title);
+        }
+        summary.innerHTML = label || (node.text ? formatText(node.text) : '');
+        details.appendChild(summary);
+
+        if (node.text) {
+            const textDiv = document.createElement('div');
+            textDiv.className = 'json-value';
+            textDiv.innerHTML = formatText(node.text);
+            details.appendChild(textDiv);
+        }
+
+        if (Array.isArray(node.children) && node.children.length) {
+            const ul = document.createElement('ul');
+            node.children.forEach(child => {
+                const li = document.createElement('li');
+                if (child && typeof child === 'object') {
+                    renderNode(child, li);
+                } else {
+                    render(li, child);
+                }
+                ul.appendChild(li);
+            });
+            details.appendChild(ul);
+        }
+
+        container.appendChild(details);
+    }
+
     function render(container, obj) {
         if (Array.isArray(obj)) {
             const ul = document.createElement('ul');
-            obj.forEach((item, idx) => {
+            obj.forEach(item => {
                 const li = document.createElement('li');
-                if (typeof item === 'object' && item !== null) {
-                    const details = document.createElement('details');
-                    const summary = document.createElement('summary');
-                    summary.classList.add('json-key');
-                    let label = item.text || item.title || item.number || item.id || idx;
-                    if (typeof label === 'string' && label.length > 40) {
-                        label = label.slice(0, 40) + '...';
-                    }
-                    if (item.number) {
-                        const num = canonicalNum(item.number);
-                        if (num) {
-                            summary.id = `node-${num}`;
-                        }
-                    }
-                    summary.innerHTML = formatText(label);
-                    details.appendChild(summary);
-                    render(details, item);
-                    li.appendChild(details);
+                if (item && typeof item === 'object' && (item.type || item.children || item.title || item.number || item.text)) {
+                    renderNode(item, li);
                 } else {
                     render(li, item);
                 }
                 ul.appendChild(li);
             });
             container.appendChild(ul);
-        } else if (typeof obj === 'object' && obj !== null) {
-            const ul = document.createElement('ul');
-            Object.keys(obj).sort().forEach(key => {
-                const value = obj[key];
-                const li = document.createElement('li');
-                if (typeof value === 'object' && value !== null) {
-                    const details = document.createElement('details');
-                    const summary = document.createElement('summary');
-                    summary.classList.add('json-key');
-                    summary.textContent = key;
-                    details.appendChild(summary);
-                    render(details, value);
-                    li.appendChild(details);
-                } else {
-                    const keySpan = document.createElement('span');
-                    keySpan.className = 'json-key';
-                    keySpan.textContent = key + ': ';
-                    const valSpan = document.createElement('span');
-                    valSpan.className = 'json-value';
-                    valSpan.innerHTML = formatText(value);
-                    li.appendChild(keySpan);
-                    li.appendChild(valSpan);
-                }
-                ul.appendChild(li);
-            });
-            container.appendChild(ul);
+        } else if (obj && typeof obj === 'object') {
+            if (obj.type || obj.children || obj.title || obj.number || obj.text) {
+                renderNode(obj, container);
+            } else {
+                const ul = document.createElement('ul');
+                Object.keys(obj).sort().forEach(key => {
+                    const value = obj[key];
+                    const li = document.createElement('li');
+                    if (value && typeof value === 'object') {
+                        const details = document.createElement('details');
+                        const summary = document.createElement('summary');
+                        summary.classList.add('json-key');
+                        summary.textContent = key;
+                        details.appendChild(summary);
+                        render(details, value);
+                        li.appendChild(details);
+                    } else {
+                        const keySpan = document.createElement('span');
+                        keySpan.className = 'json-key';
+                        keySpan.textContent = key + ': ';
+                        const valSpan = document.createElement('span');
+                        valSpan.className = 'json-value';
+                        valSpan.innerHTML = formatText(value);
+                        li.appendChild(keySpan);
+                        li.appendChild(valSpan);
+                    }
+                    ul.appendChild(li);
+                });
+                container.appendChild(ul);
+            }
         } else {
             const valSpan = document.createElement('span');
             valSpan.className = 'json-value';
