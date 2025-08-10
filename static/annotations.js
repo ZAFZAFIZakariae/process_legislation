@@ -101,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let dragTarget = null;
+    let wasDragging = false;
+    let pendingHandle = null;
 
     function getOffsetFromCoords(x, y) {
         // Temporarily hide the handles so caret lookup uses the underlying text
@@ -133,6 +135,8 @@ document.addEventListener('DOMContentLoaded', () => {
     [startHandle, endHandle].forEach(handle => {
         const startDrag = ev => {
             dragTarget = handle === startHandle ? 'start' : 'end';
+            pendingHandle = null;
+            wasDragging = false;
             if (handle.setPointerCapture && ev.pointerId !== undefined) {
                 handle.setPointerCapture(ev.pointerId);
             }
@@ -141,6 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         handle.addEventListener('mousedown', startDrag);
         handle.addEventListener('pointerdown', startDrag);
+        handle.addEventListener('click', ev => {
+            if (wasDragging) { wasDragging = false; return; }
+            pendingHandle = handle === startHandle ? 'start' : 'end';
+            ev.stopPropagation();
+        });
     });
     const moveHandler = ev => {
         if (!dragTarget) return;
@@ -161,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setSelectionRange(start, end);
         positionHandles(selected);
+        wasDragging = true;
     };
 
     document.addEventListener('mousemove', moveHandler);
@@ -219,11 +229,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!textDiv.contains(range.startContainer) || !textDiv.contains(range.endContainer)) return;
         const start = getOffset(range.startContainer, range.startOffset);
         const end = getOffset(range.endContainer, range.endOffset);
+        const selected = document.querySelector('.entity-mark.selected');
+
+        if (pendingHandle && selected) {
+            let s = parseInt(updStart.value || selected.dataset.start || '0', 10);
+            let e = parseInt(updEnd.value || selected.dataset.end || '0', 10);
+            if (pendingHandle === 'start') {
+                s = Math.min(start, e);
+                updStart.value = s;
+                selected.dataset.start = s;
+            } else {
+                e = Math.max(end, s);
+                updEnd.value = e;
+                selected.dataset.end = e;
+            }
+            setSelectionRange(s, e);
+            positionHandles(selected);
+            pendingHandle = null;
+            return;
+        }
+
         addStart.value = start;
         addEnd.value = end;
         repStart.value = start;
         repEnd.value = end;
-        const selected = document.querySelector('.entity-mark.selected');
         if (selected) {
             const curStart = parseInt(updStart.value || selected.dataset.start || '0', 10);
             const curEnd = parseInt(updEnd.value || selected.dataset.end || '0', 10);
@@ -246,8 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 selected.dataset.end = updEnd.value;
                 setSelectionRange(start, end);
             }
+            positionHandles(selected);
         }
-        if (selected) positionHandles(selected);
     });
 
     document.querySelectorAll('.entity-mark').forEach(span => {
