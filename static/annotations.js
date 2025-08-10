@@ -15,13 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Floating handles for adjusting entity offsets in the text view
     const startHandle = document.createElement('div');
     startHandle.className = 'entity-handle';
-    startHandle.innerHTML = '<button data-pos="start" data-delta="-1">&lt;</button><button data-pos="start" data-delta="1">&gt;</button>';
+    startHandle.textContent = '[';
     startHandle.style.display = 'none';
     document.body.appendChild(startHandle);
 
     const endHandle = document.createElement('div');
     endHandle.className = 'entity-handle';
-    endHandle.innerHTML = '<button data-pos="end" data-delta="-1">&lt;</button><button data-pos="end" data-delta="1">&gt;</button>';
+    endHandle.textContent = ']';
     endHandle.style.display = 'none';
     document.body.appendChild(endHandle);
 
@@ -46,34 +46,56 @@ document.addEventListener('DOMContentLoaded', () => {
         endHandle.style.display = 'block';
     }
 
-    function handleArrowClick(target, delta) {
-        let start = parseInt(updStart.value || '0', 10);
-        let end = parseInt(updEnd.value || '0', 10);
+    let dragTarget = null;
+
+    function getOffsetFromCoords(x, y) {
+        let range;
+        if (document.caretPositionFromPoint) {
+            const pos = document.caretPositionFromPoint(x, y);
+            if (!pos) return null;
+            range = document.createRange();
+            range.setStart(pos.offsetNode, pos.offset);
+        } else if (document.caretRangeFromPoint) {
+            range = document.caretRangeFromPoint(x, y);
+        }
+        if (!range) return null;
+        const node = range.startContainer;
+        const offset = range.startOffset;
+        if (!textDiv.contains(node)) return null;
+        return getOffset(node, offset);
+    }
+
+    [startHandle, endHandle].forEach(handle => {
+        handle.addEventListener('mousedown', ev => {
+            dragTarget = handle === startHandle ? 'start' : 'end';
+            ev.preventDefault();
+            ev.stopPropagation();
+        });
+    });
+
+    document.addEventListener('mousemove', ev => {
+        if (!dragTarget) return;
         const selected = document.querySelector('.entity-mark.selected');
         if (!selected) return;
-        if (target === 'start') {
-            start = Math.max(0, start + delta);
-            if (start > end) start = end;
+        const offset = getOffsetFromCoords(ev.clientX, ev.clientY);
+        if (offset == null) return;
+        let start = parseInt(updStart.value || '0', 10);
+        let end = parseInt(updEnd.value || '0', 10);
+        if (dragTarget === 'start') {
+            start = Math.min(offset, end);
             updStart.value = start;
             selected.dataset.start = start;
         } else {
-            end = Math.max(start, end + delta);
+            end = Math.max(offset, start);
             updEnd.value = end;
             selected.dataset.end = end;
         }
         setSelectionRange(start, end);
         positionHandles(selected);
-    }
+    });
 
-    [startHandle, endHandle].forEach(handle => {
-        handle.addEventListener('click', ev => {
-            const btn = ev.target.closest('button');
-            if (!btn) return;
-            const pos = btn.dataset.pos;
-            const delta = parseInt(btn.dataset.delta, 10) || 0;
-            handleArrowClick(pos, delta);
-            ev.stopPropagation();
-        });
+    document.addEventListener('mouseup', () => {
+        dragTarget = null;
     });
 
     document.addEventListener('click', ev => {
