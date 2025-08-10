@@ -83,13 +83,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function positionHandles(span) {
-        if (!span) {
+        // Prefer to position handles based on the active text selection so
+        // they track the live offsets as the user drags the markers. If there
+        // is no selection (e.g. before an entity is chosen), fall back to the
+        // span's bounding box.
+        const sel = window.getSelection();
+        let rect = null;
+        if (sel && sel.rangeCount > 0 && textDiv.contains(sel.anchorNode)) {
+            rect = sel.getRangeAt(0).getBoundingClientRect();
+        } else if (span) {
+            rect = span.getBoundingClientRect();
+        }
+
+        if (!rect) {
             hideHandles();
             return;
         }
-        // Always base the handle positions on the span's bounding box so
-        // the brackets initially wrap the entity that was clicked.
-        const rect = span.getBoundingClientRect();
+
         const handleH = startHandle.offsetHeight || 20;
         const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
         startHandle.style.top = `${top}px`;
@@ -137,9 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
             dragTarget = handle === startHandle ? 'start' : 'end';
             pendingHandle = null;
             wasDragging = false;
-            // Disable text selection while dragging the handles so the
-            // mouse movement adjusts entity offsets instead of creating a
-            // new selection range in the document.
+            // Clear any existing selection and disable text selection while
+            // dragging so mouse movement adjusts offsets rather than creating
+            // a new highlighted range in the document.
+            const sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
             textDiv.style.userSelect = 'none';
             if (handle.setPointerCapture && ev.pointerId !== undefined) {
                 handle.setPointerCapture(ev.pointerId);
