@@ -84,7 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
             hideHandles();
             return;
         }
-        const rect = span.getBoundingClientRect();
+        let rect;
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            rect = sel.getRangeAt(0).getBoundingClientRect();
+        } else {
+            rect = span.getBoundingClientRect();
+        }
         const handleH = startHandle.offsetHeight || 20;
         const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
         startHandle.style.top = `${top}px`;
