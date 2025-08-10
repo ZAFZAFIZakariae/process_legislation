@@ -38,11 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showTypePopup(span) {
         if (!span) return;
-        const rect = span.getBoundingClientRect();
         typeSelect.value = span.dataset.type || '';
-        typePopup.style.top = `${window.scrollY + rect.top - typePopup.offsetHeight - 5}px`;
-        typePopup.style.left = `${window.scrollX + rect.left}px`;
         typePopup.style.display = 'block';
+        // Ensure the popup does not obscure the entity by positioning
+        // it *above* after we know its rendered height.
+        const rect = span.getBoundingClientRect();
+        const popupH = typePopup.offsetHeight;
+        typePopup.style.top = `${window.scrollY + rect.top - popupH - 5}px`;
+        typePopup.style.left = `${window.scrollX + rect.left}px`;
         currentSpan = span;
     }
 
@@ -84,13 +87,16 @@ document.addEventListener('DOMContentLoaded', () => {
             hideHandles();
             return;
         }
-        let rect;
+        // Base handle positions on the current text selection so they follow
+        // the updated offsets as the user drags, while initially wrapping the
+        // clicked entity because the selection is set to its span before this
+        // function runs.
         const sel = window.getSelection();
-        if (sel && sel.rangeCount > 0) {
-            rect = sel.getRangeAt(0).getBoundingClientRect();
-        } else {
-            rect = span.getBoundingClientRect();
+        if (!sel || sel.rangeCount === 0) {
+            hideHandles();
+            return;
         }
+        const rect = sel.getRangeAt(0).getBoundingClientRect();
         const handleH = startHandle.offsetHeight || 20;
         const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
         startHandle.style.top = `${top}px`;
