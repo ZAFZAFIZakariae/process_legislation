@@ -33,10 +33,29 @@ document.addEventListener('DOMContentLoaded', () => {
     typePopup.appendChild(typeSelect);
     document.body.appendChild(typePopup);
 
+    const actionPopup = document.createElement('div');
+    actionPopup.className = 'annotation-popup';
+    actionPopup.style.display = 'none';
+    const actionEditBtn = document.createElement('button');
+    actionEditBtn.textContent = 'Edit';
+    const actionDeleteBtn = document.createElement('button');
+    actionDeleteBtn.textContent = 'Delete';
+    actionPopup.appendChild(actionEditBtn);
+    actionPopup.appendChild(actionDeleteBtn);
+    document.body.appendChild(actionPopup);
+
     let currentSpan = null;
     let addRange = null;
     let editMode = false;
     let addMode = false;
+
+    function showActionPopup(span) {
+        if (!span) return;
+        const rect = span.getBoundingClientRect();
+        actionPopup.style.display = 'block';
+        actionPopup.style.top = `${window.scrollY + rect.bottom + 5}px`;
+        actionPopup.style.left = `${window.scrollX + rect.left}px`;
+    }
 
     function showTypePopup(span, rect) {
         if (span) {
@@ -63,6 +82,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (span.dataset.norm) fd.append('norm', span.dataset.norm);
         fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd });
     }
+
+    actionEditBtn.addEventListener('click', () => {
+        if (!currentSpan) return;
+        actionPopup.style.display = 'none';
+        const row = document.querySelector(`#entity-table tr[data-id="${currentSpan.dataset.id}"]`);
+        const btn = row ? row.querySelector('.edit-entity') : null;
+        if (btn) btn.click();
+    });
+
+    actionDeleteBtn.addEventListener('click', () => {
+        if (!currentSpan) return;
+        const fd = new FormData();
+        fd.append('action', 'delete');
+        fd.append('id', currentSpan.dataset.id);
+        fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
+            .then(() => window.location.reload());
+    });
 
     typeSelect.addEventListener('change', () => {
         const newType = typeSelect.value;
@@ -95,6 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
                 editMode = false;
             }
+        }
+        if (!actionPopup.contains(ev.target)) {
+            actionPopup.style.display = 'none';
         }
         if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
@@ -333,6 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     hideHandles();
                 }
+                actionPopup.style.display = 'none';
                 showTypePopup(span);
             }
         });
@@ -349,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const sel = window.getSelection();
             if (sel) sel.removeAllRanges();
             hideHandles();
-            showTypePopup(span);
+            showActionPopup(span);
         });
     });
 });
