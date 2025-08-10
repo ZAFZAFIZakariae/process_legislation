@@ -137,16 +137,16 @@
         const summary = document.createElement('summary');
         summary.classList.add('json-key');
         let label = '';
-        if (node.type) label += node.type;
+        if (node.type) label += escapeHtml(node.type);
         if (node.number) {
-            label += (label ? ' ' : '') + node.number;
+            label += (label ? ' ' : '') + escapeHtml(node.number);
             const num = canonicalNum(node.number);
             if (num) summary.id = `node-${num}`;
         }
         if (node.title) {
-            label += (label ? ': ' : '') + node.title;
+            label += (label ? ': ' : '') + formatText(node.title);
         }
-        summary.textContent = label || node.text || '';
+        summary.innerHTML = label || formatText(node.text || '');
         details.appendChild(summary);
 
         if (node.text) {
