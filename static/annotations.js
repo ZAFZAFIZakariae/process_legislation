@@ -34,15 +34,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.appendChild(typePopup);
 
     let currentSpan = null;
+    let addRange = null;
+    let editMode = false;
+    let addMode = false;
 
-    function showTypePopup(span) {
-        if (!span) return;
-        typeSelect.value = span.dataset.type || '';
+    function showTypePopup(span, rect) {
+        if (span) {
+            typeSelect.value = span.dataset.type || '';
+        }
         typePopup.style.display = 'block';
-        const rect = span.getBoundingClientRect();
-        const popupH = typePopup.offsetHeight;
-        typePopup.style.top = `${window.scrollY + rect.top - popupH - 5}px`;
-        typePopup.style.left = `${window.scrollX + rect.left}px`;
+        const r = rect || (span ? span.getBoundingClientRect() : null);
+        if (r) {
+            const popupH = typePopup.offsetHeight;
+            typePopup.style.top = `${window.scrollY + r.top - popupH - 5}px`;
+            typePopup.style.left = `${window.scrollX + r.left}px`;
+        }
         currentSpan = span;
     }
 
@@ -59,22 +65,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     typeSelect.addEventListener('change', () => {
-        if (!currentSpan) return;
         const newType = typeSelect.value;
-        currentSpan.dataset.type = newType;
-        const row = document.querySelector(`#entity-table tr[data-id="${currentSpan.dataset.id}"]`);
-        if (row) {
-            row.dataset.type = newType;
-            const cell = row.querySelector('td:nth-child(2)');
-            if (cell) cell.textContent = newType;
+        if (currentSpan) {
+            currentSpan.dataset.type = newType;
+            const row = document.querySelector(`#entity-table tr[data-id="${currentSpan.dataset.id}"]`);
+            if (row) {
+                row.dataset.type = newType;
+                const cell = row.querySelector('td:nth-child(2)');
+                if (cell) cell.textContent = newType;
+            }
+            saveEntity(currentSpan);
+        } else if (addRange) {
+            const fd = new FormData();
+            fd.append('action', 'add');
+            fd.append('start', addRange.start);
+            fd.append('end', addRange.end);
+            fd.append('type', newType);
+            fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
+                .then(() => window.location.reload());
+            addRange = null;
+            addMode = false;
         }
-        saveEntity(currentSpan);
         typePopup.style.display = 'none';
     });
 
     document.addEventListener('click', ev => {
         if (!typePopup.contains(ev.target)) {
             typePopup.style.display = 'none';
+            if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
+                editMode = false;
+            }
+        }
+        if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
+            document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
+            hideHandles();
+            currentSpan = null;
+            if (addMode) {
+                addMode = false;
+                addRange = null;
+            }
         }
     });
 
@@ -262,22 +291,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    document.querySelectorAll('.entity-mark').forEach(span => {
-        span.addEventListener('click', ev => {
-            ev.stopPropagation();
+    const addBtn = document.getElementById('add-entity-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            addMode = true;
+            const sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
-            span.classList.add('selected');
-            currentSpan = span;
-            const start = parseInt(span.dataset.start, 10);
-            const end = parseInt(span.dataset.end, 10);
-            if (!Number.isNaN(start) && !Number.isNaN(end)) {
-                setSelectionRange(start, end);
-                positionHandles(span);
-            } else {
-                hideHandles();
-            }
-            showTypePopup(span);
+            hideHandles();
+            currentSpan = null;
         });
+    }
+
+    textDiv.addEventListener('mouseup', ev => {
+        if (!addMode) return;
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) return;
+        const range = sel.getRangeAt(0);
+        if (!textDiv.contains(range.startContainer) || !textDiv.contains(range.endContainer)) return;
+        const start = getOffset(range.startContainer, range.startOffset);
+        const end = getOffset(range.endContainer, range.endOffset);
+        addRange = { start, end };
+        showTypePopup(null, range.getBoundingClientRect());
     });
 
     document.querySelectorAll('.edit-entity').forEach(btn => {
@@ -287,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             const span = document.querySelector(`.entity-mark[data-id="${tr.dataset.id}"]`);
             if (span) {
+                editMode = true;
                 span.classList.add('selected');
                 currentSpan = span;
                 const start = parseInt(span.dataset.start, 10);
@@ -297,6 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     hideHandles();
                 }
+                showTypePopup(span);
             }
         });
     });
