@@ -293,8 +293,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function getOffsetFromCoords(x, y) {
         const prevVisStart = startHandle.style.visibility;
         const prevVisEnd = endHandle.style.visibility;
+        const prevUserSelect = textDiv.style.userSelect;
+        const prevWebkitUserSelect = textDiv.style.webkitUserSelect;
+        const prevMozUserSelect = textDiv.style.MozUserSelect;
         startHandle.style.visibility = 'hidden';
         endHandle.style.visibility = 'hidden';
+        // Temporarily enable text selection so caretPositionFromPoint works in all browsers.
+        textDiv.style.userSelect = 'text';
+        textDiv.style.webkitUserSelect = 'text';
+        textDiv.style.MozUserSelect = 'text';
+        const rect = textDiv.getBoundingClientRect();
+        x = Math.max(rect.left, Math.min(x, rect.right - 1));
+        y = Math.max(rect.top, Math.min(y, rect.bottom - 1));
         let range;
         if (document.caretPositionFromPoint) {
             const pos = document.caretPositionFromPoint(x, y);
@@ -307,6 +317,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         startHandle.style.visibility = prevVisStart;
         endHandle.style.visibility = prevVisEnd;
+        textDiv.style.userSelect = prevUserSelect;
+        textDiv.style.webkitUserSelect = prevWebkitUserSelect;
+        textDiv.style.MozUserSelect = prevMozUserSelect;
         if (!range) return null;
         const node = range.startContainer;
         const off = range.startOffset;
@@ -321,6 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const sel = window.getSelection();
             if (sel) sel.removeAllRanges();
             textDiv.style.userSelect = 'none';
+            textDiv.style.webkitUserSelect = 'none';
+            textDiv.style.MozUserSelect = 'none';
             if (handle.setPointerCapture && ev.pointerId !== undefined) {
                 handle.setPointerCapture(ev.pointerId);
             }
@@ -329,12 +344,16 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         handle.addEventListener('mousedown', startDrag);
         handle.addEventListener('pointerdown', startDrag);
+        handle.addEventListener('touchstart', startDrag);
         // Some browsers do not bubble move/up events when pointer capture is used,
         // so also listen on the handles themselves to ensure dragging works.
         handle.addEventListener('mousemove', moveHandler);
         handle.addEventListener('pointermove', moveHandler);
+        handle.addEventListener('touchmove', moveHandler);
         handle.addEventListener('mouseup', endDrag);
         handle.addEventListener('pointerup', endDrag);
+        handle.addEventListener('touchend', endDrag);
+        handle.addEventListener('touchcancel', endDrag);
     });
 
     function moveHandler(ev) {
@@ -342,7 +361,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const selected = document.querySelector('.entity-mark.selected');
         if (!selected) return;
         ev.preventDefault();
-        const offset = getOffsetFromCoords(ev.clientX, ev.clientY);
+        const pt = ev.touches ? ev.touches[0] : ev;
+        const offset = getOffsetFromCoords(pt.clientX, pt.clientY);
         if (offset == null) return;
         let start = parseInt(selected.dataset.start || '0', 10);
         let end = parseInt(selected.dataset.end || '0', 10);
@@ -359,11 +379,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.addEventListener('mousemove', moveHandler);
     document.addEventListener('pointermove', moveHandler);
+    document.addEventListener('touchmove', moveHandler);
 
-    function endDrag() {
+    function endDrag(ev) {
         if (!dragTarget) return;
         dragTarget = null;
         textDiv.style.userSelect = '';
+        textDiv.style.webkitUserSelect = '';
+        textDiv.style.MozUserSelect = '';
+        if (ev && ev.pointerId !== undefined) {
+            [startHandle, endHandle].forEach(h => {
+                if (h.releasePointerCapture) {
+                    try { h.releasePointerCapture(ev.pointerId); } catch (e) {}
+                }
+            });
+        }
         if (wasDragging) {
             saveEntity(document.querySelector('.entity-mark.selected'));
             wasDragging = false;
@@ -371,6 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('pointerup', endDrag);
+    document.addEventListener('touchend', endDrag);
+    document.addEventListener('touchcancel', endDrag);
 
     document.addEventListener('click', ev => {
         if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
