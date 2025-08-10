@@ -402,6 +402,24 @@ def _load_annotation(name: str) -> tuple[str, list[dict], list[dict], str, str]:
             data = json.load(f)
         entities = data.get('entities', [])
         relations = data.get('relations', [])
+    # Compute entity offsets fresh from the raw text each time so the editor
+    # can position selection brackets without relying on stored start/end
+    # values.
+    if text:
+        lower = text.lower()
+        cursor = 0
+        for ent in entities:
+            ent_txt = str(ent.get('text', ''))
+            if not ent_txt:
+                continue
+            idx = lower.find(ent_txt.lower(), cursor)
+            if idx == -1:
+                idx = lower.find(ent_txt.lower())
+            if idx != -1:
+                ent['start_char'] = idx
+                ent['end_char'] = idx + len(ent_txt)
+                cursor = idx + len(ent_txt)
+        ae_fix_offsets(text, {'entities': entities})
     return text, entities, relations, txt_path, ner_path
 
 
@@ -411,8 +429,18 @@ def _save_annotation(text: str, entities: list[dict], relations: list[dict], txt
     with open(txt_path, 'w', encoding='utf-8') as f:
         f.write(text)
     os.makedirs(os.path.dirname(ner_path), exist_ok=True)
+    clean_entities: list[dict] = []
+    for ent in entities:
+        try:
+            s = int(ent.get('start_char', -1))
+            e = int(ent.get('end_char', -1))
+            if 0 <= s < e <= len(text):
+                ent['text'] = text[s:e]
+        except Exception:
+            pass
+        clean_entities.append({k: v for k, v in ent.items() if k not in {'start_char', 'end_char'}})
     with open(ner_path, 'w', encoding='utf-8') as f:
-        json.dump({'entities': entities, 'relations': relations}, f, ensure_ascii=False, indent=2)
+        json.dump({'entities': clean_entities, 'relations': relations}, f, ensure_ascii=False, indent=2)
 
 
 @app.route('/legislation')

@@ -30,7 +30,7 @@ def test_edit_legislation_save(tmp_path, monkeypatch):
 
     resp = client.get('/legislation/edit?file=test')
     assert resp.status_code == 200
-    assert '<textarea' in resp.get_data(as_text=True)
+    assert 'entity-table' in resp.get_data(as_text=True)
 
     content = '[[ENT id=1 type=LAW]]abc[[/ENT]]def'
     resp = client.post('/legislation/edit?file=test', data={'action': 'save', 'content': content})
@@ -39,7 +39,8 @@ def test_edit_legislation_save(tmp_path, monkeypatch):
     with open(ner_dir / 'test_ner.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
     assert data['entities'][0]['type'] == 'LAW'
-    assert data['entities'][0]['start_char'] == 0
+    assert data['entities'][0]['text'] == 'abc'
+    assert 'start_char' not in data['entities'][0]
 
 
 def test_edit_legislation_add_delete(tmp_path, monkeypatch):
