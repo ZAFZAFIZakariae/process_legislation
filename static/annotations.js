@@ -334,6 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const sel = window.getSelection();
             if (sel) sel.removeAllRanges();
             textDiv.style.userSelect = 'none';
+            textDiv.style.webkitUserSelect = 'none';
+            textDiv.style.MozUserSelect = 'none';
             if (handle.setPointerCapture && ev.pointerId !== undefined) {
                 handle.setPointerCapture(ev.pointerId);
             }
@@ -373,10 +375,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('mousemove', moveHandler);
     document.addEventListener('pointermove', moveHandler);
 
-    function endDrag() {
+    function endDrag(ev) {
         if (!dragTarget) return;
         dragTarget = null;
         textDiv.style.userSelect = '';
+        textDiv.style.webkitUserSelect = '';
+        textDiv.style.MozUserSelect = '';
+        if (ev && ev.pointerId !== undefined) {
+            [startHandle, endHandle].forEach(h => {
+                if (h.releasePointerCapture) {
+                    try { h.releasePointerCapture(ev.pointerId); } catch (e) {}
+                }
+            });
+        }
         if (wasDragging) {
             saveEntity(document.querySelector('.entity-mark.selected'));
             wasDragging = false;
