@@ -329,6 +329,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         handle.addEventListener('mousedown', startDrag);
         handle.addEventListener('pointerdown', startDrag);
+        // Some browsers do not bubble move/up events when pointer capture is used,
+        // so also listen on the handles themselves to ensure dragging works.
+        handle.addEventListener('mousemove', moveHandler);
+        handle.addEventListener('pointermove', moveHandler);
+        handle.addEventListener('mouseup', endDrag);
+        handle.addEventListener('pointerup', endDrag);
     });
 
     const moveHandler = ev => {
