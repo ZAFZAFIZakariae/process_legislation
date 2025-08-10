@@ -39,8 +39,16 @@
         <label>ID <input id="upd-id" name="id" size="6" /></label>
         <label>Type <input id="upd-type" name="type" size="6" /></label>
         <label>Norm <input id="upd-norm" name="norm" size="8" /></label>
-        <label>Start <input id="upd-start" name="start" size="4" /></label>
-        <label>End <input id="upd-end" name="end" size="4" /></label>
+        <label>Start 
+            <button type="button" class="button small nudge-start" data-delta="-1">&lt;</button>
+            <input id="upd-start" name="start" size="4" />
+            <button type="button" class="button small nudge-start" data-delta="1">&gt;</button>
+        </label>
+        <label>End 
+            <button type="button" class="button small nudge-end" data-delta="-1">&lt;</button>
+            <input id="upd-end" name="end" size="4" />
+            <button type="button" class="button small nudge-end" data-delta="1">&gt;</button>
+        </label>
         <button type="submit" class="button">Update</button>
     </form>
 
