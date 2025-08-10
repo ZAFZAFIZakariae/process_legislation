@@ -241,3 +241,14 @@ tr:nth-child(even) {
 .json-value {
     color: var(--accent);
 }
+
+/* Limit entity table to show 10 rows with scroll */
+.entity-table-wrapper {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.entity-table-wrapper thead th {
+    position: sticky;
+    top: 0;
+}

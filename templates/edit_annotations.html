@@ -24,49 +24,8 @@
 
     <div id="text-display" class="card"><div id="json-tree" dir="rtl"></div></div>
 
-    <h2>Operations</h2>
-    <form id="add-form" method="post" class="inline-form">
-        <input type="hidden" name="action" value="add" />
-        <label>Start <input id="add-start" name="start" size="4" /></label>
-        <label>End <input id="add-end" name="end" size="4" /></label>
-        <label>Type <input name="type" size="6" /></label>
-        <label>Norm <input name="norm" size="8" /></label>
-        <button type="submit" class="button">Add</button>
-    </form>
-
-    <form id="update-form" method="post" class="inline-form">
-        <input type="hidden" name="action" value="update" />
-        <label>ID <input id="upd-id" name="id" size="6" /></label>
-        <label>Type <input id="upd-type" name="type" size="6" /></label>
-        <label>Norm <input id="upd-norm" name="norm" size="8" /></label>
-        <label>Start 
-            <button type="button" class="button small nudge-start" data-delta="-1">&lt;</button>
-            <input id="upd-start" name="start" size="4" />
-            <button type="button" class="button small nudge-start" data-delta="1">&gt;</button>
-        </label>
-        <label>End 
-            <button type="button" class="button small nudge-end" data-delta="-1">&lt;</button>
-            <input id="upd-end" name="end" size="4" />
-            <button type="button" class="button small nudge-end" data-delta="1">&gt;</button>
-        </label>
-        <button type="submit" class="button">Update</button>
-    </form>
-
-    <form id="replace-form" method="post" class="inline-form">
-        <input type="hidden" name="action" value="replace" />
-        <label>Start <input id="rep-start" name="start" size="4" /></label>
-        <label>End <input id="rep-end" name="end" size="4" /></label>
-        <label>Text <input id="rep-text" name="text" size="10" /></label>
-        <button type="submit" class="button">Replace Text</button>
-    </form>
-
-    <form method="post" class="inline-form">
-        <input type="hidden" name="action" value="fix" />
-        <button type="submit" class="button">Fix Offsets</button>
-        <a href="{{ url_for('view_legislation', file=file) }}" class="button">Back</a>
-    </form>
-
     <h2>Entities</h2>
+    <div class="entity-table-wrapper">
     <table id="entity-table">
         <thead>
             <tr><th>ID</th><th>Type</th><th>Text</th><th>Actions</th></tr>
@@ -89,13 +48,7 @@
         {% endfor %}
         </tbody>
     </table>
-
-    <h2>Raw Content</h2>
-    <form method="post">
-        <input type="hidden" name="action" value="save" />
-        <textarea name="content" rows="10" style="width:100%">{{ raw }}</textarea>
-        <button type="submit" class="button">Save</button>
-    </form>
+    </div>
 </main>
 <script>
     const rawData = {{ data | tojson }};
