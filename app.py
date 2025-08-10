@@ -8,7 +8,7 @@ try:
 except Exception:  # pragma: no cover
     pd = None
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from types import SimpleNamespace
 
 from annotation_editor import (
@@ -47,10 +47,18 @@ try:  # Optional pipeline for structure extraction
         remove_duplicate_articles,
     )
     from pipeline.structured_ner import run_structured_ner
+    from pipeline.post_process import post_process_data
 except BaseException:  # pragma: no cover - missing dependency
     convert_to_text = None
     run_passes = None
     run_structured_ner = None
+    post_process_data = None
+
+try:  # Optional database import helpers
+    from import_db import import_json, init_db
+except Exception:  # pragma: no cover
+    import_json = None
+    init_db = None
 
 app = Flask(__name__)
 
@@ -188,9 +196,73 @@ def graph_page():
     return render_template('graph.html')
 
 
-@app.route('/pipelines')
+@app.route('/pipelines', methods=['GET', 'POST'])
 def pipelines_page():
-    return render_template('pipelines.html')
+    if request.method == 'POST':
+        if (
+            run_passes is None
+            or convert_to_text is None
+            or run_structured_ner is None
+            or post_process_data is None
+        ):
+            runs = _collect_documents()
+            return render_template(
+                'pipelines.html', runs=runs, error='Pipeline not available'
+            )
+        uploaded = request.files.get('file')
+        model = request.form.get('model', 'gpt-4o')
+        if uploaded:
+            suffix = os.path.splitext(uploaded.filename)[1]
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                uploaded.save(tmp.name)
+                input_path = tmp.name
+            tmp_dir = tempfile.mkdtemp()
+            try:
+                txt_path = convert_to_text(input_path, tmp_dir)
+                raw = run_passes(txt_path, model)
+                data = post_process_data(raw)
+                annotated, ner_clean, _, _ = run_structured_ner(data, model)
+                base = os.path.basename(uploaded.filename).rsplit('.', 1)[0]
+                os.makedirs('output', exist_ok=True)
+                with open(os.path.join('output', f'{base}.json'), 'w', encoding='utf-8') as f:
+                    json.dump(annotated, f, ensure_ascii=False, indent=2)
+                os.makedirs('ner_output', exist_ok=True)
+                with open(os.path.join('ner_output', f'{base}_ner.json'), 'w', encoding='utf-8') as f:
+                    json.dump(ner_clean, f, ensure_ascii=False, indent=2)
+                if parse_decision is not None:
+                    try:
+                        decision = parse_decision(input_path, model)
+                        with open(
+                            os.path.join('output', f'{base}_decision.json'),
+                            'w',
+                            encoding='utf-8',
+                        ) as f:
+                            json.dump(decision, f, ensure_ascii=False, indent=2)
+                    except Exception:
+                        pass
+                if import_json is not None:
+                    try:
+                        if init_db and not os.path.exists(DB_PATH):
+                            init_db(DB_PATH)
+                        import_json(DB_PATH, 'output')
+                    except Exception:
+                        pass
+            finally:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+                os.unlink(input_path)
+        return redirect(url_for('pipelines_page'))
+    docs = _collect_documents()
+    runs = []
+    for name, info in sorted(docs.items()):
+        runs.append(
+            {
+                'name': name,
+                'structure': os.path.basename(info.get('structure', '')) if info.get('structure') else None,
+                'ner': os.path.basename(info.get('ner', '')) if info.get('ner') else None,
+                'decision': os.path.basename(info.get('decision', '')) if info.get('decision') else None,
+            }
+        )
+    return render_template('pipelines.html', runs=runs, error=None)
 
 
 @app.route('/sql')
@@ -201,6 +273,18 @@ def sql_lab():
 @app.route('/settings')
 def settings_page():
     return render_template('settings.html')
+
+
+@app.route('/output/<path:filename>')
+def download_output(filename: str):
+    """Serve files from the structured output directory."""
+    return send_from_directory('output', filename)
+
+
+@app.route('/ner_output/<path:filename>')
+def download_ner_output(filename: str):
+    """Serve files from the NER output directory."""
+    return send_from_directory('ner_output', filename)
 
 @app.route('/entities', methods=['GET', 'POST'])
 def index():
@@ -403,17 +487,22 @@ def parse_decision_route():
 
 
 def _collect_documents() -> dict[str, dict[str, str]]:
-    """Return mapping of base names to structure and NER paths."""
+    """Return mapping of base names to structure/NER/decision paths."""
     docs: dict[str, dict[str, str]] = {}
     if os.path.isdir('output'):
         for f in os.listdir('output'):
-            if f.endswith('.json'):
-                base = f.rsplit('.', 1)[0]
+            if f.endswith('_raw.json'):
+                continue
+            if f.endswith('_decision.json'):
+                base = f[:-14]
+                docs.setdefault(base, {})['decision'] = os.path.join('output', f)
+            elif f.endswith('.json'):
+                base = f[:-5]
                 docs.setdefault(base, {})['structure'] = os.path.join('output', f)
     if os.path.isdir('ner_output'):
         for f in os.listdir('ner_output'):
             if f.endswith('_ner.json'):
-                base = f[:-9]  # remove '_ner.json'
+                base = f[:-9]
                 docs.setdefault(base, {})['ner'] = os.path.join('ner_output', f)
     return docs
 
