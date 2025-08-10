@@ -155,6 +155,28 @@ pre {
     background-color: orange;
 }
 
+/* Floating arrows for adjusting entity boundaries */
+.entity-handle {
+    position: absolute;
+    width: 0;
+    height: 0;
+    z-index: 100;
+}
+
+.entity-handle.start {
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 10px solid var(--accent);
+    cursor: col-resize;
+}
+
+.entity-handle.end {
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 10px solid var(--accent);
+    cursor: col-resize;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
