@@ -83,19 +83,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function positionHandles(span) {
-        if (!span) {
+        // If a span is provided, ensure the selection matches its stored offsets
+        // so the handles wrap the current entity range.
+        if (span) {
+            const s = parseInt(span.dataset.start, 10);
+            const e = parseInt(span.dataset.end, 10);
+            setSelectionRange(s, e);
+        }
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) {
             hideHandles();
             return;
         }
-        // Always base the handle positions on the span's bounding box so
-        // the brackets initially wrap the entity that was clicked.
-        const rect = span.getBoundingClientRect();
+
+        const range = sel.getRangeAt(0);
+        const startRange = range.cloneRange();
+        startRange.collapse(true);
+        const endRange = range.cloneRange();
+        endRange.collapse(false);
+        const startRect = startRange.getBoundingClientRect();
+        const endRect = endRange.getBoundingClientRect();
+
         const handleH = startHandle.offsetHeight || 20;
-        const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
+        const top = window.scrollY + startRect.top + (startRect.height - handleH) / 2;
         startHandle.style.top = `${top}px`;
-        startHandle.style.left = `${window.scrollX + rect.left}px`;
-        endHandle.style.top = `${top}px`;
-        endHandle.style.left = `${window.scrollX + rect.right - endHandle.offsetWidth}px`;
+        startHandle.style.left = `${window.scrollX + startRect.left}px`;
+        endHandle.style.top = `${window.scrollY + endRect.top + (endRect.height - handleH) / 2}px`;
+        endHandle.style.left = `${window.scrollX + endRect.left - endHandle.offsetWidth}px`;
         startHandle.style.display = 'block';
         endHandle.style.display = 'block';
     }
@@ -137,6 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
             dragTarget = handle === startHandle ? 'start' : 'end';
             pendingHandle = null;
             wasDragging = false;
+            // Disable text selection while dragging the handles so the
+            // mouse movement adjusts entity offsets instead of creating a
+            // new selection range in the document.
+            textDiv.style.userSelect = 'none';
+            const sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
             if (handle.setPointerCapture && ev.pointerId !== undefined) {
                 handle.setPointerCapture(ev.pointerId);
             }
@@ -155,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dragTarget) return;
         const selected = document.querySelector('.entity-mark.selected');
         if (!selected) return;
+        ev.preventDefault();
         const offset = getOffsetFromCoords(ev.clientX, ev.clientY);
         if (offset == null) return;
         let start = parseInt(updStart.value || '0', 10);
@@ -176,7 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('mousemove', moveHandler);
     document.addEventListener('pointermove', moveHandler);
 
-    const endDrag = () => { dragTarget = null; };
+    const endDrag = () => {
+        dragTarget = null;
+        // Re-enable text selection after the drag completes.
+        textDiv.style.userSelect = '';
+    };
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('pointerup', endDrag);
 
