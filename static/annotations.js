@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 editMode = false;
             }
         }
-        if (!actionPopup.contains(ev.target)) {
+        if (!actionPopup.contains(ev.target) && !ev.target.closest('.entity-mark')) {
             actionPopup.style.display = 'none';
         }
         if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
