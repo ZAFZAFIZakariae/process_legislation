@@ -22,59 +22,73 @@
     <h1>Edit Annotations - {{ file }}</h1>
     {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
 
-    <form method="post">
-        <textarea name="content" rows="20" style="width:100%">{{ content }}</textarea>
-        <p>
-            <button type="submit" name="action" value="save" class="button">Save</button>
-            <a href="{{ url_for('view_legislation', file=file) }}" class="button">Back</a>
-        </p>
-    </form>
-
-    <h2>Entities</h2>
-    <ul>
-    {% for e in entities %}
-        <li>{{ e.id }} - {{ e.type }} - {{ e.text }}</li>
-    {% endfor %}
-    </ul>
+    <div id="text-display" class="card" dir="rtl">{{ content|safe }}</div>
 
     <h2>Operations</h2>
-    <form method="post" class="inline-form">
+    <form id="add-form" method="post" class="inline-form">
         <input type="hidden" name="action" value="add" />
-        <label>Start <input name="start" size="4" /></label>
-        <label>End <input name="end" size="4" /></label>
+        <label>Start <input id="add-start" name="start" size="4" /></label>
+        <label>End <input id="add-end" name="end" size="4" /></label>
         <label>Type <input name="type" size="6" /></label>
         <label>Norm <input name="norm" size="8" /></label>
         <button type="submit" class="button">Add</button>
     </form>
 
-    <form method="post" class="inline-form">
-        <input type="hidden" name="action" value="delete" />
-        <label>ID <input name="id" size="6" /></label>
-        <button type="submit" class="button">Delete</button>
-    </form>
-
-    <form method="post" class="inline-form">
+    <form id="update-form" method="post" class="inline-form">
         <input type="hidden" name="action" value="update" />
-        <label>ID <input name="id" size="6" /></label>
-        <label>Type <input name="type" size="6" /></label>
-        <label>Norm <input name="norm" size="8" /></label>
-        <label>Start <input name="start" size="4" /></label>
-        <label>End <input name="end" size="4" /></label>
+        <label>ID <input id="upd-id" name="id" size="6" /></label>
+        <label>Type <input id="upd-type" name="type" size="6" /></label>
+        <label>Norm <input id="upd-norm" name="norm" size="8" /></label>
+        <label>Start <input id="upd-start" name="start" size="4" /></label>
+        <label>End <input id="upd-end" name="end" size="4" /></label>
         <button type="submit" class="button">Update</button>
     </form>
 
-    <form method="post" class="inline-form">
+    <form id="replace-form" method="post" class="inline-form">
         <input type="hidden" name="action" value="replace" />
-        <label>Start <input name="start" size="4" /></label>
-        <label>End <input name="end" size="4" /></label>
-        <label>Text <input name="text" size="10" /></label>
+        <label>Start <input id="rep-start" name="start" size="4" /></label>
+        <label>End <input id="rep-end" name="end" size="4" /></label>
+        <label>Text <input id="rep-text" name="text" size="10" /></label>
         <button type="submit" class="button">Replace Text</button>
     </form>
 
     <form method="post" class="inline-form">
         <input type="hidden" name="action" value="fix" />
         <button type="submit" class="button">Fix Offsets</button>
+        <a href="{{ url_for('view_legislation', file=file) }}" class="button">Back</a>
+    </form>
+
+    <h2>Entities</h2>
+    <table id="entity-table">
+        <thead>
+            <tr><th>ID</th><th>Type</th><th>Text</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        {% for e in entities %}
+            <tr data-id="{{ e.id }}" data-type="{{ e.type }}" data-norm="{{ e.normalized }}" data-start="{{ e.start_char }}" data-end="{{ e.end_char }}">
+                <td>{{ e.id }}</td>
+                <td>{{ e.type }}</td>
+                <td>{{ e.text }}</td>
+                <td>
+                    <form method="post" class="inline-form">
+                        <input type="hidden" name="action" value="delete" />
+                        <input type="hidden" name="id" value="{{ e.id }}" />
+                        <button type="submit" class="button small">Delete</button>
+                    </form>
+                    <button type="button" class="button small edit-entity">Edit</button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Raw Content</h2>
+    <form method="post">
+        <input type="hidden" name="action" value="save" />
+        <textarea name="content" rows="10" style="width:100%">{{ raw }}</textarea>
+        <button type="submit" class="button">Save</button>
     </form>
 </main>
+<script src="{{ url_for('static', filename='annotations.js') }}"></script>
 </body>
 </html>
