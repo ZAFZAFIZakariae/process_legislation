@@ -38,11 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showTypePopup(span) {
         if (!span) return;
-        const rect = span.getBoundingClientRect();
         typeSelect.value = span.dataset.type || '';
-        typePopup.style.top = `${window.scrollY + rect.top - typePopup.offsetHeight - 5}px`;
-        typePopup.style.left = `${window.scrollX + rect.left}px`;
         typePopup.style.display = 'block';
+        // Ensure the popup does not obscure the entity by positioning
+        // it *above* after we know its rendered height.
+        const rect = span.getBoundingClientRect();
+        const popupH = typePopup.offsetHeight;
+        typePopup.style.top = `${window.scrollY + rect.top - popupH - 5}px`;
+        typePopup.style.left = `${window.scrollX + rect.left}px`;
         currentSpan = span;
     }
 
@@ -84,13 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
             hideHandles();
             return;
         }
-        let rect;
-        const sel = window.getSelection();
-        if (sel && sel.rangeCount > 0) {
-            rect = sel.getRangeAt(0).getBoundingClientRect();
-        } else {
-            rect = span.getBoundingClientRect();
-        }
+        // Always base the handle positions on the span's bounding box so
+        // the brackets initially wrap the entity that was clicked.
+        const rect = span.getBoundingClientRect();
         const handleH = startHandle.offsetHeight || 20;
         const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
         startHandle.style.top = `${top}px`;
