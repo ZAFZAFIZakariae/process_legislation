@@ -22,7 +22,7 @@
     <h1>Edit Annotations - {{ file }}</h1>
     {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
 
-    <div id="text-display" class="card" dir="rtl">{{ content|safe }}</div>
+    <div id="text-display" class="card"><div id="json-tree" dir="rtl"></div></div>
 
     <h2>Operations</h2>
     <form id="add-form" method="post" class="inline-form">
@@ -97,6 +97,75 @@
         <button type="submit" class="button">Save</button>
     </form>
 </main>
+<script>
+    const data = {{ data | tojson }};
+    const entitiesData = {{ entities | tojson }};
+    const entityMap = {};
+    entitiesData.forEach(e => { entityMap[e.id] = e; });
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+    }
+
+    function formatText(value) {
+        if (typeof value !== 'string') return escapeHtml(value);
+        return value.replace(/<([^,<>]+), id:(\d+)>/g, (_m, txt, id) => {
+            const ent = entityMap[id] || {};
+            const attrs = [`class=\"entity-mark\"`,`data-id=\"${id}\"`,`data-start=\"${ent.start_char || 0}\"`,`data-end=\"${ent.end_char || 0}\"`];
+            if (ent.type) attrs.push(`data-type=\"${escapeHtml(ent.type)}\"`);
+            if (ent.normalized) attrs.push(`data-norm=\"${escapeHtml(ent.normalized)}\"`);
+            return `<span ${attrs.join(' ')}>${escapeHtml(txt)}</span>`;
+        });
+    }
+
+    function renderNode(node, container) {
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.classList.add('json-key');
+        let label = '';
+        if (node.type) label += escapeHtml(node.type);
+        if (node.number) label += (label ? ' ' : '') + escapeHtml(node.number);
+        if (node.title) label += (label ? ': ' : '') + formatText(node.title);
+        summary.innerHTML = label;
+        details.appendChild(summary);
+
+        if (node.text) {
+            const textDiv = document.createElement('div');
+            textDiv.className = 'json-value';
+            textDiv.innerHTML = formatText(node.text);
+            details.appendChild(textDiv);
+        }
+
+        if (Array.isArray(node.children) && node.children.length) {
+            const ul = document.createElement('ul');
+            node.children.forEach(child => {
+                const li = document.createElement('li');
+                renderNode(child, li);
+                ul.appendChild(li);
+            });
+            details.appendChild(ul);
+        }
+        container.appendChild(details);
+    }
+
+    function render(container, obj) {
+        if (Array.isArray(obj)) {
+            const ul = document.createElement('ul');
+            obj.forEach(item => {
+                const li = document.createElement('li');
+                renderNode(item, li);
+                ul.appendChild(li);
+            });
+            container.appendChild(ul);
+        } else if (obj && typeof obj === 'object') {
+            renderNode(obj, container);
+        }
+    }
+
+    if (data) {
+        render(document.getElementById('json-tree'), data);
+    }
+</script>
 <script src="{{ url_for('static', filename='annotations.js') }}"></script>
 </body>
 </html>

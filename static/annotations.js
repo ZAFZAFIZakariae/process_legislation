@@ -66,7 +66,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.querySelectorAll('.entity-mark').forEach(span => {
-        span.addEventListener('click', () => {
+        span.addEventListener('click', ev => {
+            ev.stopPropagation();
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             span.classList.add('selected');
             updId.value = span.dataset.id;
