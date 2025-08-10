@@ -337,5 +337,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    document.querySelectorAll('.entity-mark').forEach(span => {
+        span.addEventListener('click', () => {
+            document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
+            span.classList.add('selected');
+            currentSpan = span;
+            const start = parseInt(span.dataset.start, 10);
+            const end = parseInt(span.dataset.end, 10);
+            if (!Number.isNaN(start) && !Number.isNaN(end)) {
+                setSelectionRange(start, end);
+                positionHandles(span);
+            } else {
+                hideHandles();
+            }
+            showTypePopup(span);
+        });
+    });
 });
 
