@@ -20,18 +20,38 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(Boolean))
     );
 
-    const typePopup = document.createElement('div');
-    typePopup.className = 'annotation-popup';
-    typePopup.style.display = 'none';
-    const typeSelect = document.createElement('select');
+    // Popup for editing entity type and normalized value. Uses a datalist
+    // so new types can be entered while still suggesting existing ones.
+    const editPopup = document.createElement('div');
+    editPopup.className = 'annotation-popup';
+    editPopup.style.display = 'none';
+
+    const typeInput = document.createElement('input');
+    typeInput.setAttribute('list', 'entity-types');
+
+    const typeList = document.createElement('datalist');
+    typeList.id = 'entity-types';
     availableTypes.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t;
-        opt.textContent = t;
-        typeSelect.appendChild(opt);
+        typeList.appendChild(opt);
     });
-    typePopup.appendChild(typeSelect);
-    document.body.appendChild(typePopup);
+
+    const normInput = document.createElement('input');
+    normInput.placeholder = 'Normalized (optional)';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+
+    editPopup.appendChild(typeInput);
+    editPopup.appendChild(typeList);
+    editPopup.appendChild(normInput);
+    editPopup.appendChild(saveBtn);
+    editPopup.appendChild(cancelBtn);
+    document.body.appendChild(editPopup);
 
     const actionPopup = document.createElement('div');
     actionPopup.className = 'annotation-popup';
@@ -57,16 +77,20 @@ document.addEventListener('DOMContentLoaded', () => {
         actionPopup.style.left = `${window.scrollX + rect.left}px`;
     }
 
-    function showTypePopup(span, rect) {
+    function showEditPopup(span, rect) {
         if (span) {
-            typeSelect.value = span.dataset.type || '';
+            typeInput.value = span.dataset.type || '';
+            normInput.value = span.dataset.norm || '';
+        } else {
+            typeInput.value = '';
+            normInput.value = '';
         }
-        typePopup.style.display = 'block';
+        editPopup.style.display = 'block';
         const r = rect || (span ? span.getBoundingClientRect() : null);
         if (r) {
-            const popupH = typePopup.offsetHeight;
-            typePopup.style.top = `${window.scrollY + r.top - popupH - 5}px`;
-            typePopup.style.left = `${window.scrollX + r.left}px`;
+            const popupH = editPopup.offsetHeight;
+            editPopup.style.top = `${window.scrollY + r.top - popupH - 5}px`;
+            editPopup.style.left = `${window.scrollX + r.left}px`;
         }
         currentSpan = span;
     }
@@ -76,8 +100,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const fd = new FormData();
         fd.append('action', 'update');
         fd.append('id', span.dataset.id);
-        if (span.dataset.start !== undefined) fd.append('start', span.dataset.start);
-        if (span.dataset.end !== undefined) fd.append('end', span.dataset.end);
+        const s = parseInt(span.dataset.start, 10);
+        const e = parseInt(span.dataset.end, 10);
+        if (!Number.isNaN(s) && !Number.isNaN(e)) {
+            const start = Math.min(s, e);
+            const end = Math.max(s, e);
+            fd.append('start', start);
+            fd.append('end', end);
+            span.dataset.start = start;
+            span.dataset.end = end;
+        } else {
+            if (span.dataset.start !== undefined) fd.append('start', span.dataset.start);
+            if (span.dataset.end !== undefined) fd.append('end', span.dataset.end);
+        }
         if (span.dataset.type) fd.append('type', span.dataset.type);
         if (span.dataset.norm) fd.append('norm', span.dataset.norm);
         fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd });
@@ -100,13 +135,20 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(() => window.location.reload());
     });
 
-    typeSelect.addEventListener('change', () => {
-        const newType = typeSelect.value;
+    saveBtn.addEventListener('click', () => {
+        const newType = typeInput.value.trim();
+        const newNorm = normInput.value.trim();
         if (currentSpan) {
             currentSpan.dataset.type = newType;
+            if (newNorm) {
+                currentSpan.dataset.norm = newNorm;
+            } else {
+                delete currentSpan.dataset.norm;
+            }
             const row = document.querySelector(`#entity-table tr[data-id="${currentSpan.dataset.id}"]`);
             if (row) {
                 row.dataset.type = newType;
+                row.dataset.norm = newNorm;
                 const cell = row.querySelector('td:nth-child(2)');
                 if (cell) cell.textContent = newType;
             }
@@ -117,19 +159,39 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('start', addRange.start);
             fd.append('end', addRange.end);
             fd.append('type', newType);
+            if (newNorm) fd.append('norm', newNorm);
             fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
                 .then(() => window.location.reload());
             addRange = null;
             addMode = false;
         }
-        typePopup.style.display = 'none';
+        // update suggestions if new type introduced
+        if (newType && !availableTypes.includes(newType)) {
+            availableTypes.push(newType);
+            const opt = document.createElement('option');
+            opt.value = newType;
+            typeList.appendChild(opt);
+        }
+        editPopup.style.display = 'none';
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        editPopup.style.display = 'none';
+        if (addMode) {
+            addMode = false;
+            addRange = null;
+        }
     });
 
     document.addEventListener('click', ev => {
-        if (!typePopup.contains(ev.target)) {
-            typePopup.style.display = 'none';
+        if (!editPopup.contains(ev.target)) {
+            editPopup.style.display = 'none';
             if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
                 editMode = false;
+            }
+            if (addMode) {
+                addMode = false;
+                addRange = null;
             }
         }
         if (!actionPopup.contains(ev.target) && !ev.target.closest('.entity-mark')) {
@@ -139,10 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             hideHandles();
             currentSpan = null;
-            if (addMode) {
-                addMode = false;
-                addRange = null;
-            }
         }
     });
 
@@ -186,11 +244,16 @@ document.addEventListener('DOMContentLoaded', () => {
             hideHandles();
             return;
         }
-        const start = parseInt(span.dataset.start, 10);
-        const end = parseInt(span.dataset.end, 10);
+        let start = parseInt(span.dataset.start, 10);
+        let end = parseInt(span.dataset.end, 10);
         if (Number.isNaN(start) || Number.isNaN(end)) {
             hideHandles();
             return;
+        }
+        if (start > end) {
+            [start, end] = [end, start];
+            span.dataset.start = start;
+            span.dataset.end = end;
         }
         const startRect = getRectAtOffset(start);
         const endRect = getRectAtOffset(end);
@@ -303,6 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function setSelectionRange(start, end) {
+        if (start > end) [start, end] = [end, start];
         const walker = document.createTreeWalker(textDiv, NodeFilter.SHOW_TEXT);
         let count = 0;
         let sNode = null, sOffset = 0, eNode = null, eOffset = 0;
@@ -348,10 +412,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!sel || sel.isCollapsed) return;
         const range = sel.getRangeAt(0);
         if (!textDiv.contains(range.startContainer) || !textDiv.contains(range.endContainer)) return;
-        const start = getOffset(range.startContainer, range.startOffset);
-        const end = getOffset(range.endContainer, range.endOffset);
+        let start = getOffset(range.startContainer, range.startOffset);
+        let end = getOffset(range.endContainer, range.endOffset);
+        if (start > end) [start, end] = [end, start];
         addRange = { start, end };
-        showTypePopup(null, range.getBoundingClientRect());
+        showEditPopup(null, range.getBoundingClientRect());
     });
 
     document.querySelectorAll('.edit-entity').forEach(btn => {
@@ -373,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     hideHandles();
                 }
                 actionPopup.style.display = 'none';
-                showTypePopup(span);
+                showEditPopup(span);
             }
         });
     });
