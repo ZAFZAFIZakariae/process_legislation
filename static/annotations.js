@@ -367,12 +367,20 @@ document.addEventListener('DOMContentLoaded', () => {
         let start = parseInt(selected.dataset.start || '0', 10);
         let end = parseInt(selected.dataset.end || '0', 10);
         if (dragTarget === 'start') {
-            start = Math.min(offset, end);
-            selected.dataset.start = start;
+            start = offset;
+            if (start > end) {
+                [start, end] = [end, start];
+                dragTarget = 'end';
+            }
         } else {
-            end = Math.max(offset, start);
-            selected.dataset.end = end;
+            end = offset;
+            if (end < start) {
+                [start, end] = [end, start];
+                dragTarget = 'start';
+            }
         }
+        selected.dataset.start = start;
+        selected.dataset.end = end;
         setSelectionRange(start, end);
         positionHandles(selected);
         wasDragging = true;
