@@ -63,7 +63,7 @@
 
     function formatText(value) {
         if (typeof value !== 'string') return escapeHtml(value);
-        return value.replace(/<([^,<>]+), id:(\d+)>/g, (_m, txt, id) => {
+        return value.replace(/<([^,<>]+), id:([^>]+)>/g, (_m, txt, id) => {
             const ent = entityMap[id] || {};
             const attrs = [`class=\"entity-mark\"`, `data-id=\"${id}\"`];
             if (ent.type) attrs.push(`data-type=\"${escapeHtml(ent.type)}\"`);
