@@ -181,6 +181,10 @@ pre {
     font-size: 0.9rem;
 }
 
+.annotation-popup button {
+    margin-right: 4px;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
