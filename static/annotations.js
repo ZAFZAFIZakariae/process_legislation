@@ -294,10 +294,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const prevVisStart = startHandle.style.visibility;
         const prevVisEnd = endHandle.style.visibility;
         const prevUserSelect = textDiv.style.userSelect;
+        const prevWebkitUserSelect = textDiv.style.webkitUserSelect;
+        const prevMozUserSelect = textDiv.style.MozUserSelect;
         startHandle.style.visibility = 'hidden';
         endHandle.style.visibility = 'hidden';
         // Temporarily enable text selection so caretPositionFromPoint works in all browsers.
         textDiv.style.userSelect = 'text';
+        textDiv.style.webkitUserSelect = 'text';
+        textDiv.style.MozUserSelect = 'text';
+        const rect = textDiv.getBoundingClientRect();
+        x = Math.max(rect.left, Math.min(x, rect.right - 1));
+        y = Math.max(rect.top, Math.min(y, rect.bottom - 1));
         let range;
         if (document.caretPositionFromPoint) {
             const pos = document.caretPositionFromPoint(x, y);
@@ -311,6 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
         startHandle.style.visibility = prevVisStart;
         endHandle.style.visibility = prevVisEnd;
         textDiv.style.userSelect = prevUserSelect;
+        textDiv.style.webkitUserSelect = prevWebkitUserSelect;
+        textDiv.style.MozUserSelect = prevMozUserSelect;
         if (!range) return null;
         const node = range.startContainer;
         const off = range.startOffset;
