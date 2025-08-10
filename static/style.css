@@ -155,6 +155,38 @@ pre {
     background-color: orange;
 }
 
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: left;
+}
+
+th {
+    background-color: var(--primary);
+    color: #fff;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.button.small {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    margin-top: 0;
+}
+
+.inline-form {
+    display: inline-block;
+    margin-right: 10px;
+}
+
 .json-tree ul {
     list-style: none;
     margin-left: 20px;

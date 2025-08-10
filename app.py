@@ -416,6 +416,36 @@ def _save_annotation(text: str, entities: list[dict], relations: list[dict], txt
         json.dump({'entities': entities, 'relations': relations}, f, ensure_ascii=False, indent=2)
 
 
+def _render_editable_html(text: str, entities: list[dict]) -> str:
+    """Return HTML with entity spans annotated for the editor."""
+    parts: list[str] = []
+    last = 0
+    for ent in sorted(entities, key=lambda e: int(e.get("start_char", 0))):
+        try:
+            start = int(ent.get("start_char", -1))
+            end = int(ent.get("end_char", -1))
+        except Exception:
+            continue
+        if start < last or start < 0 or end <= start or end > len(text):
+            continue
+        parts.append(html.escape(text[last:start]))
+        span_text = html.escape(text[start:end])
+        attrs = [
+            f'data-id="{html.escape(str(ent.get("id")))}"',
+            f'data-type="{html.escape(str(ent.get("type")))}"',
+            f'data-start="{start}"',
+            f'data-end="{end}"',
+        ]
+        norm = ent.get("normalized")
+        if norm:
+            attrs.append(f'data-norm="{html.escape(str(norm))}"')
+        attr_str = " ".join(attrs)
+        parts.append(f'<span class="entity-mark" {attr_str}>{span_text}</span>')
+        last = end
+    parts.append(html.escape(text[last:]))
+    return ''.join(parts)
+
+
 @app.route('/legislation')
 def view_legislation():
     docs = _collect_documents()
@@ -476,10 +506,12 @@ def edit_legislation():
                 _save_annotation(text, entities, relations, txt_path, ner_path)
                 return redirect(url_for('view_legislation', file=name))
             except Exception as exc:
+                html_view = _render_editable_html(text, entities)
                 return render_template(
                     'edit_annotations.html',
                     file=name,
-                    content=content,
+                    content=html_view,
+                    raw=content,
                     entities=entities,
                     error=str(exc),
                 )
@@ -520,17 +552,26 @@ def edit_legislation():
             ae_fix_offsets(text, {'entities': entities})
 
         _save_annotation(text, entities, relations, txt_path, ner_path)
+        html_view = _render_editable_html(text, entities)
         annotated = ae_text_with_markers(text, entities)
         return render_template(
             'edit_annotations.html',
             file=name,
-            content=annotated,
+            content=html_view,
+            raw=annotated,
             entities=entities,
             error=None,
         )
-
+    html_view = _render_editable_html(text, entities)
     annotated = ae_text_with_markers(text, entities)
-    return render_template('edit_annotations.html', file=name, content=annotated, entities=entities, error=None)
+    return render_template(
+        'edit_annotations.html',
+        file=name,
+        content=html_view,
+        raw=annotated,
+        entities=entities,
+        error=None,
+    )
 
 
 @app.route('/query', methods=['GET', 'POST'])
