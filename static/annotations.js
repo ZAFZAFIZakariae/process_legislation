@@ -12,6 +12,77 @@ document.addEventListener('DOMContentLoaded', () => {
     const repStart = document.getElementById('rep-start');
     const repEnd = document.getElementById('rep-end');
 
+    // Floating handles for adjusting entity offsets in the text view
+    const startHandle = document.createElement('div');
+    startHandle.className = 'entity-handle';
+    startHandle.innerHTML = '<button data-pos="start" data-delta="-1">&lt;</button><button data-pos="start" data-delta="1">&gt;</button>';
+    startHandle.style.display = 'none';
+    document.body.appendChild(startHandle);
+
+    const endHandle = document.createElement('div');
+    endHandle.className = 'entity-handle';
+    endHandle.innerHTML = '<button data-pos="end" data-delta="-1">&lt;</button><button data-pos="end" data-delta="1">&gt;</button>';
+    endHandle.style.display = 'none';
+    document.body.appendChild(endHandle);
+
+    function hideHandles() {
+        startHandle.style.display = 'none';
+        endHandle.style.display = 'none';
+    }
+
+    function positionHandles(span) {
+        if (!span) {
+            hideHandles();
+            return;
+        }
+        const rect = span.getBoundingClientRect();
+        const handleH = startHandle.offsetHeight || 20;
+        const top = window.scrollY + rect.top - handleH;
+        startHandle.style.top = `${top}px`;
+        startHandle.style.left = `${window.scrollX + rect.left}px`;
+        endHandle.style.top = `${top}px`;
+        endHandle.style.left = `${window.scrollX + rect.right - endHandle.offsetWidth}px`;
+        startHandle.style.display = 'block';
+        endHandle.style.display = 'block';
+    }
+
+    function handleArrowClick(target, delta) {
+        let start = parseInt(updStart.value || '0', 10);
+        let end = parseInt(updEnd.value || '0', 10);
+        const selected = document.querySelector('.entity-mark.selected');
+        if (!selected) return;
+        if (target === 'start') {
+            start = Math.max(0, start + delta);
+            if (start > end) start = end;
+            updStart.value = start;
+            selected.dataset.start = start;
+        } else {
+            end = Math.max(start, end + delta);
+            updEnd.value = end;
+            selected.dataset.end = end;
+        }
+        setSelectionRange(start, end);
+        positionHandles(selected);
+    }
+
+    [startHandle, endHandle].forEach(handle => {
+        handle.addEventListener('click', ev => {
+            const btn = ev.target.closest('button');
+            if (!btn) return;
+            const pos = btn.dataset.pos;
+            const delta = parseInt(btn.dataset.delta, 10) || 0;
+            handleArrowClick(pos, delta);
+            ev.stopPropagation();
+        });
+    });
+
+    document.addEventListener('click', ev => {
+        if (!ev.target.closest('.entity-mark')) {
+            document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
+            hideHandles();
+        }
+    });
+
     function getOffset(node, offset) {
         const range = document.createRange();
         range.selectNodeContents(textDiv);
@@ -82,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setSelectionRange(start, end);
             }
         }
+        if (selected) positionHandles(selected);
     });
 
     document.querySelectorAll('.entity-mark').forEach(span => {
@@ -95,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updStart.value = span.dataset.start;
             updEnd.value = span.dataset.end;
             setSelectionRange(parseInt(span.dataset.start), parseInt(span.dataset.end));
+            positionHandles(span);
         });
     });
 
@@ -111,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updStart.value = tr.dataset.start;
             updEnd.value = tr.dataset.end;
             setSelectionRange(parseInt(tr.dataset.start), parseInt(tr.dataset.end));
+            positionHandles(span);
         });
     });
 
@@ -123,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (start > end) start = end;
             updStart.value = start;
             setSelectionRange(start, end);
+            positionHandles(document.querySelector('.entity-mark.selected'));
         });
     });
 
@@ -134,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (end < start) end = start;
             updEnd.value = end;
             setSelectionRange(start, end);
+            positionHandles(document.querySelector('.entity-mark.selected'));
         });
     });
 });
