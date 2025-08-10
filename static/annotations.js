@@ -1,6 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     const textDiv = document.getElementById('text-display');
 
+    function initOffsets() {
+        document.querySelectorAll('.entity-mark').forEach(span => {
+            const range = document.createRange();
+            range.selectNodeContents(textDiv);
+            range.setEndBefore(span);
+            const start = range.toString().length;
+            const end = start + span.textContent.length;
+            span.dataset.start = start;
+            span.dataset.end = end;
+        });
+    }
+    initOffsets();
+
     const availableTypes = Array.from(
         new Set(Array.from(document.querySelectorAll('.entity-mark'))
             .map(s => s.dataset.type)
@@ -38,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const fd = new FormData();
         fd.append('action', 'update');
         fd.append('id', span.dataset.id);
-        fd.append('start', span.dataset.start);
-        fd.append('end', span.dataset.end);
+        if (span.dataset.start !== undefined) fd.append('start', span.dataset.start);
+        if (span.dataset.end !== undefined) fd.append('end', span.dataset.end);
         if (span.dataset.type) fd.append('type', span.dataset.type);
         if (span.dataset.norm) fd.append('norm', span.dataset.norm);
         fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd });
@@ -105,8 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
             hideHandles();
             return;
         }
-        const startRect = getRectAtOffset(parseInt(span.dataset.start, 10));
-        const endRect = getRectAtOffset(parseInt(span.dataset.end, 10));
+        const start = parseInt(span.dataset.start, 10);
+        const end = parseInt(span.dataset.end, 10);
+        if (Number.isNaN(start) || Number.isNaN(end)) {
+            hideHandles();
+            return;
+        }
+        const startRect = getRectAtOffset(start);
+        const endRect = getRectAtOffset(end);
         if (!startRect || !endRect) {
             hideHandles();
             return;
@@ -249,8 +268,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             span.classList.add('selected');
             currentSpan = span;
-            setSelectionRange(parseInt(span.dataset.start, 10), parseInt(span.dataset.end, 10));
-            positionHandles(span);
+            const start = parseInt(span.dataset.start, 10);
+            const end = parseInt(span.dataset.end, 10);
+            if (!Number.isNaN(start) && !Number.isNaN(end)) {
+                setSelectionRange(start, end);
+                positionHandles(span);
+            } else {
+                hideHandles();
+            }
             showTypePopup(span);
         });
     });
@@ -261,11 +286,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!tr) return;
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             const span = document.querySelector(`.entity-mark[data-id="${tr.dataset.id}"]`);
-            if (span) span.classList.add('selected');
-            currentSpan = span;
             if (span) {
-                setSelectionRange(parseInt(span.dataset.start, 10), parseInt(span.dataset.end, 10));
-                positionHandles(span);
+                span.classList.add('selected');
+                currentSpan = span;
+                const start = parseInt(span.dataset.start, 10);
+                const end = parseInt(span.dataset.end, 10);
+                if (!Number.isNaN(start) && !Number.isNaN(end)) {
+                    setSelectionRange(start, end);
+                    positionHandles(span);
+                } else {
+                    hideHandles();
+                }
             }
         });
     });

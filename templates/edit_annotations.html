@@ -32,7 +32,7 @@
         </thead>
         <tbody>
         {% for e in entities %}
-            <tr data-id="{{ e.id }}" data-type="{{ e.type }}" data-norm="{{ e.normalized }}" data-start="{{ e.start_char }}" data-end="{{ e.end_char }}">
+            <tr data-id="{{ e.id }}" data-type="{{ e.type }}" data-norm="{{ e.normalized }}">
                 <td>{{ e.id }}</td>
                 <td>{{ e.type }}</td>
                 <td>{{ e.text }}</td>
@@ -64,7 +64,7 @@
         if (typeof value !== 'string') return escapeHtml(value);
         return value.replace(/<([^,<>]+), id:(\d+)>/g, (_m, txt, id) => {
             const ent = entityMap[id] || {};
-            const attrs = [`class=\"entity-mark\"`,`data-id=\"${id}\"`,`data-start=\"${ent.start_char || 0}\"`,`data-end=\"${ent.end_char || 0}\"`];
+            const attrs = [`class=\"entity-mark\"`, `data-id=\"${id}\"`];
             if (ent.type) attrs.push(`data-type=\"${escapeHtml(ent.type)}\"`);
             if (ent.normalized) attrs.push(`data-norm=\"${escapeHtml(ent.normalized)}\"`);
             return `<span ${attrs.join(' ')}>${escapeHtml(txt)}</span>`;
