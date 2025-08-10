@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Document</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+<script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+<aside class="sidebar" data-collapsed="false">
+  <button class="sidebar-toggle btn ghost" aria-label="Toggle sidebar">☰</button>
+  <nav>
+    <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+    <a href="{{ url_for('corpus') }}" class="nav-link">Corpus</a>
+    <a href="{{ url_for('document') }}" class="nav-link active">Document</a>
+    <a href="{{ url_for('graph_page') }}" class="nav-link">Graph</a>
+    <a href="{{ url_for('pipelines_page') }}" class="nav-link">Pipelines</a>
+    <a href="{{ url_for('sql_lab') }}" class="nav-link">SQL Lab</a>
+    <a href="{{ url_for('settings_page') }}" class="nav-link">Settings</a>
+  </nav>
+</aside>
+<div class="main" style="flex:1;display:flex;flex-direction:column;min-height:100vh;">
+<header class="topbar">
+  <div class="breadcrumbs">Document</div>
+  <div class="actions" style="display:flex;gap:.5rem;">
+    <button class="btn ghost" data-action="open-palette" aria-label="Command palette">⌘K</button>
+    <button class="btn ghost" data-action="theme-toggle" aria-label="Toggle theme">🌗</button>
+  </div>
+</header>
+<main class="page">
+  <div class="card"><h1>Document</h1><p>Tri-pane layout placeholder.</p></div>
+</main>
+</div>
+<div id="palette" class="palette hidden" role="dialog" aria-modal="true">
+  <div class="palette-content">
+    <input type="text" placeholder="Search commands" aria-label="Command">
+    <ul></ul>
+  </div>
+</div>
+<div id="toasts" class="toasts"></div>
+</body>
+</html>
