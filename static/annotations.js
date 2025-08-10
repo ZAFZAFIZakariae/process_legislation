@@ -118,7 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd });
     }
 
-    actionEditBtn.addEventListener('click', () => {
+    actionEditBtn.addEventListener('click', ev => {
+        ev.stopPropagation();
         if (!currentSpan) return;
         actionPopup.style.display = 'none';
         const row = document.querySelector(`#entity-table tr[data-id="${currentSpan.dataset.id}"]`);
@@ -126,7 +127,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn) btn.click();
     });
 
-    actionDeleteBtn.addEventListener('click', () => {
+    actionDeleteBtn.addEventListener('click', ev => {
+        ev.stopPropagation();
         if (!currentSpan) return;
         const fd = new FormData();
         fd.append('action', 'delete');
@@ -396,7 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const addBtn = document.getElementById('add-entity-btn');
     if (addBtn) {
-        addBtn.addEventListener('click', () => {
+        addBtn.addEventListener('click', ev => {
+            ev.stopPropagation();
             addMode = true;
             const sel = window.getSelection();
             if (sel) sel.removeAllRanges();
@@ -420,7 +423,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.querySelectorAll('.edit-entity').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', ev => {
+            ev.stopPropagation();
             const tr = btn.closest('tr');
             if (!tr) return;
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
