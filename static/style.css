@@ -1,0 +1,258 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --primary: #006c9a;
+    --primary-dark: #005077;
+    --accent: #ff7043;
+    --bg: #f4f6f9;
+}
+
+body {
+    font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+    background-color: var(--bg);
+    color: #333;
+    margin: 0;
+}
+
+header {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+header .logo {
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+
+nav a {
+    color: #fff;
+    margin-right: 15px;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 6px 8px;
+    border-radius: 4px;
+    transition: background 0.2s ease-in-out;
+}
+
+nav a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 15px;
+}
+
+.card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: 500;
+}
+
+input[type="file"],
+input[type="text"],
+select,
+textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button,
+.button {
+    background-color: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 12px 18px;
+    margin-top: 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+button:hover,
+.button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.button.accent {
+    background-color: var(--accent);
+}
+
+.menu {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.menu li {
+    margin: 0;
+}
+
+.menu a.button {
+    width: 100%;
+    text-align: center;
+}
+
+.file-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.file-list li {
+    margin: 0;
+}
+
+.file-list a.button {
+    width: 100%;
+    text-align: left;
+}
+
+#search {
+    margin-bottom: 10px;
+}
+
+pre {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.ner-span {
+    direction: rtl;
+}
+
+.entity-mark {
+    background-color: #FFFF00;
+}
+
+.entity-mark.selected {
+    background-color: orange;
+}
+
+/* Floating handles for adjusting entity boundaries */
+.entity-handle {
+    position: absolute;
+    z-index: 100;
+    font-weight: bold;
+    cursor: ew-resize;
+    user-select: none;
+    color: red;
+    touch-action: none;
+}
+
+/* Popup for changing annotation type */
+.annotation-popup {
+    position: absolute;
+    z-index: 200;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 4px;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.annotation-popup select {
+    font-size: 0.9rem;
+}
+
+.annotation-popup button {
+    margin-right: 4px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 6px;
+    text-align: left;
+}
+
+th {
+    background-color: var(--primary);
+    color: #fff;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.button.small {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    margin-top: 0;
+}
+
+.inline-form {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.json-tree ul {
+    list-style: none;
+    margin-left: 20px;
+    padding-left: 15px;
+    border-left: 1px solid #ccc;
+}
+
+.json-tree summary {
+    cursor: pointer;
+    background: var(--primary);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.json-tree summary:hover {
+    background: var(--primary-dark);
+}
+
+.json-key {
+    color: var(--primary-dark);
+    font-weight: 500;
+}
+
+.json-value {
+    color: var(--accent);
+}
+
+/* Limit entity table to show 10 rows with scroll */
+.entity-table-wrapper {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.entity-table-wrapper thead th {
+    position: sticky;
+    top: 0;
+}
