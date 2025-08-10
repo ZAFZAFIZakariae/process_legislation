@@ -9,7 +9,18 @@ try:
 except Exception:  # pragma: no cover
     pd = None
 import sqlite3
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
+from types import SimpleNamespace
+
+from annotation_editor import (
+    add_entity as ae_add_entity,
+    delete_entity as ae_delete_entity,
+    update_entity as ae_update_entity,
+    replace_text as ae_replace_text,
+    fix_entity_offsets as ae_fix_offsets,
+    text_with_markers as ae_text_with_markers,
+    parse_marked_text as ae_parse_marked_text,
+)
 
 try:
     import networkx as nx  # optional
@@ -377,6 +388,34 @@ def _collect_documents() -> dict[str, dict[str, str]]:
     return docs
 
 
+def _load_annotation(name: str) -> tuple[str, list[dict], list[dict], str, str]:
+    """Load raw text and NER data for *name* along with file paths."""
+    txt_path = os.path.join('data_txt', f'{name}.txt')
+    ner_path = os.path.join('ner_output', f'{name}_ner.json')
+    text = ''
+    if os.path.exists(txt_path):
+        with open(txt_path, 'r', encoding='utf-8') as f:
+            text = f.read()
+    entities: list[dict] = []
+    relations: list[dict] = []
+    if os.path.exists(ner_path):
+        with open(ner_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        entities = data.get('entities', [])
+        relations = data.get('relations', [])
+    return text, entities, relations, txt_path, ner_path
+
+
+def _save_annotation(text: str, entities: list[dict], relations: list[dict], txt_path: str, ner_path: str) -> None:
+    """Persist raw *text* and NER annotations back to disk."""
+    os.makedirs(os.path.dirname(txt_path), exist_ok=True)
+    with open(txt_path, 'w', encoding='utf-8') as f:
+        f.write(text)
+    os.makedirs(os.path.dirname(ner_path), exist_ok=True)
+    with open(ner_path, 'w', encoding='utf-8') as f:
+        json.dump({'entities': entities, 'relations': relations}, f, ensure_ascii=False, indent=2)
+
+
 @app.route('/legislation')
 def view_legislation():
     docs = _collect_documents()
@@ -416,6 +455,82 @@ def view_legislation():
         data=data,
         entities=entities,
     )
+
+
+@app.route('/legislation/edit', methods=['GET', 'POST'])
+def edit_legislation():
+    docs = _collect_documents()
+    name = request.args.get('file')
+    if name not in docs:
+        return "File not found", 404
+
+    text, entities, relations, txt_path, ner_path = _load_annotation(name)
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'save':
+            content = request.form.get('content', '')
+            try:
+                text, entities = ae_parse_marked_text(content)
+                _save_annotation(text, entities, relations, txt_path, ner_path)
+                return redirect(url_for('view_legislation', file=name))
+            except Exception as exc:
+                return render_template(
+                    'edit_annotations.html',
+                    file=name,
+                    content=content,
+                    entities=entities,
+                    error=str(exc),
+                )
+
+        # operations acting on existing annotations
+        if action == 'add':
+            args = SimpleNamespace(
+                add=(request.form.get('start'), request.form.get('end'), request.form.get('type')),
+                norm=request.form.get('norm'),
+            )
+            ae_add_entity(args, text, entities)
+        elif action == 'delete':
+            args = SimpleNamespace(delete=request.form.get('id'))
+            ae_delete_entity(args, entities)
+        elif action == 'update':
+            uid = request.form.get('id')
+            items = [uid]
+            if request.form.get('type'):
+                items.append(f"type={request.form.get('type')}")
+            if request.form.get('norm'):
+                items.append(f"norm={request.form.get('norm')}")
+            if request.form.get('start'):
+                items.append(f"start={request.form.get('start')}")
+            if request.form.get('end'):
+                items.append(f"end={request.form.get('end')}")
+            args = SimpleNamespace(update=items)
+            ae_update_entity(args, entities)
+        elif action == 'replace':
+            args = SimpleNamespace(
+                replace_text=(
+                    request.form.get('start'),
+                    request.form.get('end'),
+                    request.form.get('text'),
+                )
+            )
+            text = ae_replace_text(args, text, entities)
+        elif action == 'fix':
+            ae_fix_offsets(text, {'entities': entities})
+
+        _save_annotation(text, entities, relations, txt_path, ner_path)
+        annotated = ae_text_with_markers(text, entities)
+        return render_template(
+            'edit_annotations.html',
+            file=name,
+            content=annotated,
+            entities=entities,
+            error=None,
+        )
+
+    annotated = ae_text_with_markers(text, entities)
+    return render_template('edit_annotations.html', file=name, content=annotated, entities=entities, error=None)
 
 
 @app.route('/query', methods=['GET', 'POST'])
