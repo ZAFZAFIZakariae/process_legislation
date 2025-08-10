@@ -257,11 +257,17 @@ document.addEventListener('DOMContentLoaded', () => {
             span.dataset.start = start;
             span.dataset.end = end;
         }
-        const startRect = getRectAtOffset(start);
-        const endRect = getRectAtOffset(end);
-        if (!startRect || !endRect) {
-            hideHandles();
-            return;
+        let startRect = getRectAtOffset(start);
+        let endRect = getRectAtOffset(end);
+        if (
+            !startRect ||
+            !endRect ||
+            startRect.width === 0 ||
+            endRect.width === 0
+        ) {
+            const rect = span.getBoundingClientRect();
+            startRect = { left: rect.left, top: rect.top, height: rect.height };
+            endRect = { right: rect.right, top: rect.top, height: rect.height };
         }
         const handleH = startHandle.offsetHeight || 20;
         const startTop = window.scrollY + startRect.top + (startRect.height - handleH) / 2;
