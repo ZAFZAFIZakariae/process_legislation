@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         handle.addEventListener('pointerup', endDrag);
     });
 
-    const moveHandler = ev => {
+    function moveHandler(ev) {
         if (!dragTarget) return;
         const selected = document.querySelector('.entity-mark.selected');
         if (!selected) return;
@@ -356,11 +356,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setSelectionRange(start, end);
         positionHandles(selected);
         wasDragging = true;
-    };
+    }
     document.addEventListener('mousemove', moveHandler);
     document.addEventListener('pointermove', moveHandler);
 
-    const endDrag = () => {
+    function endDrag() {
         if (!dragTarget) return;
         dragTarget = null;
         textDiv.style.userSelect = '';
@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
             saveEntity(document.querySelector('.entity-mark.selected'));
             wasDragging = false;
         }
-    };
+    }
     document.addEventListener('mouseup', endDrag);
     document.addEventListener('pointerup', endDrag);
 
