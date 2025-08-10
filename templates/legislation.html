@@ -120,7 +120,7 @@
         if (typeof value !== 'string') {
             return escapeHtml(String(value));
         }
-        return value.replace(/<([^,<>]+), id:(\d+)>/g, function(_m, txt, id) {
+        return value.replace(/<([^,<>]+), id:([^>]+)>/g, function(_m, txt, id) {
             const ent = entityMap[id];
             const bold = `<strong>${escapeHtml(txt)}</strong>`;
             const target = articleTargets[id];
