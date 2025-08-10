@@ -293,8 +293,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function getOffsetFromCoords(x, y) {
         const prevVisStart = startHandle.style.visibility;
         const prevVisEnd = endHandle.style.visibility;
+        const prevUserSelect = textDiv.style.userSelect;
         startHandle.style.visibility = 'hidden';
         endHandle.style.visibility = 'hidden';
+        // Temporarily enable text selection so caretPositionFromPoint works in all browsers.
+        textDiv.style.userSelect = 'text';
         let range;
         if (document.caretPositionFromPoint) {
             const pos = document.caretPositionFromPoint(x, y);
@@ -307,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         startHandle.style.visibility = prevVisStart;
         endHandle.style.visibility = prevVisEnd;
+        textDiv.style.userSelect = prevUserSelect;
         if (!range) return null;
         const node = range.startContainer;
         const off = range.startOffset;
