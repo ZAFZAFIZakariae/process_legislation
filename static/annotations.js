@@ -11,6 +11,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const nudgeEndBtns = document.querySelectorAll('.nudge-end');
     const repStart = document.getElementById('rep-start');
     const repEnd = document.getElementById('rep-end');
+    const updateForm = document.getElementById('update-form');
+
+    // Build list of available entity types from existing spans
+    const availableTypes = Array.from(
+        new Set(Array.from(document.querySelectorAll('.entity-mark'))
+            .map(s => s.dataset.type)
+            .filter(Boolean))
+    );
+
+    // Popup for changing entity types
+    const typePopup = document.createElement('div');
+    typePopup.className = 'annotation-popup';
+    typePopup.style.display = 'none';
+    const typeSelect = document.createElement('select');
+    availableTypes.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        typeSelect.appendChild(opt);
+    });
+    typePopup.appendChild(typeSelect);
+    document.body.appendChild(typePopup);
+
+    let currentSpan = null;
+
+    function showTypePopup(span) {
+        if (!span) return;
+        const rect = span.getBoundingClientRect();
+        typeSelect.value = span.dataset.type || '';
+        typePopup.style.top = `${window.scrollY + rect.top - typePopup.offsetHeight - 5}px`;
+        typePopup.style.left = `${window.scrollX + rect.left}px`;
+        typePopup.style.display = 'block';
+        currentSpan = span;
+    }
+
+    typeSelect.addEventListener('change', () => {
+        if (!currentSpan) return;
+        const newType = typeSelect.value;
+        updId.value = currentSpan.dataset.id;
+        updType.value = newType;
+        updateForm.submit();
+        typePopup.style.display = 'none';
+    });
+
+    document.addEventListener('click', ev => {
+        if (!typePopup.contains(ev.target)) {
+            typePopup.style.display = 'none';
+        }
+    });
 
     // Floating handles for adjusting entity offsets in the text view
     const startHandle = document.createElement('div');
@@ -35,7 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
             hideHandles();
             return;
         }
-        const rect = span.getBoundingClientRect();
+        let rect = span.getBoundingClientRect();
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+            const range = sel.getRangeAt(0);
+            if (textDiv.contains(range.startContainer) && textDiv.contains(range.endContainer)) {
+                rect = range.getBoundingClientRect();
+            }
+        }
         const handleH = startHandle.offsetHeight || 20;
         const top = window.scrollY + rect.top + (rect.height - handleH) / 2;
         startHandle.style.top = `${top}px`;
@@ -77,14 +133,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     [startHandle, endHandle].forEach(handle => {
-        handle.addEventListener('mousedown', ev => {
+        const startDrag = ev => {
             dragTarget = handle === startHandle ? 'start' : 'end';
+            if (handle.setPointerCapture && ev.pointerId !== undefined) {
+                handle.setPointerCapture(ev.pointerId);
+            }
             ev.preventDefault();
             ev.stopPropagation();
-        });
+        };
+        handle.addEventListener('mousedown', startDrag);
+        handle.addEventListener('pointerdown', startDrag);
     });
-
-    document.addEventListener('mousemove', ev => {
+    const moveHandler = ev => {
         if (!dragTarget) return;
         const selected = document.querySelector('.entity-mark.selected');
         if (!selected) return;
@@ -103,11 +163,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setSelectionRange(start, end);
         positionHandles(selected);
-    });
+    };
 
-    document.addEventListener('mouseup', () => {
-        dragTarget = null;
-    });
+    document.addEventListener('mousemove', moveHandler);
+    document.addEventListener('pointermove', moveHandler);
+
+    const endDrag = () => { dragTarget = null; };
+    document.addEventListener('mouseup', endDrag);
+    document.addEventListener('pointerup', endDrag);
 
     document.addEventListener('click', ev => {
         if (!ev.target.closest('.entity-mark')) {
@@ -201,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updEnd.value = span.dataset.end;
             setSelectionRange(parseInt(span.dataset.start), parseInt(span.dataset.end));
             positionHandles(span);
+            showTypePopup(span);
         });
     });
 

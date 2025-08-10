@@ -165,6 +165,21 @@ pre {
     color: red;
 }
 
+/* Popup for changing annotation type */
+.annotation-popup {
+    position: absolute;
+    z-index: 200;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 4px;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.annotation-popup select {
+    font-size: 0.9rem;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
