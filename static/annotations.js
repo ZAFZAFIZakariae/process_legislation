@@ -60,8 +60,27 @@ document.addEventListener('DOMContentLoaded', () => {
         repEnd.value = end;
         const selected = document.querySelector('.entity-mark.selected');
         if (selected) {
-            updStart.value = start;
-            updEnd.value = end;
+            const curStart = parseInt(updStart.value || selected.dataset.start || '0', 10);
+            const curEnd = parseInt(updEnd.value || selected.dataset.end || '0', 10);
+            if (start === end) {
+                const distToStart = Math.abs(start - curStart);
+                const distToEnd = Math.abs(end - curEnd);
+                if (distToStart <= distToEnd) {
+                    updStart.value = start;
+                    selected.dataset.start = updStart.value;
+                    setSelectionRange(start, curEnd);
+                } else {
+                    updEnd.value = end;
+                    selected.dataset.end = updEnd.value;
+                    setSelectionRange(curStart, end);
+                }
+            } else {
+                updStart.value = start;
+                updEnd.value = end;
+                selected.dataset.start = updStart.value;
+                selected.dataset.end = updEnd.value;
+                setSelectionRange(start, end);
+            }
         }
     });
 
