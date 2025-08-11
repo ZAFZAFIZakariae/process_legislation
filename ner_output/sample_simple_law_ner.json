@@ -1,13 +1,13 @@
 {
   "entities": [
     {
-      "id": 100,
+      "id": 1,
       "type": "LAW",
       "text": "قانون تجريبي رقم 0.00",
       "normalized": "0.00 القانون التجريبي"
     },
     {
-      "id": 200,
+      "id": 2,
       "type": "ARTICLE",
       "text": "مادة 2",
       "normalized": "2 المادة"
@@ -17,8 +17,8 @@
     {
       "relation_id": 1,
       "type": "refers_to",
-      "source_id": 100,
-      "target_id": 200
+      "source_id": 1,
+      "target_id": 2
     }
   ]
 }
