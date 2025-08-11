@@ -339,21 +339,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (handle.setPointerCapture && ev.pointerId !== undefined) {
                 handle.setPointerCapture(ev.pointerId);
             }
+            document.addEventListener('mousemove', moveHandler);
+            document.addEventListener('pointermove', moveHandler);
+            document.addEventListener('touchmove', moveHandler, { passive: false });
+            document.addEventListener('mouseup', endDrag, { once: true });
+            document.addEventListener('pointerup', endDrag, { once: true });
+            document.addEventListener('touchend', endDrag, { once: true });
+            document.addEventListener('touchcancel', endDrag, { once: true });
             ev.preventDefault();
             ev.stopPropagation();
         };
         handle.addEventListener('mousedown', startDrag);
         handle.addEventListener('pointerdown', startDrag);
-        handle.addEventListener('touchstart', startDrag);
-        // Some browsers do not bubble move/up events when pointer capture is used,
-        // so also listen on the handles themselves to ensure dragging works.
-        handle.addEventListener('mousemove', moveHandler);
-        handle.addEventListener('pointermove', moveHandler);
-        handle.addEventListener('touchmove', moveHandler);
-        handle.addEventListener('mouseup', endDrag);
-        handle.addEventListener('pointerup', endDrag);
-        handle.addEventListener('touchend', endDrag);
-        handle.addEventListener('touchcancel', endDrag);
+        handle.addEventListener('touchstart', startDrag, { passive: false });
     });
 
     function moveHandler(ev) {
@@ -385,16 +383,15 @@ document.addEventListener('DOMContentLoaded', () => {
         positionHandles(selected);
         wasDragging = true;
     }
-    document.addEventListener('mousemove', moveHandler);
-    document.addEventListener('pointermove', moveHandler);
-    document.addEventListener('touchmove', moveHandler);
-
     function endDrag(ev) {
         if (!dragTarget) return;
         dragTarget = null;
         textDiv.style.userSelect = '';
         textDiv.style.webkitUserSelect = '';
         textDiv.style.MozUserSelect = '';
+        document.removeEventListener('mousemove', moveHandler);
+        document.removeEventListener('pointermove', moveHandler);
+        document.removeEventListener('touchmove', moveHandler);
         if (ev && ev.pointerId !== undefined) {
             [startHandle, endHandle].forEach(h => {
                 if (h.releasePointerCapture) {
@@ -407,10 +404,6 @@ document.addEventListener('DOMContentLoaded', () => {
             wasDragging = false;
         }
     }
-    document.addEventListener('mouseup', endDrag);
-    document.addEventListener('pointerup', endDrag);
-    document.addEventListener('touchend', endDrag);
-    document.addEventListener('touchcancel', endDrag);
 
     document.addEventListener('click', ev => {
         if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
