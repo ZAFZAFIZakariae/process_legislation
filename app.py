@@ -504,6 +504,8 @@ def _save_annotation(
     os.makedirs(os.path.dirname(txt_path), exist_ok=True)
     with open(txt_path, 'w', encoding='utf-8') as f:
         f.write(text)
+        f.flush()
+        os.fsync(f.fileno())
 
     os.makedirs(os.path.dirname(ner_path), exist_ok=True)
     clean_entities: list[dict] = []
@@ -526,6 +528,8 @@ def _save_annotation(
             ensure_ascii=False,
             indent=2,
         )
+        f.flush()
+        os.fsync(f.fileno())
 
     if structure_path and os.path.exists(structure_path):
         def _strip_markers(obj):
@@ -545,6 +549,8 @@ def _save_annotation(
         annotate_json(struct, clean_entities)
         with open(structure_path, 'w', encoding='utf-8') as sf:
             json.dump(struct, sf, ensure_ascii=False, indent=2)
+            sf.flush()
+            os.fsync(sf.fileno())
 
 
 @app.route('/legislation')
@@ -662,6 +668,16 @@ def edit_legislation():
             ae_fix_offsets(text, {'entities': entities})
 
         _save_annotation(text, entities, relations, txt_path, ner_path, structure_path)
+
+        # Reload from disk so the editor shows the persisted state even if in-memory
+        # objects were only partially updated. This also validates that the files
+        # were written correctly.
+        text, entities, relations, _, _ = _load_annotation(name)
+
+        if structure_path and os.path.exists(structure_path):
+            with open(structure_path, 'r', encoding='utf-8') as sf:
+                structure = json.load(sf)
+
         annotated = ae_text_with_markers(text, entities)
         return render_template(
             'edit_annotations.html',

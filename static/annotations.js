@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (span.dataset.type) fd.append('type', span.dataset.type);
         if (span.dataset.norm) fd.append('norm', span.dataset.norm);
         fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
-            .then(() => window.location.reload());
+            .then(resp => { if (resp.ok) { window.location.reload(); } else { resp.text().then(t => alert(t)); } });
     }
 
     actionEditBtn.addEventListener('click', ev => {
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fd.append('action', 'delete');
         fd.append('id', currentSpan.dataset.id);
         fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
-            .then(() => window.location.reload());
+            .then(resp => { if (resp.ok) { window.location.reload(); } else { resp.text().then(t => alert(t)); } });
     });
 
     saveBtn.addEventListener('click', () => {
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('type', newType);
             if (newNorm) fd.append('norm', newNorm);
             fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
-                .then(() => window.location.reload());
+                .then(resp => { if (resp.ok) { window.location.reload(); } else { resp.text().then(t => alert(t)); } });
             addRange = null;
             addMode = false;
         }
