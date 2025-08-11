@@ -186,6 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('click', ev => {
+        if (addMode && textDiv.contains(ev.target)) {
+            return;
+        }
         if (!editPopup.contains(ev.target)) {
             editPopup.style.display = 'none';
             if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
