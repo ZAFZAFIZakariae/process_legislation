@@ -20,6 +20,7 @@ from annotation_editor import (
     text_with_markers as ae_text_with_markers,
     parse_marked_text as ae_parse_marked_text,
 )
+from pipeline.structured_ner import annotate_json
 
 try:
     import networkx as nx  # optional
@@ -490,11 +491,20 @@ def _load_annotation(name: str) -> tuple[str, list[dict], list[dict], str, str]:
     return text, entities, relations, txt_path, ner_path
 
 
-def _save_annotation(text: str, entities: list[dict], relations: list[dict], txt_path: str, ner_path: str) -> None:
+def _save_annotation(
+    text: str,
+    entities: list[dict],
+    relations: list[dict],
+    txt_path: str,
+    ner_path: str,
+    structure_path: str | None = None,
+) -> None:
     """Persist raw *text* and NER annotations back to disk."""
+
     os.makedirs(os.path.dirname(txt_path), exist_ok=True)
     with open(txt_path, 'w', encoding='utf-8') as f:
         f.write(text)
+
     os.makedirs(os.path.dirname(ner_path), exist_ok=True)
     clean_entities: list[dict] = []
     for ent in entities:
@@ -505,9 +515,36 @@ def _save_annotation(text: str, entities: list[dict], relations: list[dict], txt
                 ent['text'] = text[s:e]
         except Exception:
             pass
-        clean_entities.append({k: v for k, v in ent.items() if k not in {'start_char', 'end_char'}})
+        clean_entities.append(
+            {k: v for k, v in ent.items() if k not in {'start_char', 'end_char'}}
+        )
+
     with open(ner_path, 'w', encoding='utf-8') as f:
-        json.dump({'entities': clean_entities, 'relations': relations}, f, ensure_ascii=False, indent=2)
+        json.dump(
+            {'entities': clean_entities, 'relations': relations},
+            f,
+            ensure_ascii=False,
+            indent=2,
+        )
+
+    if structure_path and os.path.exists(structure_path):
+        def _strip_markers(obj):
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    obj[k] = _strip_markers(v)
+                return obj
+            if isinstance(obj, list):
+                return [_strip_markers(v) for v in obj]
+            if isinstance(obj, str):
+                return re.sub(r'<([^,<>]+), id:[^>]+>', r'\1', obj)
+            return obj
+
+        with open(structure_path, 'r', encoding='utf-8') as sf:
+            struct = json.load(sf)
+        struct = _strip_markers(struct)
+        annotate_json(struct, clean_entities)
+        with open(structure_path, 'w', encoding='utf-8') as sf:
+            json.dump(struct, sf, ensure_ascii=False, indent=2)
 
 
 @app.route('/legislation')
@@ -576,7 +613,7 @@ def edit_legislation():
             content = request.form.get('content', '')
             try:
                 text, entities = ae_parse_marked_text(content)
-                _save_annotation(text, entities, relations, txt_path, ner_path)
+                _save_annotation(text, entities, relations, txt_path, ner_path, structure_path)
                 return redirect(url_for('view_legislation', file=name))
             except Exception as exc:
                 return render_template(
@@ -624,7 +661,7 @@ def edit_legislation():
         elif action == 'fix':
             ae_fix_offsets(text, {'entities': entities})
 
-        _save_annotation(text, entities, relations, txt_path, ner_path)
+        _save_annotation(text, entities, relations, txt_path, ner_path, structure_path)
         annotated = ae_text_with_markers(text, entities)
         return render_template(
             'edit_annotations.html',
