@@ -495,6 +495,62 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Allow fine-tuning entity boundaries with the keyboard.
+    // Alt+Arrow adjusts the start, Shift+Arrow adjusts the end.
+    document.addEventListener('keydown', ev => {
+        if (!editMode) return;
+        const span = document.querySelector('.entity-mark.selected');
+        if (!span) return;
+        let start = parseInt(span.dataset.start, 10) || 0;
+        let end = parseInt(span.dataset.end, 10) || 0;
+        const maxLen = textDiv.textContent.length;
+        let changed = false;
+        if (ev.altKey) {
+            if (ev.key === 'ArrowLeft') {
+                start = Math.max(0, start - 1);
+                changed = true;
+            } else if (ev.key === 'ArrowRight') {
+                start = Math.min(end, start + 1);
+                changed = true;
+            }
+        } else if (ev.shiftKey) {
+            if (ev.key === 'ArrowLeft') {
+                end = Math.max(start, end - 1);
+                changed = true;
+            } else if (ev.key === 'ArrowRight') {
+                end = Math.min(maxLen, end + 1);
+                changed = true;
+            }
+        }
+        if (changed) {
+            span.dataset.start = start;
+            span.dataset.end = end;
+            setSelectionRange(start, end);
+            positionHandles(span);
+            saveEntity(span);
+            ev.preventDefault();
+        }
+    });
+
+    // Keep annotation brackets aligned with any manual selection changes.
+    document.addEventListener('selectionchange', () => {
+        if (!editMode) return;
+        const span = document.querySelector('.entity-mark.selected');
+        if (!span) return;
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        if (!textDiv.contains(range.startContainer) || !textDiv.contains(range.endContainer)) return;
+        let start = getOffset(range.startContainer, range.startOffset);
+        let end = getOffset(range.endContainer, range.endOffset);
+        if (start > end) [start, end] = [end, start];
+        if (start !== parseInt(span.dataset.start, 10) || end !== parseInt(span.dataset.end, 10)) {
+            span.dataset.start = start;
+            span.dataset.end = end;
+            positionHandles(span);
+        }
+    });
+
     document.querySelectorAll('.entity-mark').forEach(span => {
         span.addEventListener('click', () => {
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
