@@ -202,7 +202,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!actionPopup.contains(ev.target) && !ev.target.closest('.entity-mark')) {
             actionPopup.style.display = 'none';
         }
-        if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
+        if (
+            !ev.target.closest('.entity-mark') &&
+            !ev.target.closest('.entity-handle') &&
+            !editPopup.contains(ev.target)
+        ) {
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             hideHandles();
             currentSpan = null;
@@ -499,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Alt+Arrow adjusts the start, Shift+Arrow adjusts the end.
     document.addEventListener('keydown', ev => {
         if (!editMode) return;
-        const span = document.querySelector('.entity-mark.selected');
+        const span = currentSpan || document.querySelector('.entity-mark.selected');
         if (!span) return;
         let start = parseInt(span.dataset.start, 10) || 0;
         let end = parseInt(span.dataset.end, 10) || 0;
@@ -526,6 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
             span.dataset.start = start;
             span.dataset.end = end;
             setSelectionRange(start, end);
+            // Reposition bracket handles so keyboard adjustments are visible
             positionHandles(span);
             saveEntity(span);
             ev.preventDefault();
