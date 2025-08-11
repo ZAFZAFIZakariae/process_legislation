@@ -53,8 +53,6 @@ except BaseException:  # pragma: no cover - missing dependency
     run_structured_ner = None
 
 app = Flask(__name__)
-load_settings()
-
 # Path to the SQLite database used for querying
 DB_PATH = os.environ.get("DB_PATH", "legislation.db")
 
@@ -105,6 +103,9 @@ def save_settings(data: dict) -> None:
 def get_model() -> str:
     """Return the currently configured GPT model."""
     return load_settings().get("model", "gpt-3.5-turbo-16k")
+
+# Initialise settings and credentials at import time
+load_settings()
 
 # Arabic labels for relation types
 RELATION_LABELS = {
