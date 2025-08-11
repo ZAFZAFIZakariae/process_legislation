@@ -1,58 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <title>Legal NER Assistant</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-</head>
-<body>
-<header>
-    <div class="logo">Legal AI Assistant</div>
-    <nav>
-        <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('index') }}">Entities</a>
-        <a href="{{ url_for('extract_structure') }}">Structure</a>
-        <a href="{{ url_for('parse_decision_route') }}">Decision</a>
-        <a href="{{ url_for('run_query') }}">SQL</a>
-        <a href="{{ url_for('view_legislation') }}">Moroccan Legislation</a>
-    </nav>
-</header>
-<main class="container">
-    <h1>Legal NER Assistant</h1>
-    <form class="card" action="{{ url_for('index') }}" method="post" enctype="multipart/form-data">
-        <label>Upload PDF or text file:
-            <input type="file" name="file" required>
-        </label>
-        <label>Model:
-            <input list="models" name="model" value="gpt-3.5-turbo-16k">
-            <datalist id="models">
-                <option value="gpt-3.5-turbo-16k">
-                <option value="gpt-4o">
-            </datalist>
-        </label>
-        <button type="submit">Extract Entities</button>
-    </form>
-
-    {% if entities_table %}
-        <section class="card">
-            <h2>Annotated Text</h2>
-            <div>{{ annotated|safe }}</div>
-
-            <h2>Entities</h2>
-            {{ entities_table|safe }}
-            <a class="button" href="data:text/csv;charset=utf-8,{{ entities_csv | urlencode }}" download="entities.csv">Download entities.csv</a>
-
-            {% if relations_table %}
-                <h2>Relations</h2>
-                {{ relations_table|safe }}
-                <a class="button" href="data:text/csv;charset=utf-8,{{ relations_csv | urlencode }}" download="relations.csv">Download relations.csv</a>
-                {% if graph_html %}
-                    <h2>Relation Graph</h2>
-                    <div>{{ graph_html|safe }}</div>
-                {% endif %}
-            {% endif %}
-        </section>
+{% extends "base.html" %}
+{% block title %}Legal NER Assistant{% endblock %}
+{% block content %}
+<h1>Legal NER Assistant</h1>
+<form class="card" action="{{ url_for('index') }}" method="post" enctype="multipart/form-data">
+    <label>Upload PDF or text file:
+        <input type="file" name="file" required />
+    </label>
+    <button type="submit">Extract Entities</button>
+</form>
+{% if entities_table %}
+<section class="card">
+    <h2>Annotated Text</h2>
+    <div>{{ annotated|safe }}</div>
+    <h2>Entities</h2>
+    {{ entities_table|safe }}
+    <a class="button" href="data:text/csv;charset=utf-8,{{ entities_csv | urlencode }}" download="entities.csv">Download entities.csv</a>
+    {% if relations_table %}
+    <h2>Relations</h2>
+    {{ relations_table|safe }}
+    <a class="button" href="data:text/csv;charset=utf-8,{{ relations_csv | urlencode }}" download="relations.csv">Download relations.csv</a>
+    {% if graph_html %}
+    <h2>Relation Graph</h2>
+    <div>{{ graph_html|safe }}</div>
     {% endif %}
-</main>
-</body>
-</html>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

@@ -53,9 +53,58 @@ except BaseException:  # pragma: no cover - missing dependency
     run_structured_ner = None
 
 app = Flask(__name__)
+load_settings()
 
 # Path to the SQLite database used for querying
 DB_PATH = os.environ.get("DB_PATH", "legislation.db")
+
+# Configuration for model and API credentials
+SETTINGS_FILE = "settings.json"
+
+
+def apply_settings(cfg: dict) -> None:
+    """Apply API credentials from *cfg* to environment variables."""
+    if cfg.get("provider") == "azure":
+        os.environ["AZURE_OPENAI_API_KEY"] = cfg.get("azure_key", "")
+        os.environ["AZURE_OPENAI_ENDPOINT"] = cfg.get("azure_endpoint", "")
+        os.environ.pop("OPENAI_API_KEY", None)
+    else:
+        os.environ["OPENAI_API_KEY"] = cfg.get("openai_key", "")
+        os.environ.pop("AZURE_OPENAI_API_KEY", None)
+        os.environ.pop("AZURE_OPENAI_ENDPOINT", None)
+
+
+def load_settings() -> dict:
+    """Load settings from *SETTINGS_FILE* (creating defaults if missing)."""
+    default = {
+        "provider": "openai",
+        "model": "gpt-4o",
+        "openai_key": "",
+        "azure_key": "",
+        "azure_endpoint": "",
+    }
+    try:
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = default.copy()
+    else:
+        for k, v in default.items():
+            data.setdefault(k, v)
+    apply_settings(data)
+    return data
+
+
+def save_settings(data: dict) -> None:
+    """Persist *data* to *SETTINGS_FILE* and apply credentials."""
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    apply_settings(data)
+
+
+def get_model() -> str:
+    """Return the currently configured GPT model."""
+    return load_settings().get("model", "gpt-3.5-turbo-16k")
 
 # Arabic labels for relation types
 RELATION_LABELS = {
@@ -167,15 +216,28 @@ def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
     return html_str.replace("</body>", script + "</body>")
 
 
+@app.route('/settings', methods=['POST'])
+def settings_route():
+    cfg = load_settings()
+    cfg['provider'] = request.form.get('provider', cfg.get('provider'))
+    cfg['model'] = request.form.get('model', cfg.get('model'))
+    cfg['openai_key'] = request.form.get('openai_key', cfg.get('openai_key'))
+    cfg['azure_key'] = request.form.get('azure_key', cfg.get('azure_key'))
+    cfg['azure_endpoint'] = request.form.get('azure_endpoint', cfg.get('azure_endpoint'))
+    save_settings(cfg)
+    return ('', 204)
+
+
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('home.html', settings=load_settings())
 
 @app.route('/entities', methods=['GET', 'POST'])
 def index():
+    cfg = load_settings()
+    model = cfg.get('model', 'gpt-3.5-turbo-16k')
     if request.method == 'POST':
         uploaded = request.files.get('file')
-        model = request.form.get('model', 'gpt-3.5-turbo-16k')
         if uploaded:
             if uploaded.filename.lower().endswith('.pdf'):
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
@@ -291,17 +353,19 @@ def index():
                 relations_table=relations_table,
                 relations_csv=relations_csv,
                 graph_html=graph_html,
+                settings=cfg,
             )
-    return render_template('index.html')
+    return render_template('index.html', settings=cfg)
 
 
 @app.route('/structure', methods=['GET', 'POST'])
 def extract_structure():
     if run_passes is None or convert_to_text is None or run_structured_ner is None:
-        return render_template('structure.html', error='Structure pipeline not available')
+        return render_template('structure.html', error='Structure pipeline not available', settings=load_settings())
+    cfg = load_settings()
+    model = cfg.get('model', 'gpt-3.5-turbo-16k')
     if request.method == 'POST':
         uploaded = request.files.get('file')
-        model = request.form.get('model', 'gpt-3.5-turbo-16k')
         if uploaded:
             suffix = os.path.splitext(uploaded.filename)[1]
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -345,18 +409,20 @@ def extract_structure():
                     result=result,
                     saved_file=os.path.basename(out_path),
                     ner_html=ner_html,
+                    settings=cfg,
                 )
             except Exception as exc:  # pragma: no cover - display error
-                return render_template('structure.html', error=str(exc))
+                return render_template('structure.html', error=str(exc), settings=cfg)
             finally:
                 os.unlink(input_path)
-    return render_template('structure.html')
+    return render_template('structure.html', settings=cfg)
 
 @app.route('/decision', methods=['GET', 'POST'])
 def parse_decision_route():
+    cfg = load_settings()
+    model = cfg.get('model', 'gpt-3.5-turbo-16k')
     if request.method == 'POST' and parse_decision:
         uploaded = request.files.get('file')
-        model = request.form.get('model', 'gpt-3.5-turbo-16k')
         if uploaded:
             suffix = '.pdf' if uploaded.filename.lower().endswith('.pdf') else '.txt'
             with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
@@ -367,8 +433,8 @@ def parse_decision_route():
             finally:
                 os.unlink(tmp_path)
             pretty = json.dumps(result, ensure_ascii=False, indent=2)
-            return render_template('decision.html', result_json=pretty)
-    return render_template('decision.html', result_json=None)
+            return render_template('decision.html', result_json=pretty, settings=cfg)
+    return render_template('decision.html', result_json=None, settings=cfg)
 
 
 def _collect_documents() -> dict[str, dict[str, str]]:
@@ -481,11 +547,13 @@ def view_legislation():
         selected=name,
         data=data,
         entities=entities,
+        settings=load_settings(),
     )
 
 
 @app.route('/legislation/edit', methods=['GET', 'POST'])
 def edit_legislation():
+    cfg = load_settings()
     docs = _collect_documents()
     name = request.args.get('file')
     if name not in docs:
@@ -517,6 +585,7 @@ def edit_legislation():
                     raw=content,
                     entities=entities,
                     error=str(exc),
+                    settings=cfg,
                 )
 
         # operations acting on existing annotations
@@ -563,6 +632,7 @@ def edit_legislation():
             raw=annotated,
             entities=entities,
             error=None,
+            settings=cfg,
         )
     annotated = ae_text_with_markers(text, entities)
     return render_template(
@@ -572,6 +642,7 @@ def edit_legislation():
         raw=annotated,
         entities=entities,
         error=None,
+        settings=cfg,
     )
 
 
@@ -596,6 +667,7 @@ def run_query():
         sql=sql,
         result_html=result_html,
         error=error,
+        settings=load_settings(),
     )
 
 

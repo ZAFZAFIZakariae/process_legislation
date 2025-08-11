@@ -1,56 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>SQL Query</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
-    <script>
-        const presets = {{ queries|tojson }};
-        function setPreset(sel) {
-            const q = presets[sel.value] || '';
-            document.getElementById('sql').value = q;
-        }
-    </script>
-</head>
-<body>
-<header>
-    <div class="logo">Legal AI Assistant</div>
-    <nav>
-        <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('index') }}">Entities</a>
-        <a href="{{ url_for('extract_structure') }}">Structure</a>
-        <a href="{{ url_for('parse_decision_route') }}">Decision</a>
-        <a href="{{ url_for('run_query') }}">SQL</a>
-        <a href="{{ url_for('view_legislation') }}">Moroccan Legislation</a>
-    </nav>
-</header>
-<main class="container">
-    <h1>Run SQL Query</h1>
-    <form class="card" method="post">
-        <label>Predefined:
-            <select id="preset" onchange="setPreset(this)">
-                <option value="">Custom...</option>
-                {% for name in queries.keys() %}
-                <option value="{{ name }}">{{ name }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>SQL:
-            <textarea id="sql" name="sql" rows="6">{{ sql }}</textarea>
-        </label>
-        <button type="submit">Execute</button>
-    </form>
-    {% if error %}
-    <section class="card" style="color:red;">
-        <p>{{ error }}</p>
-    </section>
-    {% endif %}
-    {% if result_html %}
-        <section class="card">
-            <h2>Results</h2>
-            <div>{{ result_html|safe }}</div>
-        </section>
-    {% endif %}
-</main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}SQL Query{% endblock %}
+{% block content %}
+<h1>Run SQL Query</h1>
+<form class="card" method="post">
+    <label>Predefined:
+        <select id="preset" onchange="setPreset(this)">
+            <option value="">Custom...</option>
+            {% for name in queries.keys() %}
+            <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <label>SQL:
+        <textarea id="sql" name="sql" rows="6">{{ sql }}</textarea>
+    </label>
+    <button type="submit">Execute</button>
+</form>
+{% if error %}
+<section class="card" style="color:red;">
+    <p>{{ error }}</p>
+</section>
+{% endif %}
+{% if result_html %}
+<section class="card">
+    <h2>Results</h2>
+    <div>{{ result_html|safe }}</div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+const presets = {{ queries|tojson }};
+function setPreset(sel) {
+    const q = presets[sel.value] || '';
+    document.getElementById('sql').value = q;
+}
+</script>
+{% endblock %}

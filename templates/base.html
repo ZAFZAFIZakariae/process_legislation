@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Legal Assistant{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    {% block head %}{% endblock %}
+</head>
+<body>
+<header>
+    <div class="logo">Legal AI Assistant</div>
+    <nav>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('index') }}">Entities</a>
+        <a href="{{ url_for('extract_structure') }}">Structure</a>
+        <a href="{{ url_for('parse_decision_route') }}">Decision</a>
+        <a href="{{ url_for('run_query') }}">SQL</a>
+        <a href="{{ url_for('view_legislation') }}">Moroccan Legislation</a>
+        <button id="settings-button" class="icon-button popover" data-popover="Settings">⚙️</button>
+    </nav>
+</header>
+<aside id="settings-drawer" class="drawer">
+    <div class="drawer-header">
+        <h2>Settings</h2>
+        <button id="drawer-close" class="icon-button">×</button>
+    </div>
+    <form id="settings-form">
+        <label>Provider
+            <select name="provider">
+                <option value="openai" {% if settings.provider == 'openai' %}selected{% endif %}>OpenAI</option>
+                <option value="azure" {% if settings.provider == 'azure' %}selected{% endif %}>Azure</option>
+            </select>
+        </label>
+        <label>Model
+            <input type="text" name="model" value="{{ settings.model }}" />
+        </label>
+        <label>OpenAI API Key
+            <input type="password" name="openai_key" value="{{ settings.openai_key }}" />
+        </label>
+        <label>Azure API Key
+            <input type="password" name="azure_key" value="{{ settings.azure_key }}" />
+        </label>
+        <label>Azure Endpoint
+            <input type="text" name="azure_endpoint" value="{{ settings.azure_endpoint }}" />
+        </label>
+        <label>Theme
+            <select id="theme-select">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+            </select>
+        </label>
+        <button type="submit">Save</button>
+    </form>
+</aside>
+<div id="command-palette" class="palette hidden">
+    <input type="text" id="command-input" placeholder="Type a command..." autocomplete="off" />
+    <ul id="command-list"></ul>
+</div>
+<div id="toast-container"></div>
+<main class="container">
+{% block content %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='ui.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
