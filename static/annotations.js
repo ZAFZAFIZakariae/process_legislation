@@ -533,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
             setSelectionRange(start, end);
             // Reposition bracket handles so keyboard adjustments are visible
             positionHandles(span);
-            saveEntity(span);
             ev.preventDefault();
         }
     });
