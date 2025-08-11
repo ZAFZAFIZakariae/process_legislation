@@ -1,150 +1,121 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Edit Annotations</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-</head>
-<body>
-<header>
-    <div class="logo">Legal AI Assistant</div>
-    <nav>
-        <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('index') }}">Entities</a>
-        <a href="{{ url_for('extract_structure') }}">Structure</a>
-        <a href="{{ url_for('parse_decision_route') }}">Decision</a>
-        <a href="{{ url_for('run_query') }}">SQL</a>
-        <a href="{{ url_for('view_legislation') }}">Moroccan Legislation</a>
-    </nav>
-</header>
-<main class="container">
-    <h1>Edit Annotations - {{ file }}</h1>
-    {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
-
-    <div id="text-display" class="card"><div id="json-tree" dir="rtl"></div></div>
-    <div class="card" style="margin-top:1em;"><button id="add-entity-btn" type="button" class="button small">Add Entity</button></div>
-
-    <h2>Entities</h2>
-    <div class="entity-table-wrapper">
-    <table id="entity-table">
-        <thead>
-            <tr><th>ID</th><th>Type</th><th>Text</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-        {% for e in entities %}
-            <tr data-id="{{ e.id }}" data-type="{{ e.type }}" data-norm="{{ e.normalized }}">
-                <td>{{ e.id }}</td>
-                <td>{{ e.type }}</td>
-                <td>{{ e.text }}</td>
-                <td>
-                    <form method="post" class="inline-form">
-                        <input type="hidden" name="action" value="delete" />
-                        <input type="hidden" name="id" value="{{ e.id }}" />
-                        <button type="submit" class="button small">Delete</button>
-                    </form>
-                    <button type="button" class="button small edit-entity">Edit</button>
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    </div>
-</main>
+{% extends "base.html" %}
+{% block title %}Edit Annotations{% endblock %}
+{% block content %}
+<h1>Edit Annotations - {{ file }}</h1>
+{% if error %}<p style="color:red">{{ error }}</p>{% endif %}
+<div id="text-display" class="card"><div id="json-tree" dir="rtl"></div></div>
+<div class="card" style="margin-top:1em;"><button id="add-entity-btn" type="button" class="button small">Add Entity</button></div>
+<h2>Entities</h2>
+<div class="entity-table-wrapper">
+<table id="entity-table">
+    <thead>
+        <tr><th>ID</th><th>Type</th><th>Text</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+    {% for e in entities %}
+        <tr data-id="{{ e.id }}" data-type="{{ e.type }}" data-norm="{{ e.normalized }}">
+            <td>{{ e.id }}</td>
+            <td>{{ e.type }}</td>
+            <td>{{ e.text }}</td>
+            <td>
+                <form method="post" class="inline-form">
+                    <input type="hidden" name="action" value="delete" />
+                    <input type="hidden" name="id" value="{{ e.id }}" />
+                    <button type="submit" class="button small">Delete</button>
+                </form>
+                <button type="button" class="button small edit-entity">Edit</button>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}
+{% block scripts %}
 <script>
-    const rawData = {{ data | tojson }};
-    const entitiesData = {{ entities | tojson }};
-    const entityMap = {};
-    entitiesData.forEach(e => { entityMap[e.id] = e; });
-
-    function escapeHtml(str) {
-        return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+const rawData = {{ data | tojson }};
+const entitiesData = {{ entities | tojson }};
+const entityMap = {};
+entitiesData.forEach(e => { entityMap[e.id] = e; });
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+}
+function formatText(value) {
+    if (typeof value !== 'string') return escapeHtml(value);
+    return value.replace(/<([^,<>]+), id:([^>]+)>/g, (_m, txt, id) => {
+        const ent = entityMap[id] || {};
+        const attrs = [`class=\"entity-mark\"`, `data-id=\"${id}\"`];
+        if (ent.type) attrs.push(`data-type=\"${escapeHtml(ent.type)}\"`);
+        if (ent.normalized) attrs.push(`data-norm=\"${escapeHtml(ent.normalized)}\"`);
+        return `<span ${attrs.join(' ')}>${escapeHtml(txt)}</span>`;
+    });
+}
+function renderNode(node, container) {
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.classList.add('json-key');
+    let label = '';
+    if (node.type) label += escapeHtml(node.type);
+    if (node.number) label += (label ? ' ' : '') + escapeHtml(node.number);
+    if (node.title) label += (label ? ': ' : '') + formatText(node.title);
+    summary.innerHTML = label;
+    details.appendChild(summary);
+    if (node.text) {
+        const textDiv = document.createElement('div');
+        textDiv.className = 'json-value';
+        textDiv.innerHTML = formatText(node.text);
+        details.appendChild(textDiv);
     }
-
-    function formatText(value) {
-        if (typeof value !== 'string') return escapeHtml(value);
-        return value.replace(/<([^,<>]+), id:([^>]+)>/g, (_m, txt, id) => {
-            const ent = entityMap[id] || {};
-            const attrs = [`class=\"entity-mark\"`, `data-id=\"${id}\"`];
-            if (ent.type) attrs.push(`data-type=\"${escapeHtml(ent.type)}\"`);
-            if (ent.normalized) attrs.push(`data-norm=\"${escapeHtml(ent.normalized)}\"`);
-            return `<span ${attrs.join(' ')}>${escapeHtml(txt)}</span>`;
+    if (Array.isArray(node.children) && node.children.length) {
+        const ul = document.createElement('ul');
+        node.children.forEach(child => {
+            const li = document.createElement('li');
+            renderNode(child, li);
+            ul.appendChild(li);
         });
+        details.appendChild(ul);
     }
-
-    function renderNode(node, container) {
-        const details = document.createElement('details');
-        const summary = document.createElement('summary');
-        summary.classList.add('json-key');
-        let label = '';
-        if (node.type) label += escapeHtml(node.type);
-        if (node.number) label += (label ? ' ' : '') + escapeHtml(node.number);
-        if (node.title) label += (label ? ': ' : '') + formatText(node.title);
-        summary.innerHTML = label;
-        details.appendChild(summary);
-
-        if (node.text) {
-            const textDiv = document.createElement('div');
-            textDiv.className = 'json-value';
-            textDiv.innerHTML = formatText(node.text);
-            details.appendChild(textDiv);
-        }
-
-        if (Array.isArray(node.children) && node.children.length) {
-            const ul = document.createElement('ul');
-            node.children.forEach(child => {
-                const li = document.createElement('li');
-                renderNode(child, li);
-                ul.appendChild(li);
-            });
-            details.appendChild(ul);
-        }
-        container.appendChild(details);
+    container.appendChild(details);
+}
+function toNode(key, value) {
+    if (value === null || typeof value !== 'object') {
+        return { type: key, text: String(value) };
     }
-
-    function toNode(key, value) {
-        if (value === null || typeof value !== 'object') {
-            return { type: key, text: String(value) };
-        }
-        if (Array.isArray(value)) {
-            return { type: key, children: value.map((v, i) => toNode(String(i), v)) };
-        }
-        if (value.type) {
-            const node = { type: value.type };
-            if (value.number) node.number = value.number;
-            if (value.title) node.title = value.title;
-            if (value.text) node.text = value.text;
-            if (Array.isArray(value.children)) {
-                node.children = value.children.map((c, i) => toNode(String(i), c));
-            }
-            return node;
-        }
-        return {
-            type: key,
-            children: Object.entries(value).map(([k, v]) => toNode(k, v)),
-        };
+    if (Array.isArray(value)) {
+        return { type: key, children: value.map((v, i) => toNode(String(i), v)) };
     }
-
-    const data = toNode('{{ file }}', rawData);
-
-    function render(container, obj) {
-        if (Array.isArray(obj)) {
-            const ul = document.createElement('ul');
-            obj.forEach(item => {
-                const li = document.createElement('li');
-                renderNode(item, li);
-                ul.appendChild(li);
-            });
-            container.appendChild(ul);
-        } else if (obj && typeof obj === 'object') {
-            renderNode(obj, container);
+    if (value.type) {
+        const node = { type: value.type };
+        if (value.number) node.number = value.number;
+        if (value.title) node.title = value.title;
+        if (value.text) node.text = value.text;
+        if (Array.isArray(value.children)) {
+            node.children = value.children.map((c, i) => toNode(String(i), c));
         }
+        return node;
     }
-
-    if (data) {
-        render(document.getElementById('json-tree'), data);
+    return {
+        type: key,
+        children: Object.entries(value).map(([k, v]) => toNode(k, v)),
+    };
+}
+const data = toNode('{{ file }}', rawData);
+function render(container, obj) {
+    if (Array.isArray(obj)) {
+        const ul = document.createElement('ul');
+        obj.forEach(item => {
+            const li = document.createElement('li');
+            renderNode(item, li);
+            ul.appendChild(li);
+        });
+        container.appendChild(ul);
+    } else if (obj && typeof obj === 'object') {
+        renderNode(obj, container);
     }
+}
+if (data) {
+    render(document.getElementById('json-tree'), data);
+}
 </script>
 <script src="{{ url_for('static', filename='annotations.js') }}"></script>
-</body>
-</html>
+{% endblock %}
