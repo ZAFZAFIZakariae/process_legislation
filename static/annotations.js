@@ -115,7 +115,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (span.dataset.type) fd.append('type', span.dataset.type);
         if (span.dataset.norm) fd.append('norm', span.dataset.norm);
-        fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd });
+        fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
+            .then(() => window.location.reload());
     }
 
     actionEditBtn.addEventListener('click', ev => {
