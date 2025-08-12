@@ -390,6 +390,13 @@ def extract_structure():
                     ner_html = render_ner_html(raw_text, ner_raw)
 
                     base = os.path.basename(uploaded.filename).rsplit('.', 1)[0]
+
+                    txt_dir = 'data_txt'
+                    os.makedirs(txt_dir, exist_ok=True)
+                    txt_out = os.path.join(txt_dir, f'{base}.txt')
+                    with open(txt_out, 'w', encoding='utf-8') as f:
+                        f.write(raw_text)
+
                     os.makedirs('output', exist_ok=True)
                     out_path = os.path.join('output', f'{base}.json')
                     with open(out_path, 'w', encoding='utf-8') as f:
