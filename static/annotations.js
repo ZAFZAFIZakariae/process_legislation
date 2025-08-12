@@ -101,6 +101,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let editMode = false;
     let addMode = false;
 
+    function updateFromSelection() {
+        if (!editMode) return;
+        const span = currentSpan || document.querySelector('.entity-mark.selected');
+        const sel = window.getSelection();
+        if (!span || !sel || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        if (!textDiv.contains(range.startContainer) || !textDiv.contains(range.endContainer)) return;
+        let start = getOffset(range.startContainer, range.startOffset);
+        let end = getOffset(range.endContainer, range.endOffset);
+        if (start > end) [start, end] = [end, start];
+        span.dataset.start = start;
+        span.dataset.end = end;
+    }
+
     function showActionPopup(span) {
         if (!span) return;
         const rect = span.getBoundingClientRect();
@@ -129,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveEntity(span) {
         if (!span) return;
+        updateFromSelection();
         const fd = new FormData();
         fd.append('action', 'update');
         fd.append('id', span.dataset.id);
@@ -217,6 +232,13 @@ document.addEventListener('DOMContentLoaded', () => {
             addMode = false;
             addRange = null;
         }
+    });
+
+    document.addEventListener('selectionchange', () => {
+        if (!editMode) return;
+        updateFromSelection();
+        const span = currentSpan || document.querySelector('.entity-mark.selected');
+        if (span) positionHandles(span);
     });
 
     document.addEventListener('click', ev => {
