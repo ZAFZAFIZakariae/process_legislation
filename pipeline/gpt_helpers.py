@@ -439,51 +439,6 @@ def finalize_structure(tree: list, seen: set | None = None) -> None:
             finalize_structure(node["children"], seen)
 
 
-def fix_duplicate_numbers(tree: list) -> None:
-    """Collapse article numbers polluted by OCR footnote digits.
-
-    OCR systems sometimes glue a superscript footnote marker to the article
-    number.  Depending on whether the marker appears before or after the
-    number, this yields either a repeated digit (``22`` instead of ``2``) or a
-    prefixed digit (``28`` instead of ``8`` or ``110`` instead of ``10``).
-
-    This pass walks sibling lists and normalizes such numbers by comparing
-    them to the expected sequential value.  Legitimate jumps such as ``22``
-    following ``21`` are left untouched.
-    """
-
-    def _walk(nodes: list) -> None:
-        last: dict[str, int] = {}
-        for node in nodes:
-            typ = canonical_type(node.get("type", ""))
-            num = node.get("number")
-            if typ in ARTICLE_TYPES and isinstance(num, str) and num.isdigit():
-                prev = last.get(typ)
-                val = int(num)
-                if prev is not None:
-                    expected = prev + 1
-                    exp_str = str(expected)
-                    if val != expected:
-                        if num.endswith(exp_str):
-                            # e.g. ``17`` after ``6`` -> ``7`` or ``110`` after
-                            # ``9`` -> ``10`` where a footnote digit prefixes
-                            # the real number.
-                            val = expected
-                            node["number"] = exp_str
-                        elif len(num) == len(exp_str) * 2 and num == exp_str * 2:
-                            # e.g. ``22`` after ``1`` -> ``2`` where the
-                            # footnote digit was appended to the number.
-                            val = expected
-                            node["number"] = exp_str
-                    else:
-                        val = expected
-                last[typ] = val
-            if node.get("children"):
-                _walk(node["children"])
-
-    _walk(tree)
-
-
 def break_cycles(nodes: list, active: set[int] | None = None, seen: set[int] | None = None) -> None:
     if active is None:
         active = set()

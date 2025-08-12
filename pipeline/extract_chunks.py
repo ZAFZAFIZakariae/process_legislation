@@ -30,7 +30,6 @@ def run_passes(txt_path: str, model: str) -> dict:
     full_obj = json.loads(raw_full) if isinstance(raw_full, str) else raw_full
     structure_tree = full_obj.get("structure", [])
     gpt.finalize_structure(structure_tree)
-    gpt.fix_duplicate_numbers(structure_tree)
 
     def collect_annexes(nodes: list) -> tuple[list, list]:
         remaining: list = []
