@@ -113,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (start > end) [start, end] = [end, start];
         span.dataset.start = start;
         span.dataset.end = end;
+        span.dataset.selectedText = sel.toString();
     }
 
     function showActionPopup(span) {
@@ -162,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (span.dataset.type) fd.append('type', span.dataset.type);
         if (span.dataset.norm) fd.append('norm', span.dataset.norm);
+        if (span.dataset.selectedText) fd.append('text', span.dataset.selectedText);
         fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
             .then(resp => { if (resp.ok) { window.location.reload(); } else { resp.text().then(t => alert(t)); } });
     }
