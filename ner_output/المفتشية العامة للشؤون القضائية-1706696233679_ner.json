@@ -1,0 +1,486 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "type": "LAW",
+      "text": "القانون رقم 38.21 المتعلق بالمفتشية العامة للشؤون القضائية",
+      "normalized": "38.21 القانون"
+    },
+    {
+      "id": 2,
+      "type": "DECRET",
+      "text": "ظهير شريف رقم 1.21.93",
+      "normalized": "1.21.93 الظهير الشريف"
+    },
+    {
+      "id": 3,
+      "type": "DATE",
+      "text": "15 من ذي الحجة 1442",
+      "normalized": "2021-07-26"
+    },
+    {
+      "id": 4,
+      "type": "DATE",
+      "text": "26 يوليو 2021",
+      "normalized": "2021-07-26"
+    },
+    {
+      "id": 5,
+      "type": "OFFICIAL_JOURNAL",
+      "text": "الجريدة الرسمية",
+      "normalized": "الجريدة الرسمية"
+    },
+    {
+      "id": 6,
+      "type": "GOVERNMENT_BODY",
+      "text": "مجلس النواب",
+      "normalized": "مجلس النواب"
+    },
+    {
+      "id": 7,
+      "type": "GOVERNMENT_BODY",
+      "text": "مجلس المستشارين",
+      "normalized": "مجلس المستشارين"
+    },
+    {
+      "id": 8,
+      "type": "CHAPTER",
+      "text": "باب 1 أحكام عامة",
+      "normalized": "1 الباب"
+    },
+    {
+      "id": 9,
+      "type": "ARTICLE",
+      "text": "مادة 1",
+      "normalized": "1 المادة"
+    },
+    {
+      "id": 10,
+      "type": "LAW",
+      "text": "القانون التنظيمي رقم 100.13 المتعلق بالمجلس الأعلى للسلطة القضائية",
+      "normalized": "100.13 القانون التنظيمي"
+    },
+    {
+      "id": 11,
+      "type": "ARTICLE",
+      "text": "مادة 2",
+      "normalized": "2 المادة"
+    },
+    {
+      "id": 12,
+      "type": "GOVERNMENT_BODY",
+      "text": "المجلس الأعلى للسلطة القضائية",
+      "normalized": "المجلس الأعلى للسلطة القضائية"
+    },
+    {
+      "id": 13,
+      "type": "GOVERNMENT_BODY",
+      "text": "الرئيس المنتدب للمجلس الأعلى للسلطة القضائية",
+      "normalized": "الرئيس المنتدب"
+    },
+    {
+      "id": 14,
+      "type": "GOVERNMENT_BODY",
+      "text": "الوكيل العام للملك لدى محكمة النقض، رئيس النيابة العامة",
+      "normalized": "رئيس النيابة العامة"
+    },
+    {
+      "id": 15,
+      "type": "AGENCY",
+      "text": "المفتشية العامة للشؤون القضائية بالمجلس الأعلى للسلطة القضائية",
+      "normalized": "المفتشية العامة"
+    },
+    {
+      "id": 16,
+      "type": "PERSON",
+      "text": "محمد بن الحسن بن محمد بن يوسف",
+      "normalized": "محمد بن الحسن بن محمد بن يوسف"
+    },
+    {
+      "id": 17,
+      "type": "CHAPTER",
+      "text": "باب 2 تأليف المفتشية العامة",
+      "normalized": "2 الباب"
+    },
+    {
+      "id": 18,
+      "type": "ARTICLE",
+      "text": "مادة 4",
+      "normalized": "4 المادة"
+    },
+    {
+      "id": 19,
+      "type": "ARTICLE",
+      "text": "مادة 5",
+      "normalized": "5 المادة"
+    },
+    {
+      "id": 20,
+      "type": "ARTICLE",
+      "text": "مادة 6",
+      "normalized": "6 المادة"
+    },
+    {
+      "id": 21,
+      "type": "ARTICLE",
+      "text": "مادة 7",
+      "normalized": "7 المادة"
+    },
+    {
+      "id": 22,
+      "type": "ARTICLE",
+      "text": "مادة 8",
+      "normalized": "8 المادة"
+    },
+    {
+      "id": 23,
+      "type": "ARTICLE",
+      "text": "مادة 9",
+      "normalized": "9 المادة"
+    },
+    {
+      "id": 24,
+      "type": "CHAPTER",
+      "text": "باب 3 اختصاصات المفتشية العامة",
+      "normalized": "3 الباب"
+    },
+    {
+      "id": 25,
+      "type": "ARTICLE",
+      "text": "مادة 10",
+      "normalized": "10 المادة"
+    },
+    {
+      "id": 26,
+      "type": "SECTION",
+      "text": "فرع 1 التفتيش القضائي المركزي للمحاكم",
+      "normalized": "1 القسم"
+    },
+    {
+      "id": 27,
+      "type": "ARTICLE",
+      "text": "مادة 11",
+      "normalized": "11 المادة"
+    },
+    {
+      "id": 28,
+      "type": "ARTICLE",
+      "text": "مادة 12",
+      "normalized": "12 المادة"
+    },
+    {
+      "id": 29,
+      "type": "ARTICLE",
+      "text": "مادة 13",
+      "normalized": "13 المادة"
+    },
+    {
+      "id": 30,
+      "type": "ARTICLE",
+      "text": "مادة 14",
+      "normalized": "14 المادة"
+    },
+    {
+      "id": 31,
+      "type": "ARTICLE",
+      "text": "مادة 15",
+      "normalized": "15 المادة"
+    },
+    {
+      "id": 32,
+      "type": "ARTICLE",
+      "text": "مادة 16",
+      "normalized": "16 المادة"
+    },
+    {
+      "id": 33,
+      "type": "ARTICLE",
+      "text": "مادة 17",
+      "normalized": "17 المادة"
+    },
+    {
+      "id": 34,
+      "type": "SECTION",
+      "text": "فرع 2 التفتيش القضائي اللامركزي للمحاكم",
+      "normalized": "2 القسم"
+    },
+    {
+      "id": 35,
+      "type": "ARTICLE",
+      "text": "مادة 18",
+      "normalized": "18 المادة"
+    },
+    {
+      "id": 36,
+      "type": "ARTICLE",
+      "text": "مادة 19",
+      "normalized": "19 المادة"
+    },
+    {
+      "id": 37,
+      "type": "ARTICLE",
+      "text": "مادة 20",
+      "normalized": "20 المادة"
+    },
+    {
+      "id": 38,
+      "type": "SECTION",
+      "text": "فرع 3 الأبحاث والتحريات",
+      "normalized": "3 القسم"
+    },
+    {
+      "id": 39,
+      "type": "ARTICLE",
+      "text": "مادة 21",
+      "normalized": "21 المادة"
+    },
+    {
+      "id": 40,
+      "type": "ARTICLE",
+      "text": "مادة 22",
+      "normalized": "22 المادة"
+    },
+    {
+      "id": 41,
+      "type": "ARTICLE",
+      "text": "مادة 23",
+      "normalized": "23 المادة"
+    },
+    {
+      "id": 42,
+      "type": "ARTICLE",
+      "text": "مادة 24",
+      "normalized": "24 المادة"
+    },
+    {
+      "id": 43,
+      "type": "ARTICLE",
+      "text": "مادة 25",
+      "normalized": "25 المادة"
+    },
+    {
+      "id": 44,
+      "type": "ARTICLE",
+      "text": "مادة 26",
+      "normalized": "26 المادة"
+    },
+    {
+      "id": 45,
+      "type": "ARTICLE",
+      "text": "مادة 27",
+      "normalized": "27 المادة"
+    },
+    {
+      "id": 46,
+      "type": "CHAPTER",
+      "text": "باب 4 قواعد تنظيم المفتشية العامة",
+      "normalized": "4 الباب"
+    },
+    {
+      "id": 47,
+      "type": "ARTICLE",
+      "text": "مادة 28",
+      "normalized": "28 المادة"
+    },
+    {
+      "id": 48,
+      "type": "ARTICLE",
+      "text": "مادة 29",
+      "normalized": "29 المادة"
+    },
+    {
+      "id": 49,
+      "type": "ARTICLE",
+      "text": "مادة 30",
+      "normalized": "30 المادة"
+    },
+    {
+      "id": 50,
+      "type": "ARTICLE",
+      "text": "مادة 31",
+      "normalized": "31 المادة"
+    },
+    {
+      "id": 51,
+      "type": "ARTICLE",
+      "text": "مادة 32",
+      "normalized": "32 المادة"
+    },
+    {
+      "id": 52,
+      "type": "CHAPTER",
+      "text": "باب 5 الحقوق والواجبات",
+      "normalized": "5 الباب"
+    },
+    {
+      "id": 53,
+      "type": "ARTICLE",
+      "text": "مادة 33",
+      "normalized": "33 المادة"
+    },
+    {
+      "id": 54,
+      "type": "ARTICLE",
+      "text": "مادة 34",
+      "normalized": "34 المادة"
+    },
+    {
+      "id": 55,
+      "type": "CHAPTER",
+      "text": "باب 6 مقتضيات ختامية",
+      "normalized": "6 الباب"
+    },
+    {
+      "id": 56,
+      "type": "ARTICLE",
+      "text": "مادة 35",
+      "normalized": "35 المادة"
+    },
+    {
+      "id": 57,
+      "type": "LAW",
+      "text": "الظهير الشريف بمثابة قانون رقم 1.74.338 بتاريخ 24 جمادى الثانية 1394 (15 يوليوز 1974) المتعلق بالتنظيم القضائي للمملكة",
+      "normalized": "1.74.338 الظهير الشريف"
+    },
+    {
+      "id": 58,
+      "type": "DATE",
+      "text": "15 يوليوز 1974",
+      "normalized": "1974-07-15"
+    },
+    {
+      "id": 59,
+      "type": "PERSON",
+      "text": "سعد الدين العثماني",
+      "normalized": "سعد الدين العثماني"
+    },
+    {
+      "id": 60,
+      "type": "GOVERNMENT_BODY",
+      "text": "رئيس الحكومة",
+      "normalized": "رئيس الحكومة"
+    },
+    {
+      "id": 61,
+      "type": "INTERNAL_REF",
+      "text": "الفصلين 42 و50",
+      "normalized": "الفصل 42_50"
+    },
+    {
+      "id": 62,
+      "type": "ARTICLE",
+      "text": "42",
+      "normalized": "42 الفصل"
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": 1,
+      "type": "enacted_by",
+      "source_id": 1,
+      "target_id": 2
+    },
+    {
+      "relation_id": 2,
+      "type": "effective_on",
+      "source_id": 2,
+      "target_id": 3
+    },
+    {
+      "relation_id": 3,
+      "type": "effective_on",
+      "source_id": 2,
+      "target_id": 4
+    },
+    {
+      "relation_id": 4,
+      "type": "published_in",
+      "source_id": 1,
+      "target_id": 5
+    },
+    {
+      "relation_id": 5,
+      "type": "approved_by",
+      "source_id": 1,
+      "target_id": 6
+    },
+    {
+      "relation_id": 6,
+      "type": "approved_by",
+      "source_id": 1,
+      "target_id": 7
+    },
+    {
+      "relation_id": 7,
+      "type": "contains",
+      "source_id": 8,
+      "target_id": 9
+    },
+    {
+      "relation_id": 8,
+      "type": "amended_by",
+      "source_id": 1,
+      "target_id": 10
+    },
+    {
+      "relation_id": 9,
+      "type": "contains",
+      "source_id": 17,
+      "target_id": 18
+    },
+    {
+      "relation_id": 10,
+      "type": "contains",
+      "source_id": 24,
+      "target_id": 25
+    },
+    {
+      "relation_id": 11,
+      "type": "contains",
+      "source_id": 26,
+      "target_id": 27
+    },
+    {
+      "relation_id": 12,
+      "type": "contains",
+      "source_id": 34,
+      "target_id": 35
+    },
+    {
+      "relation_id": 13,
+      "type": "contains",
+      "source_id": 38,
+      "target_id": 39
+    },
+    {
+      "relation_id": 14,
+      "type": "contains",
+      "source_id": 46,
+      "target_id": 47
+    },
+    {
+      "relation_id": 15,
+      "type": "contains",
+      "source_id": 52,
+      "target_id": 53
+    },
+    {
+      "relation_id": 16,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 56
+    },
+    {
+      "relation_id": 17,
+      "type": "signed_by",
+      "source_id": 2,
+      "target_id": 16
+    },
+    {
+      "relation_id": 18,
+      "type": "refers_to",
+      "source_id": 61,
+      "target_id": 62
+    }
+  ]
+}
