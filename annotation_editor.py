@@ -49,10 +49,13 @@ def add_entity(args, text: str, entities: list[dict]) -> None:
     start, end, typ = int(args.add[0]), int(args.add[1]), args.add[2]
     if not (0 <= start < end <= len(text)):
         raise ValueError("Invalid start/end for add")
+    ent_text = getattr(args, "text", None)
+    if ent_text is None:
+        ent_text = text[start:end]
     ent = {
         "id": _next_id(entities),
         "type": typ,
-        "text": text[start:end],
+        "text": ent_text,
         "start_char": start,
         "end_char": end,
     }

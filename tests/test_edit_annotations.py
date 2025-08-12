@@ -98,3 +98,40 @@ def test_add_entity_updates_structure_json(tmp_path, monkeypatch):
     with open(ner_path, 'r', encoding='utf-8') as f:
         ner_saved = json.load(f)
     assert ner_saved['entities'][0]['id'] == 1
+
+
+def test_add_entity_with_text_corrects_offset(tmp_path, monkeypatch):
+    out_dir = tmp_path / 'output'
+    ner_dir = tmp_path / 'ner_output'
+    txt_dir = tmp_path / 'data_txt'
+    out_dir.mkdir()
+    ner_dir.mkdir()
+    txt_dir.mkdir()
+
+    content = 'هيرنا ا شيء الدستور نهاية'
+    structure_path = out_dir / 'test.json'
+    with open(structure_path, 'w', encoding='utf-8') as f:
+        json.dump({'text': content}, f, ensure_ascii=False)
+
+    with open(txt_dir / 'test.txt', 'w', encoding='utf-8') as f:
+        f.write(content)
+
+    ner_path = ner_dir / 'test_ner.json'
+    with open(ner_path, 'w', encoding='utf-8') as f:
+        json.dump({'entities': [], 'relations': []}, f, ensure_ascii=False)
+
+    monkeypatch.chdir(tmp_path)
+    client = app.test_client()
+    resp = client.post(
+        '/legislation/edit?file=test',
+        data={'action': 'add', 'start': 0, 'end': 7, 'type': 'LAW', 'text': 'الدستور'}
+    )
+    assert resp.status_code == 200
+
+    with open(ner_path, 'r', encoding='utf-8') as f:
+        ner_saved = json.load(f)
+    assert ner_saved['entities'][0]['text'] == 'الدستور'
+
+    with open(structure_path, 'r', encoding='utf-8') as f:
+        struct = json.load(f)
+    assert struct['text'] == 'هيرنا ا شيء <الدستور, id:1> نهاية'
