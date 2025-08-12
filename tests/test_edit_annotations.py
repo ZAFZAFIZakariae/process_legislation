@@ -131,6 +131,8 @@ def test_add_entity_with_text_corrects_offset(tmp_path, monkeypatch):
     with open(ner_path, 'r', encoding='utf-8') as f:
         ner_saved = json.load(f)
     assert ner_saved['entities'][0]['text'] == 'الدستور'
+    assert ner_saved['entities'][0]['start_char'] == content.find('الدستور')
+    assert ner_saved['entities'][0]['end_char'] == content.find('الدستور') + len('الدستور')
 
     with open(structure_path, 'r', encoding='utf-8') as f:
         struct = json.load(f)
@@ -183,6 +185,8 @@ def test_update_entity_with_text_corrects_offset(tmp_path, monkeypatch):
     with open(ner_path, 'r', encoding='utf-8') as f:
         ner_saved = json.load(f)
     assert ner_saved['entities'][0]['text'] == 'الدستور'
+    assert ner_saved['entities'][0]['start_char'] == content.find('الدستور')
+    assert ner_saved['entities'][0]['end_char'] == content.find('الدستور') + len('الدستور')
 
     with open(structure_path, 'r', encoding='utf-8') as f:
         struct = json.load(f)
