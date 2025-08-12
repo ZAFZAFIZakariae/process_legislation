@@ -104,8 +104,6 @@ def run_structured_ner(
         stripped.append(e)
 
     annotate_json(data, stripped)
-    if relations:
-        data["relations"] = relations
 
     ner_clean: Dict[str, Any] = {"entities": stripped}
     if relations:
