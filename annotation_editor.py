@@ -90,6 +90,8 @@ def update_entity(args, entities: list[dict]) -> None:
             target["start_char"] = int(val)
         elif key.lower() == "end":
             target["end_char"] = int(val)
+        elif key.lower() == "text":
+            target["text"] = val
 
 
 def replace_text(args, text: str, entities: list[dict]) -> str:
