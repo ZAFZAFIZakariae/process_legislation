@@ -657,6 +657,23 @@ def edit_legislation():
                 items.append(f"end={request.form.get('end')}")
             args = SimpleNamespace(update=items)
             ae_update_entity(args, entities)
+            # If the entity boundaries were modified we need to keep the
+            # stored text in sync before any further offset corrections are
+            # applied.  Otherwise subsequent calls (such as ``fix_entity_offsets``)
+            # may search for the old text and effectively remove the edited
+            # span from the document when re-rendered.
+            for ent in entities:
+                if str(ent.get('id')) == uid:
+                    try:
+                        s = int(ent.get('start_char', -1))
+                        e = int(ent.get('end_char', -1))
+                    except Exception:  # pragma: no cover - defensive
+                        s = e = -1
+                    if 0 <= s < e <= len(text):
+                        ent['text'] = text[s:e]
+                    break
+            # Ensure no overlaps remain after changing the boundaries.
+            ae_fix_offsets(text, {'entities': entities})
         elif action == 'replace':
             args = SimpleNamespace(
                 replace_text=(
