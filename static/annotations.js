@@ -1,12 +1,48 @@
 document.addEventListener('DOMContentLoaded', () => {
     const textDiv = document.getElementById('text-display');
 
+    // Only count text nodes that live inside elements containing the original
+    // document text.  Metadata and other auxiliary fields should not affect
+    // offsets, so restrict to known content sections.
+    const allowedSections = ['preamble', 'structure', 'annexes', 'footer', 'tables_and_schedules'];
+    function isRelevant(node) {
+        if (!node || !node.parentElement) return false;
+        const val = node.parentElement.closest('.json-value');
+        if (!val) return false;
+        return allowedSections.includes(val.dataset.section);
+    }
+
+    function createWalker() {
+        return document.createTreeWalker(
+            textDiv,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: node =>
+                    isRelevant(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+            }
+        );
+    }
+
+    function getOffset(node, offset) {
+        if (node && node.nodeType !== Node.TEXT_NODE) {
+            node = node.firstChild;
+            offset = 0;
+        }
+        const walker = createWalker();
+        let count = 0;
+        while (walker.nextNode()) {
+            const n = walker.currentNode;
+            if (n === node) {
+                return count + offset;
+            }
+            count += n.textContent.length;
+        }
+        return count;
+    }
+
     function initOffsets() {
         document.querySelectorAll('.entity-mark').forEach(span => {
-            const range = document.createRange();
-            range.selectNodeContents(textDiv);
-            range.setEndBefore(span);
-            const start = range.toString().length;
+            const start = getOffset(span.firstChild || span, 0);
             const end = start + span.textContent.length;
             span.dataset.start = start;
             span.dataset.end = end;
@@ -232,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getRectAtOffset(offset) {
-        const walker = document.createTreeWalker(textDiv, NodeFilter.SHOW_TEXT);
+        const walker = createWalker();
         let count = 0;
         while (walker.nextNode()) {
             const node = walker.currentNode;
@@ -290,13 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let dragTarget = null;
     let wasDragging = false;
-
-    function getOffset(node, offset) {
-        const range = document.createRange();
-        range.selectNodeContents(textDiv);
-        range.setEnd(node, offset);
-        return range.toString().length;
-    }
 
     function getOffsetFromCoords(x, y) {
         const prevVisStart = startHandle.style.visibility;
@@ -422,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setSelectionRange(start, end) {
         if (start > end) [start, end] = [end, start];
-        const walker = document.createTreeWalker(textDiv, NodeFilter.SHOW_TEXT);
+        const walker = createWalker();
         let count = 0;
         let sNode = null, sOffset = 0, eNode = null, eOffset = 0;
         while (walker.nextNode()) {

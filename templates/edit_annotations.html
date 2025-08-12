@@ -50,7 +50,7 @@ function formatText(value) {
         return `<span ${attrs.join(' ')}>${escapeHtml(txt)}</span>`;
     });
 }
-function renderNode(node, container) {
+function renderNode(node, container, section) {
     const details = document.createElement('details');
     const summary = document.createElement('summary');
     summary.classList.add('json-key');
@@ -63,6 +63,7 @@ function renderNode(node, container) {
     if (node.text) {
         const textDiv = document.createElement('div');
         textDiv.className = 'json-value';
+        if (section) textDiv.dataset.section = section;
         textDiv.innerHTML = formatText(node.text);
         details.appendChild(textDiv);
     }
@@ -70,7 +71,7 @@ function renderNode(node, container) {
         const ul = document.createElement('ul');
         node.children.forEach(child => {
             const li = document.createElement('li');
-            renderNode(child, li);
+            renderNode(child, li, section || child.type);
             ul.appendChild(li);
         });
         details.appendChild(ul);
@@ -105,7 +106,7 @@ function render(container, obj) {
         const ul = document.createElement('ul');
         obj.forEach(item => {
             const li = document.createElement('li');
-            renderNode(item, li);
+            renderNode(item, li, item.type);
             ul.appendChild(li);
         });
         container.appendChild(ul);

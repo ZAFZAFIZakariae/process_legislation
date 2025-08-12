@@ -94,4 +94,35 @@ def test_add_entity_updates_structure_json(tmp_path, monkeypatch):
     assert resp.status_code == 200
     with open(structure_path, 'r', encoding='utf-8') as f:
         struct = json.load(f)
-    assert struct['text'] == '<القانون, id:ENT_1>'
+    assert struct['text'] == '<القانون, id:1>'
+    with open(ner_path, 'r', encoding='utf-8') as f:
+        ner_saved = json.load(f)
+    assert ner_saved['entities'][0]['id'] == 1
+
+
+def test_section_data_attributes_used(tmp_path, monkeypatch):
+    out_dir = tmp_path / 'output'
+    ner_dir = tmp_path / 'ner_output'
+    txt_dir = tmp_path / 'data_txt'
+    out_dir.mkdir()
+    ner_dir.mkdir()
+    txt_dir.mkdir()
+
+    structure_path = out_dir / 'test.json'
+    with open(structure_path, 'w', encoding='utf-8') as f:
+        json.dump({'metadata': {'foo': 'bar'}, 'preamble': 'النص'}, f, ensure_ascii=False)
+
+    with open(txt_dir / 'test.txt', 'w', encoding='utf-8') as f:
+        f.write('bar\nالنص')
+
+    ner_path = ner_dir / 'test_ner.json'
+    with open(ner_path, 'w', encoding='utf-8') as f:
+        json.dump({'entities': [], 'relations': []}, f, ensure_ascii=False)
+
+    monkeypatch.chdir(tmp_path)
+    client = app.test_client()
+    resp = client.get('/legislation/edit?file=test')
+    assert resp.status_code == 200
+    body = resp.get_data(as_text=True)
+    assert 'data-section="metadata"' in body
+    assert 'data-section="preamble"' in body
