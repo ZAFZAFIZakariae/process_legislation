@@ -135,3 +135,38 @@ def test_add_entity_with_text_corrects_offset(tmp_path, monkeypatch):
     with open(structure_path, 'r', encoding='utf-8') as f:
         struct = json.load(f)
     assert struct['text'] == 'هيرنا ا شيء <الدستور, id:1> نهاية'
+
+
+def test_expand_entity_span_preserves_text(tmp_path, monkeypatch):
+    flask = pytest.importorskip('flask')
+    from app import app
+
+    out_dir = tmp_path / 'output'
+    ner_dir = tmp_path / 'ner_output'
+    txt_dir = tmp_path / 'data_txt'
+    out_dir.mkdir(); ner_dir.mkdir(); txt_dir.mkdir()
+
+    text = 'موافق بالنظام الأساسي للقضاة'
+    with open(txt_dir / 'test.txt', 'w', encoding='utf-8') as f:
+        f.write(text)
+
+    start = text.index('النظام')
+    end = start + len('النظام الأساسي للقضاة')
+    ner_path = ner_dir / 'test_ner.json'
+    with open(ner_path, 'w', encoding='utf-8') as f:
+        json.dump({'entities': [{'id': 1, 'text': 'النظام الأساسي للقضاة', 'type': 'LAW'}], 'relations': []}, f, ensure_ascii=False)
+
+    with open(out_dir / 'test.json', 'w', encoding='utf-8') as f:
+        json.dump({'text': f'<النظام الأساسي للقضاة, id:1>'}, f, ensure_ascii=False)
+
+    monkeypatch.chdir(tmp_path)
+    client = app.test_client()
+
+    new_start = start - 1  # include the preceding "ب"
+    new_end = end
+    resp = client.post('/legislation/edit?file=test', data={'action': 'update', 'id': '1', 'start': new_start, 'end': new_end})
+    assert resp.status_code == 200
+
+    resp = client.get('/legislation/edit?file=test')
+    body = resp.get_data(as_text=True)
+    assert 'بالنظام الأساسي للقضاة' in body
