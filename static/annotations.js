@@ -245,9 +245,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (addMode && textDiv.contains(ev.target)) {
             return;
         }
+        const insideText = textDiv.contains(ev.target);
         if (!editPopup.contains(ev.target)) {
             editPopup.style.display = 'none';
-            if (!ev.target.closest('.entity-mark') && !ev.target.closest('.entity-handle')) {
+            if (
+                !ev.target.closest('.entity-mark') &&
+                !ev.target.closest('.entity-handle') &&
+                !insideText
+            ) {
                 editMode = false;
             }
             if (addMode) {
@@ -261,9 +266,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (
             !ev.target.closest('.entity-mark') &&
             !ev.target.closest('.entity-handle') &&
-            !editPopup.contains(ev.target)
+            !editPopup.contains(ev.target) &&
+            !insideText
         ) {
-            document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
+            document
+                .querySelectorAll('.entity-mark')
+                .forEach(s => s.classList.remove('selected'));
             hideHandles();
             currentSpan = null;
         }
@@ -271,13 +279,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const startHandle = document.createElement('div');
     startHandle.className = 'entity-handle';
-    startHandle.textContent = '[';
+    startHandle.textContent = '';
     startHandle.style.display = 'none';
     document.body.appendChild(startHandle);
 
     const endHandle = document.createElement('div');
     endHandle.className = 'entity-handle';
-    endHandle.textContent = ']';
+    endHandle.textContent = '';
     endHandle.style.display = 'none';
     document.body.appendChild(endHandle);
 
@@ -286,61 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
         endHandle.style.display = 'none';
     }
 
-    function getRectAtOffset(offset) {
-        const walker = document.createTreeWalker(textDiv, NodeFilter.SHOW_TEXT);
-        let count = 0;
-        while (walker.nextNode()) {
-            const node = walker.currentNode;
-            const len = node.textContent.length;
-            if (offset <= count + len) {
-                const range = document.createRange();
-                const pos = offset - count;
-                range.setStart(node, pos);
-                range.setEnd(node, pos);
-                return range.getBoundingClientRect();
-            }
-            count += len;
-        }
-        return null;
-    }
-
     function positionHandles(span) {
-        if (!editMode || !span) {
-            hideHandles();
-            return;
-        }
-        let start = parseInt(span.dataset.start, 10);
-        let end = parseInt(span.dataset.end, 10);
-        if (Number.isNaN(start) || Number.isNaN(end)) {
-            hideHandles();
-            return;
-        }
-        if (start > end) {
-            [start, end] = [end, start];
-            span.dataset.start = start;
-            span.dataset.end = end;
-        }
-        let startRect = getRectAtOffset(start);
-        let endRect = getRectAtOffset(end);
-        if (
-            !startRect ||
-            !endRect ||
-            startRect.width === 0 ||
-            endRect.width === 0
-        ) {
-            const rect = span.getBoundingClientRect();
-            startRect = { left: rect.left, top: rect.top, height: rect.height };
-            endRect = { right: rect.right, top: rect.top, height: rect.height };
-        }
-        const handleH = startHandle.offsetHeight || 20;
-        const startTop = window.scrollY + startRect.top + (startRect.height - handleH) / 2;
-        const endTop = window.scrollY + endRect.top + (endRect.height - handleH) / 2;
-        startHandle.style.top = `${startTop}px`;
-        endHandle.style.top = `${endTop}px`;
-        startHandle.style.left = `${window.scrollX + startRect.left}px`;
-        endHandle.style.left = `${window.scrollX + endRect.right - endHandle.offsetWidth}px`;
-        startHandle.style.display = 'block';
-        endHandle.style.display = 'block';
+        hideHandles();
     }
 
     let dragTarget = null;
@@ -594,6 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.querySelectorAll('.entity-mark').forEach(span => {
         span.addEventListener('click', () => {
+            if (editMode && currentSpan === span) return;
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
             span.classList.add('selected');
             currentSpan = span;
