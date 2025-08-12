@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('click', ev => {
-        if (addMode && textDiv.contains(ev.target)) {
+        if ((addMode || editMode) && textDiv.contains(ev.target)) {
             return;
         }
         const insideText = textDiv.contains(ev.target);
