@@ -194,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('start', addRange.start);
             fd.append('end', addRange.end);
             fd.append('type', newType);
+            fd.append('text', addRange.text);
             if (newNorm) fd.append('norm', newNorm);
             fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
                 .then(resp => { if (resp.ok) { window.location.reload(); } else { resp.text().then(t => alert(t)); } });
@@ -496,7 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let start = getOffset(range.startContainer, range.startOffset);
         let end = getOffset(range.endContainer, range.endOffset);
         if (start > end) [start, end] = [end, start];
-        addRange = { start, end };
+        addRange = { start, end, text: sel.toString() };
         showEditPopup(null, range.getBoundingClientRect());
     });
 
