@@ -94,4 +94,7 @@ def test_add_entity_updates_structure_json(tmp_path, monkeypatch):
     assert resp.status_code == 200
     with open(structure_path, 'r', encoding='utf-8') as f:
         struct = json.load(f)
-    assert struct['text'] == '<القانون, id:ENT_1>'
+    assert struct['text'] == '<القانون, id:1>'
+    with open(ner_path, 'r', encoding='utf-8') as f:
+        ner_saved = json.load(f)
+    assert ner_saved['entities'][0]['id'] == 1

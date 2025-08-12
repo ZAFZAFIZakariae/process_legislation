@@ -1,12 +1,44 @@
 document.addEventListener('DOMContentLoaded', () => {
     const textDiv = document.getElementById('text-display');
 
+    // Only count text nodes that live inside elements containing the original
+    // document text.  This avoids including titles/summary labels which are
+    // rendered for navigation but are not part of the raw text on disk.
+    function isRelevant(node) {
+        return node && node.parentElement && node.parentElement.closest('.json-value');
+    }
+
+    function createWalker() {
+        return document.createTreeWalker(
+            textDiv,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode: node =>
+                    isRelevant(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT,
+            }
+        );
+    }
+
+    function getOffset(node, offset) {
+        if (node && node.nodeType !== Node.TEXT_NODE) {
+            node = node.firstChild;
+            offset = 0;
+        }
+        const walker = createWalker();
+        let count = 0;
+        while (walker.nextNode()) {
+            const n = walker.currentNode;
+            if (n === node) {
+                return count + offset;
+            }
+            count += n.textContent.length;
+        }
+        return count;
+    }
+
     function initOffsets() {
         document.querySelectorAll('.entity-mark').forEach(span => {
-            const range = document.createRange();
-            range.selectNodeContents(textDiv);
-            range.setEndBefore(span);
-            const start = range.toString().length;
+            const start = getOffset(span.firstChild || span, 0);
             const end = start + span.textContent.length;
             span.dataset.start = start;
             span.dataset.end = end;
@@ -291,13 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let dragTarget = null;
     let wasDragging = false;
 
-    function getOffset(node, offset) {
-        const range = document.createRange();
-        range.selectNodeContents(textDiv);
-        range.setEnd(node, offset);
-        return range.toString().length;
-    }
-
     function getOffsetFromCoords(x, y) {
         const prevVisStart = startHandle.style.visibility;
         const prevVisEnd = endHandle.style.visibility;
@@ -422,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setSelectionRange(start, end) {
         if (start > end) [start, end] = [end, start];
-        const walker = document.createTreeWalker(textDiv, NodeFilter.SHOW_TEXT);
+        const walker = createWalker();
         let count = 0;
         let sNode = null, sOffset = 0, eNode = null, eOffset = 0;
         while (walker.nextNode()) {

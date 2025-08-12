@@ -7,7 +7,14 @@ except Exception:  # pragma: no cover - allow standalone use
     from ner import parse_marked_text, text_with_markers, fix_entity_offsets  # type: ignore
 
 
-def _next_id(entities: list[dict]) -> str:
+def _next_id(entities: list[dict]) -> int:
+    """Return the next available integer ID for *entities*.
+
+    Existing IDs may be numeric or alphanumeric; any trailing digit
+    sequence is considered when determining the next value.  The returned
+    ID is an integer without any prefix such as ``ENT_``.
+    """
+
     nums: list[int] = []
     for e in entities:
         sid = str(e.get("id", ""))
@@ -18,7 +25,7 @@ def _next_id(entities: list[dict]) -> str:
             except Exception:
                 pass
     n = max(nums) + 1 if nums else 1
-    return f"ENT_{n}"
+    return n
 
 
 def load_file(path: str) -> tuple[str, list[dict]]:
