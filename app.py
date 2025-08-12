@@ -408,9 +408,6 @@ def extract_structure():
                     with open(ner_json, 'w', encoding='utf-8') as f:
                         json.dump(ner_saved, f, ensure_ascii=False, indent=2)
 
-                    ner_html_path = os.path.join(ner_dir, f'{base}_ner.html')
-                    with open(ner_html_path, 'w', encoding='utf-8') as f:
-                        f.write(ner_html)
                 finally:
                     shutil.rmtree(tmp_dir, ignore_errors=True)
                 return render_template(
