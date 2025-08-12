@@ -529,7 +529,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = btn.closest('tr');
             if (!tr) return;
             document.querySelectorAll('.entity-mark').forEach(s => s.classList.remove('selected'));
-            const span = document.querySelector(`.entity-mark[data-id="${tr.dataset.id}"]`);
+            // Use the span that triggered the edit if available; otherwise fall back
+            // to the first occurrence of this entity ID.
+            let span = null;
+            if (currentSpan && currentSpan.dataset.id === tr.dataset.id) {
+                span = currentSpan;
+            } else {
+                span = document.querySelector(`.entity-mark[data-id="${tr.dataset.id}"]`);
+            }
             if (span) {
                 editMode = true;
                 span.classList.add('selected');
