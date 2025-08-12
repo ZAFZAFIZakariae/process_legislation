@@ -36,6 +36,26 @@ document.addEventListener('DOMContentLoaded', () => {
         return count;
     }
 
+    function getTextSlice(start, end) {
+        const walker = createWalker();
+        let count = 0;
+        let result = '';
+        while (walker.nextNode()) {
+            const n = walker.currentNode;
+            const len = n.textContent.length;
+            const nodeStart = count;
+            const nodeEnd = count + len;
+            if (end <= nodeStart) break;
+            if (start < nodeEnd) {
+                const s = Math.max(0, start - nodeStart);
+                const e = Math.min(len, end - nodeStart);
+                result += n.textContent.slice(s, e);
+            }
+            count = nodeEnd;
+        }
+        return result;
+    }
+
     function initOffsets() {
         document.querySelectorAll('.entity-mark').forEach(span => {
             const start = getOffset(span.firstChild || span, 0);
@@ -141,9 +161,15 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('end', end);
             span.dataset.start = start;
             span.dataset.end = end;
+            fd.append('text', getTextSlice(start, end));
         } else {
             if (span.dataset.start !== undefined) fd.append('start', span.dataset.start);
             if (span.dataset.end !== undefined) fd.append('end', span.dataset.end);
+            const start = parseInt(span.dataset.start || '0', 10);
+            const end = parseInt(span.dataset.end || '0', 10);
+            if (!Number.isNaN(start) && !Number.isNaN(end)) {
+                fd.append('text', getTextSlice(Math.min(start, end), Math.max(start, end)));
+            }
         }
         if (span.dataset.type) fd.append('type', span.dataset.type);
         if (span.dataset.norm) fd.append('norm', span.dataset.norm);
@@ -194,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fd.append('start', addRange.start);
             fd.append('end', addRange.end);
             fd.append('type', newType);
+            fd.append('text', addRange.text);
             if (newNorm) fd.append('norm', newNorm);
             fetch(window.location.pathname + window.location.search, { method: 'POST', body: fd })
                 .then(resp => { if (resp.ok) { window.location.reload(); } else { resp.text().then(t => alert(t)); } });
@@ -496,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let start = getOffset(range.startContainer, range.startOffset);
         let end = getOffset(range.endContainer, range.endOffset);
         if (start > end) [start, end] = [end, start];
-        addRange = { start, end };
+        addRange = { start, end, text: sel.toString() };
         showEditPopup(null, range.getBoundingClientRect());
     });
 

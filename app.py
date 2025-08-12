@@ -637,8 +637,10 @@ def edit_legislation():
             args = SimpleNamespace(
                 add=(request.form.get('start'), request.form.get('end'), request.form.get('type')),
                 norm=request.form.get('norm'),
+                text=request.form.get('text'),
             )
             ae_add_entity(args, text, entities)
+            ae_fix_offsets(text, {'entities': entities})
         elif action == 'delete':
             args = SimpleNamespace(delete=request.form.get('id'))
             ae_delete_entity(args, entities)
@@ -653,8 +655,11 @@ def edit_legislation():
                 items.append(f"start={request.form.get('start')}")
             if request.form.get('end'):
                 items.append(f"end={request.form.get('end')}")
+            if request.form.get('text'):
+                items.append(f"text={request.form.get('text')}")
             args = SimpleNamespace(update=items)
             ae_update_entity(args, entities)
+            ae_fix_offsets(text, {'entities': entities})
         elif action == 'replace':
             args = SimpleNamespace(
                 replace_text=(
