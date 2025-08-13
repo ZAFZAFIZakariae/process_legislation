@@ -40,9 +40,10 @@ def test_annotate_json_metadata():
     assert data["metadata"]["official_title"] == "<القانون 1, id:LAW_1>"
 
 
-def test_main_saves_relations(tmp_path, monkeypatch):
+def test_entities_saved_separately(tmp_path, monkeypatch):
     input_path = tmp_path / "in.json"
     output_path = tmp_path / "out.json"
+    ent_path = tmp_path / "entities.json"
     data = {"structure": [{"text": "المادة 1 تشير إلى المادة 2"}]}
     with open(input_path, "w", encoding="utf-8") as f:
         json.dump(data, f)
@@ -74,6 +75,8 @@ def test_main_saves_relations(tmp_path, monkeypatch):
             str(input_path),
             "--output",
             str(output_path),
+            "--entities-output",
+            str(ent_path),
         ],
     )
 
@@ -82,8 +85,14 @@ def test_main_saves_relations(tmp_path, monkeypatch):
     with open(output_path, "r", encoding="utf-8") as f:
         out = json.load(f)
 
-    assert out["relations"] == ner_result["relations"]
-    assert out["relations"][0]["target_id"] == "ARTICLE_2"
+    assert "relations" not in out
+    assert "entities" not in out
+
+    with open(ent_path, "r", encoding="utf-8") as f:
+        ents = json.load(f)
+
+    assert ents["relations"] == ner_result["relations"]
+    assert ents["relations"][0]["target_id"] == "ARTICLE_2"
 
 
 def test_entities_output_without_positions(tmp_path, monkeypatch):
@@ -124,6 +133,12 @@ def test_entities_output_without_positions(tmp_path, monkeypatch):
     )
 
     structured_ner.main()
+
+    with open(output_path, "r", encoding="utf-8") as f:
+        out = json.load(f)
+
+    assert "entities" not in out
+    assert "relations" not in out
 
     with open(ent_path, "r", encoding="utf-8") as f:
         ents = json.load(f)["entities"]

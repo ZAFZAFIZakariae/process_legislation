@@ -1,12 +1,30 @@
 {% extends "base.html" %}
-{% block title %}Legal Assistant{% endblock %}
+{% block title %}Home{% endblock %}
 {% block content %}
-<h1>Legal Processing Portal</h1>
-<ul class="menu">
-    <li><a class="button" href="{{ url_for('index') }}">Extract Entities</a></li>
-    <li><a class="button" href="{{ url_for('extract_structure') }}">Chunk &amp; Build Hierarchy</a></li>
-    <li><a class="button" href="{{ url_for('parse_decision_route') }}">Parse Court Decision</a></li>
-    <li><a class="button" href="{{ url_for('run_query') }}">Run SQL Query</a></li>
-    <li><a class="button" href="{{ url_for('view_legislation') }}">Moroccan Legislation</a></li>
-</ul>
+<h1>Document Processing</h1>
+<form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="action" value="process" />
+    <label>Upload PDF or TXT:
+        <input type="file" name="file" required />
+    </label>
+    <div class="options">
+        <label><input type="checkbox" name="decision_parser" /> Add structured court decision parser</label><br/>
+        <label><input type="checkbox" name="structured_ner" /> Add structured NER extraction</label><br/>
+        <label><input type="checkbox" name="save_db" /> Save processed data to Moroccan Legislation</label>
+    </div>
+    <button type="submit">Upload &amp; Process</button>
+</form>
+{% if saved_file %}
+<p>Processed file saved as {{ saved_file }}. <a class="button" href="{{ url_for('view_legislation', file=saved_file) }}">Open</a></p>
+{% endif %}
+{% if process_error %}<div class="error">{{ process_error }}</div>{% endif %}
+<hr/>
+<form method="post">
+    <input type="hidden" name="action" value="query" />
+    <label>SQL Query:</label><br/>
+    <textarea name="sql" rows="4" cols="80">{{ sql }}</textarea><br/>
+    <button type="submit">Run Query</button>
+</form>
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+{% if result_html %}{{ result_html|safe }}{% endif %}
 {% endblock %}
