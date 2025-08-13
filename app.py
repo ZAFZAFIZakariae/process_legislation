@@ -230,9 +230,115 @@ def settings_route():
     return ('', 204)
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
-    return render_template('home.html', settings=load_settings())
+    """Render the main interface and handle uploads/SQL queries."""
+    cfg = load_settings()
+    result_html = None
+    error = None
+    sql = ''
+    saved_file: str | None = None
+    process_error: str | None = None
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'query':
+            sql = request.form.get('sql', '')
+            try:
+                con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+                if pd:
+                    df = pd.read_sql_query(sql, con)
+                    result_html = df.to_html(index=False)
+                else:  # pragma: no cover - fallback when pandas missing
+                    cur = con.cursor()
+                    cur.execute(sql)
+                    rows = cur.fetchall()
+                    headers = [d[0] for d in cur.description or []]
+                    result_html = (
+                        '<table><thead><tr>'
+                        + ''.join(f'<th>{h}</th>' for h in headers)
+                        + '</tr></thead><tbody>'
+                        + ''.join(
+                            '<tr>' + ''.join(f'<td>{c}</td>' for c in row) + '</tr>'
+                            for row in rows
+                        )
+                        + '</tbody></table>'
+                    )
+            except Exception as exc:  # pragma: no cover - display error
+                error = str(exc)
+            finally:
+                try:
+                    con.close()
+                except Exception:  # pragma: no cover - defensive
+                    pass
+        elif action == 'process':
+            uploaded = request.files.get('file')
+            if not uploaded:
+                process_error = 'No file uploaded'
+            elif convert_to_text is None or run_passes is None:
+                process_error = 'Structure pipeline not available'
+            else:
+                suffix = os.path.splitext(uploaded.filename)[1] or '.txt'
+                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                    uploaded.save(tmp.name)
+                    input_path = tmp.name
+                try:
+                    tmp_dir = tempfile.mkdtemp()
+                    model = cfg.get('model', 'gpt-3.5-turbo-16k')
+                    txt_path = convert_to_text(input_path, tmp_dir)
+                    result = run_passes(txt_path, model)
+                    hier = postprocess_structure(result.get('structure', []))
+                    flatten_articles(hier)
+                    hier = merge_duplicates(hier)
+                    remove_duplicate_articles(hier)
+                    attach_stray_articles(hier)
+                    result['structure'] = hier
+                    with open(txt_path, 'r', encoding='utf-8') as f:
+                        raw_text = f.read()
+                    ner_saved = None
+                    if request.form.get('decision_parser'):
+                        try:  # pragma: no cover - optional dependency
+                            from pipeline.structured_decision_parser import (
+                                run_structured_decision_parser,
+                            )
+                            result['decision'] = run_structured_decision_parser(result, model)
+                        except Exception:
+                            pass
+                    if request.form.get('structured_ner') and run_structured_ner:
+                        result, ner_saved, raw_text, _ = run_structured_ner(result, model)
+                    base = os.path.splitext(uploaded.filename)[0]
+                    os.makedirs('data_txt', exist_ok=True)
+                    with open(os.path.join('data_txt', f'{base}.txt'), 'w', encoding='utf-8') as f:
+                        f.write(raw_text)
+                    os.makedirs('output', exist_ok=True)
+                    out_path = os.path.join('output', f'{base}.json')
+                    with open(out_path, 'w', encoding='utf-8') as f:
+                        json.dump(result, f, ensure_ascii=False, indent=2)
+                    if ner_saved:
+                        os.makedirs('ner_output', exist_ok=True)
+                        ner_json = os.path.join('ner_output', f'{base}_ner.json')
+                        with open(ner_json, 'w', encoding='utf-8') as f:
+                            json.dump(ner_saved, f, ensure_ascii=False, indent=2)
+                    saved_file = base
+                    if request.form.get('save_db'):
+                        try:  # pragma: no cover - optional dependency
+                            from import_db import import_json
+                            import_json(DB_PATH)
+                        except Exception as exc:
+                            process_error = str(exc)
+                except Exception as exc:  # pragma: no cover - show error
+                    process_error = str(exc)
+                finally:
+                    os.unlink(input_path)
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
+    return render_template(
+        'home.html',
+        settings=cfg,
+        result_html=result_html,
+        error=error,
+        sql=sql,
+        saved_file=saved_file,
+        process_error=process_error,
+    )
 
 @app.route('/entities', methods=['GET', 'POST'])
 def index():

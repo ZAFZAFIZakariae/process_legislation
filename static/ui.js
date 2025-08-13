@@ -38,10 +38,6 @@
   const cmdList = document.getElementById('command-list');
   const commands = [
     {name: 'Home', url: '/'},
-    {name: 'Entities', url: '/entities'},
-    {name: 'Structure', url: '/structure'},
-    {name: 'Decision', url: '/decision'},
-    {name: 'SQL', url: '/query'},
     {name: 'Legislation', url: '/legislation'},
     {name: 'Settings', action: () => drawer.classList.add('open')}
   ];
