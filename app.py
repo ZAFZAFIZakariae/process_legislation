@@ -238,7 +238,7 @@ def home():
     error = None
     sql = ''
     saved_file: str | None = None
-    decision_saved: str | None = None
+    saved_to: str | None = None
     process_error: str | None = None
     if request.method == 'POST':
         action = request.form.get('action')
@@ -310,22 +310,24 @@ def home():
                     os.makedirs('data_txt', exist_ok=True)
                     with open(os.path.join('data_txt', f'{base}.txt'), 'w', encoding='utf-8') as f:
                         f.write(raw_text)
-                    os.makedirs('output', exist_ok=True)
-                    out_path = os.path.join('output', f'{base}.json')
+                    output_type = request.form.get('output_type', 'legislation')
+                    if output_type == 'legal':
+                        os.makedirs('legal_output', exist_ok=True)
+                        out_path = os.path.join('legal_output', f'{base}.json')
+                        data_to_save = result.get('decision') or result
+                    else:
+                        os.makedirs('output', exist_ok=True)
+                        out_path = os.path.join('output', f'{base}.json')
+                        data_to_save = result
                     with open(out_path, 'w', encoding='utf-8') as f:
-                        json.dump(result, f, ensure_ascii=False, indent=2)
+                        json.dump(data_to_save, f, ensure_ascii=False, indent=2)
                     if ner_saved:
                         os.makedirs('ner_output', exist_ok=True)
                         ner_json = os.path.join('ner_output', f'{base}_ner.json')
                         with open(ner_json, 'w', encoding='utf-8') as f:
                             json.dump(ner_saved, f, ensure_ascii=False, indent=2)
-                    if result.get('decision'):
-                        os.makedirs('legal_output', exist_ok=True)
-                        dec_path = os.path.join('legal_output', f'{base}.json')
-                        with open(dec_path, 'w', encoding='utf-8') as df:
-                            json.dump(result['decision'], df, ensure_ascii=False, indent=2)
-                        decision_saved = base
                     saved_file = base
+                    saved_to = output_type
                     if request.form.get('save_db'):
                         try:  # pragma: no cover - optional dependency
                             from import_db import import_json
@@ -344,7 +346,7 @@ def home():
         error=error,
         sql=sql,
         saved_file=saved_file,
-        decision_saved=decision_saved,
+        saved_to=saved_to,
         process_error=process_error,
     )
 
