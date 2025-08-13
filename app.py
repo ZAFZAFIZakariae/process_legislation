@@ -833,10 +833,25 @@ def edit_legislation():
 
     doc = docs.get(name, {})
     structure_path = doc.get('structure')
-    structure = None
+
+    # When editing a court decision the JSON produced by the pipeline stores
+    # the decision sections under a top-level "decision" key.  The original
+    # editor expected the sections (facts/arguments/...) at the root which
+    # meant the UI failed to display them.  Detect this scenario and expose
+    # the nested decision object to the template while keeping a reference to
+    # the full document for persistence.
+    is_decision = request.path.startswith('/decision')
+    full_doc: dict | None = None
+    structure: dict | None = None
     if structure_path and os.path.exists(structure_path):
         with open(structure_path, 'r', encoding='utf-8') as sf:
-            structure = json.load(sf)
+            loaded = json.load(sf)
+        if is_decision and isinstance(loaded, dict) and 'decision' in loaded:
+            full_doc = loaded
+            structure = loaded.get('decision')  # sections to edit
+        else:
+            structure = loaded
+            full_doc = loaded
 
     text, entities, relations, txt_path, ner_path = _load_annotation(name)
 
@@ -914,25 +929,28 @@ def edit_legislation():
         elif action == 'add_struct':
             key = request.form.get('category')
             val = request.form.get('text', '')
-            if structure_path and structure and isinstance(structure, dict):
-                lst = structure.get(key)
-                if isinstance(lst, list):
-                    lst.append(val)
-                    with open(structure_path, 'w', encoding='utf-8') as sf:
-                        json.dump(structure, sf, ensure_ascii=False, indent=2)
+            if structure_path and full_doc and isinstance(full_doc, dict):
+                target = full_doc.get('decision') if is_decision else full_doc
+                if isinstance(target, dict):
+                    lst = target.get(key)
+                    if isinstance(lst, list):
+                        lst.append(val)
+                        with open(structure_path, 'w', encoding='utf-8') as sf:
+                            json.dump(full_doc, sf, ensure_ascii=False, indent=2)
         elif action == 'delete_struct':
             key = request.form.get('category')
             idx = request.form.get('index')
-            if structure_path and structure and isinstance(structure, dict):
+            if structure_path and full_doc and isinstance(full_doc, dict):
+                target = full_doc.get('decision') if is_decision else full_doc
                 try:
                     i = int(idx)
                 except Exception:
                     i = -1
-                lst = structure.get(key)
+                lst = target.get(key) if isinstance(target, dict) else None
                 if isinstance(lst, list) and 0 <= i < len(lst):
                     del lst[i]
                     with open(structure_path, 'w', encoding='utf-8') as sf:
-                        json.dump(structure, sf, ensure_ascii=False, indent=2)
+                        json.dump(full_doc, sf, ensure_ascii=False, indent=2)
 
         _save_annotation(text, entities, relations, txt_path, ner_path, structure_path)
 
@@ -943,7 +961,13 @@ def edit_legislation():
 
         if structure_path and os.path.exists(structure_path):
             with open(structure_path, 'r', encoding='utf-8') as sf:
-                structure = json.load(sf)
+                loaded = json.load(sf)
+            if is_decision and isinstance(loaded, dict):
+                structure = loaded.get('decision')
+                full_doc = loaded
+            else:
+                structure = loaded
+                full_doc = loaded
 
         annotated = ae_text_with_markers(text, entities)
         return render_template(
