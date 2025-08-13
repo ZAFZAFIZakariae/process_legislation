@@ -238,6 +238,7 @@ def home():
     error = None
     sql = ''
     saved_file: str | None = None
+    decision_saved: str | None = None
     process_error: str | None = None
     if request.method == 'POST':
         action = request.form.get('action')
@@ -318,6 +319,12 @@ def home():
                         ner_json = os.path.join('ner_output', f'{base}_ner.json')
                         with open(ner_json, 'w', encoding='utf-8') as f:
                             json.dump(ner_saved, f, ensure_ascii=False, indent=2)
+                    if result.get('decision'):
+                        os.makedirs('legal_output', exist_ok=True)
+                        dec_path = os.path.join('legal_output', f'{base}.json')
+                        with open(dec_path, 'w', encoding='utf-8') as df:
+                            json.dump(result['decision'], df, ensure_ascii=False, indent=2)
+                        decision_saved = base
                     saved_file = base
                     if request.form.get('save_db'):
                         try:  # pragma: no cover - optional dependency
@@ -337,6 +344,7 @@ def home():
         error=error,
         sql=sql,
         saved_file=saved_file,
+        decision_saved=decision_saved,
         process_error=process_error,
     )
 
@@ -565,6 +573,17 @@ def _collect_documents() -> dict[str, dict[str, str]]:
     return docs
 
 
+def _collect_legal_documents() -> dict[str, str]:
+    """Return mapping of base names to legal document paths."""
+    docs: dict[str, str] = {}
+    if os.path.isdir('legal_output'):
+        for f in os.listdir('legal_output'):
+            if f.endswith('.json'):
+                base = f.rsplit('.', 1)[0]
+                docs[base] = os.path.join('legal_output', f)
+    return docs
+
+
 def _load_annotation(name: str) -> tuple[str, list[dict], list[dict], str, str]:
     """Load raw text and NER data for *name* along with file paths."""
     txt_path = os.path.join('data_txt', f'{name}.txt')
@@ -701,6 +720,25 @@ def view_legislation():
         selected=name,
         data=data,
         entities=entities,
+        settings=load_settings(),
+    )
+
+
+@app.route('/legal_documents')
+def view_legal_documents():
+    docs = _collect_legal_documents()
+    files = sorted(docs.keys())
+    name = request.args.get('file')
+    data = None
+    doc = docs.get(name)
+    if doc:
+        with open(doc, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    return render_template(
+        'legal_documents.html',
+        files=files,
+        selected=name,
+        data=data,
         settings=load_settings(),
     )
 
