@@ -636,6 +636,10 @@ def _collect_legal_documents() -> dict[str, str]:
 def _load_annotation(name: str) -> tuple[str, list[dict], list[dict], str, str]:
     """Load raw text and NER data for *name* along with file paths."""
     txt_path = os.path.join('data_txt', f'{name}.txt')
+    if not os.path.exists(txt_path):
+        alt = os.path.join('court_decision_txt', f'{name}.txt')
+        if os.path.exists(alt):
+            txt_path = alt
     ner_path = os.path.join('ner_output', f'{name}_ner.json')
     text = ''
     if os.path.exists(txt_path):
