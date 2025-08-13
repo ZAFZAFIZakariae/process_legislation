@@ -112,8 +112,19 @@
     setTimeout(() => showToast('Step 1: Alternatively, enter an SQL query below.'), 3500);
     ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('hover'); }));
     ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('hover'); }));
-    dropZone.addEventListener('drop', e => { fileInput.files = e.dataTransfer.files; });
+    dropZone.addEventListener('drop', e => {
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    });
     dropZone.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const msg = fileInput.files.length
+        ? `File uploaded: ${fileInput.files[0].name}`
+        : 'Drag & drop file here or click to browse';
+      const p = dropZone.querySelector('p');
+      if (p) p.textContent = msg;
+    });
     fileInput.addEventListener('change', () => showToast('Step 2: Adjust options then press "Upload & Process".'), { once: true });
     const processForm = fileInput.closest('form');
     processForm && processForm.addEventListener('submit', () => showToast('Uploading file...'));
