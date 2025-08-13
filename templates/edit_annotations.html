@@ -37,7 +37,8 @@
   <h3>{{ section.replace('_', ' ').title() }}</h3>
   <ul>
     {% for item in data.get(section, []) %}
-    <li>{{ item }}
+    <li>
+      <span class="decision-text">{{ item }}</span>
       <form method="post" class="inline-form">
         <input type="hidden" name="action" value="delete_struct" />
         <input type="hidden" name="category" value="{{ section }}" />
@@ -142,6 +143,9 @@ function render(container, obj) {
 if (data) {
     render(document.getElementById('json-tree'), data);
 }
+document.querySelectorAll('.decision-text').forEach(span => {
+    span.innerHTML = formatText(span.textContent);
+});
 </script>
 <script src="{{ url_for('static', filename='annotations.js') }}"></script>
 {% endblock %}
