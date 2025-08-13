@@ -327,20 +327,21 @@ def home():
                         result['structure'] = hier
                         with open(txt_path, 'r', encoding='utf-8') as f:
                             raw_text = f.read()
-                        if request.form.get('decision_parser'):
-                            try:  # pragma: no cover - optional dependency
-                                from pipeline.structured_decision_parser import (
-                                    run_structured_decision_parser,
-                                )
-                                result['decision'] = run_structured_decision_parser(
-                                    result, model
-                                )
-                            except Exception:
-                                pass
-                        if request.form.get('structured_ner') and run_structured_ner:
-                            result, ner_saved, raw_text, _ = run_structured_ner(
+
+                    if request.form.get('decision_parser'):
+                        try:  # pragma: no cover - optional dependency
+                            from pipeline.structured_decision_parser import (
+                                run_structured_decision_parser,
+                            )
+                            result['decision'] = run_structured_decision_parser(
                                 result, model
                             )
+                        except Exception:
+                            pass
+                    if request.form.get('structured_ner') and run_structured_ner:
+                        result, ner_saved, raw_text, _ = run_structured_ner(
+                            result, model
+                        )
                     base = os.path.splitext(uploaded.filename)[0]
                     os.makedirs('data_txt', exist_ok=True)
                     with open(
@@ -350,14 +351,23 @@ def home():
                     if output_type == 'legal':
                         os.makedirs('legal_output', exist_ok=True)
                         out_path = os.path.join('legal_output', f'{base}.json')
-                        data_to_save = {"structure": result.get('structure', []), "text": raw_text}
+                        data_to_save = {
+                            "structure": result.get('structure', []),
+                            "text": raw_text,
+                        }
+                        if request.form.get('decision_parser') and result.get('decision'):
+                            data_to_save['decision'] = result['decision']
+                        if request.form.get('structured_ner') and ner_saved:
+                            data_to_save['ner'] = ner_saved
                     else:
                         os.makedirs('output', exist_ok=True)
                         out_path = os.path.join('output', f'{base}.json')
                         data_to_save = result
+                        if request.form.get('structured_ner') and ner_saved:
+                            data_to_save['ner'] = ner_saved
                     with open(out_path, 'w', encoding='utf-8') as f:
                         json.dump(data_to_save, f, ensure_ascii=False, indent=2)
-                    if ner_saved:
+                    if request.form.get('structured_ner') and ner_saved:
                         os.makedirs('ner_output', exist_ok=True)
                         ner_json = os.path.join('ner_output', f'{base}_ner.json')
                         with open(ner_json, 'w', encoding='utf-8') as f:
