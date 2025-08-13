@@ -603,6 +603,11 @@ def _collect_documents() -> dict[str, dict[str, str]]:
             if f.endswith('.json'):
                 base = f.rsplit('.', 1)[0]
                 docs.setdefault(base, {})['structure'] = os.path.join('output', f)
+    if os.path.isdir('legal_output'):
+        for f in os.listdir('legal_output'):
+            if f.endswith('.json'):
+                base = f.rsplit('.', 1)[0]
+                docs.setdefault(base, {})['structure'] = os.path.join('legal_output', f)
     if os.path.isdir('ner_output'):
         for f in os.listdir('ner_output'):
             if f.endswith('_ner.json'):
@@ -898,6 +903,28 @@ def edit_legislation():
             text = ae_replace_text(args, text, entities)
         elif action == 'fix':
             ae_fix_offsets(text, {'entities': entities})
+        elif action == 'add_struct':
+            key = request.form.get('category')
+            val = request.form.get('text', '')
+            if structure_path and structure and isinstance(structure, dict):
+                lst = structure.get(key)
+                if isinstance(lst, list):
+                    lst.append(val)
+                    with open(structure_path, 'w', encoding='utf-8') as sf:
+                        json.dump(structure, sf, ensure_ascii=False, indent=2)
+        elif action == 'delete_struct':
+            key = request.form.get('category')
+            idx = request.form.get('index')
+            if structure_path and structure and isinstance(structure, dict):
+                try:
+                    i = int(idx)
+                except Exception:
+                    i = -1
+                lst = structure.get(key)
+                if isinstance(lst, list) and 0 <= i < len(lst):
+                    del lst[i]
+                    with open(structure_path, 'w', encoding='utf-8') as sf:
+                        json.dump(structure, sf, ensure_ascii=False, indent=2)
 
         _save_annotation(text, entities, relations, txt_path, ner_path, structure_path)
 
@@ -930,6 +957,12 @@ def edit_legislation():
         error=None,
         settings=cfg,
     )
+
+
+@app.route('/decision/edit', methods=['GET', 'POST'])
+def edit_decision():
+    """Edit court decision documents (alias for edit_legislation)."""
+    return edit_legislation()
 
 
 @app.route('/query', methods=['GET', 'POST'])
