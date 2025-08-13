@@ -730,15 +730,38 @@ def view_legal_documents():
     files = sorted(docs.keys())
     name = request.args.get('file')
     data = None
+    entities = None
     doc = docs.get(name)
     if doc:
         with open(doc, 'r', encoding='utf-8') as f:
             data = json.load(f)
+        ner_path = os.path.join('ner_output', f'{name}_ner.json')
+        if os.path.exists(ner_path):
+            with open(ner_path, 'r', encoding='utf-8') as nf:
+                ner_data = json.load(nf)
+            entities = ner_data.get('entities', [])
+            relations = ner_data.get('relations', [])
+            ent_map = {str(e.get('id')): e for e in entities}
+            for rel in relations:
+                src = str(rel.get('source_id'))
+                tgt = str(rel.get('target_id'))
+                typ = rel.get('type')
+                label = RELATION_LABELS.get(typ, typ)
+                s_txt = ent_map.get(src, {}).get('text', '')
+                t_txt = ent_map.get(tgt, {}).get('text', '')
+                msg = f"{s_txt} {label} {t_txt}".strip()
+                cat = 'references' if typ in {'refers_to', 'jumps_to'} else 'relations'
+                if src in ent_map:
+                    ent_map[src].setdefault(cat, []).append(msg)
+                if tgt in ent_map:
+                    ent_map[tgt].setdefault(cat, []).append(msg)
+            entities = list(ent_map.values())
     return render_template(
         'legal_documents.html',
         files=files,
         selected=name,
         data=data,
+        entities=entities,
         settings=load_settings(),
     )
 
