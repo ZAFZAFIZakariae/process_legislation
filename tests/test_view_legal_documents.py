@@ -17,4 +17,7 @@ def test_view_legal_documents_lists_files(tmp_path, monkeypatch):
     assert b'case' in res.data
 
     res = client.get('/legal_documents?file=case')
-    assert b'"a": 1' in res.data
+    body = res.get_data(as_text=True)
+    assert 'json-tree' in body
+    assert 'Edit annotations' in body
+    assert '"a":1' in body
