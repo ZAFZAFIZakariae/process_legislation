@@ -33,4 +33,5 @@ def test_view_legal_documents_lists_files(tmp_path, monkeypatch):
     assert 'json-tree' in body
     assert 'Edit annotations' in body
     assert 'Text</h2>' not in body
-    assert 'id:1' in body
+    assert 'id:1' not in body
+    assert 'class="entity-link"' in body

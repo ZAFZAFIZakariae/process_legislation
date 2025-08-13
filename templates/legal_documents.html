@@ -18,13 +18,13 @@
     <div id="json-tree" class="json-tree"></div>
 </section>
 {% if decision %}
-<section class="card">
+<section class="card" id="decision-section">
     <h2>Decision</h2>
     {% for key, items in decision.items() %}
         <h3>{{ key.replace('_', ' ') }}</h3>
         <ul>
         {% for item in items %}
-            <li>{{ item }}</li>
+            <li class="decision-item">{{ item }}</li>
         {% endfor %}
         </ul>
     {% endfor %}
@@ -219,6 +219,11 @@ document.querySelectorAll('.entity-link').forEach(link => {
 document.getElementById('popup-close').addEventListener('click', () => {
     document.getElementById('popup').style.display = 'none';
 });
+{% if decision %}
+document.querySelectorAll('.decision-item').forEach(li => {
+    li.innerHTML = formatText(li.textContent);
+});
+{% endif %}
 {% endif %}
 </script>
 {% endblock %}
