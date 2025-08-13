@@ -12,10 +12,10 @@
     {% endfor %}
     </ul>
 </section>
-{% if data %}
+{% if text %}
 <section class="card">
     <h2>{{ selected }}</h2>
-    <div id="json-tree" class="json-tree"></div>
+    <div id="document-text" style="white-space: pre-wrap;">{{ text }}</div>
 </section>
 {% if decision %}
 <section class="card" id="decision-section">
@@ -50,184 +50,54 @@ searchInput && searchInput.addEventListener('input', function() {
         li.style.display = text.includes(query) ? '' : 'none';
     });
 });
-{% if data %}
-const data = {{ data | tojson }};
+{% if text %}
 const entitiesData = {{ entities | tojson | default('null', true) }};
 const entityMap = {};
-const articleTargets = {};
 if (entitiesData) {
-    entitiesData.forEach(e => {
-        entityMap[e.id] = e;
-        if (e.type === 'ARTICLE') {
-            const num = canonicalNum(e.normalized || e.text);
-            if (num) {
-                articleTargets[e.id] = `node-${num}`;
-            }
-        }
-    });
+    entitiesData.forEach(e => { entityMap[e.id] = e; });
 }
 function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, function(c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-}
-function canonicalNum(value) {
-    if (!value) return null;
-    const trans = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
-    let s = String(value).replace(/[٠-٩]/g, d => trans[d]);
-    const m = s.match(/\d+(?:[./]+[^\d]*\d+)*/);
-    if (!m) return null;
-    const digits = m[0].match(/\d+/g);
-    const seps = m[0].match(/[./]+/g) || [];
-    let result = digits[0];
-    for (let i = 1; i < digits.length; i++) {
-        result += seps[i-1][0] + digits[i];
-    }
-    return result;
+    return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 function formatText(value) {
-    if (typeof value !== 'string') {
-        return escapeHtml(String(value));
-    }
+    if (typeof value !== 'string') return escapeHtml(String(value));
     return value.replace(/<([^,<>]+), id:([^>]+)>/g, (_m, txt, id) => {
         const ent = entityMap[id] || {};
-        const attrs = [`class=\"entity-link\"`, `href=\"#\"`];
-        const target = articleTargets[id];
-        if (target) attrs.push(`data-target=\"${target}\"`);
+        const attrs = ['class="entity-link"', 'href="#"'];
         const popup = [];
         if (ent.text) popup.push(`<p>${escapeHtml(ent.text)}</p>`);
         if (ent.articles && ent.articles.length) {
             popup.push('<ul>' + ent.articles.map(r => `<li>${escapeHtml(r)}</li>`).join('') + '</ul>');
         } else {
-            ['references', 'relations'].forEach(key => {
+            ['references','relations'].forEach(key => {
                 const items = ent[key];
                 if (items && items.length) {
                     popup.push('<ul>' + items.map(r => `<li>${escapeHtml(r)}</li>`).join('') + '</ul>');
                 }
             });
         }
-        if (popup.length) attrs.push(`data-popup=\"${popup.join('')}\"`);
+        if (popup.length) attrs.push(`data-popup="${popup.join('')}"`);
         return `<a ${attrs.join(' ')}>${escapeHtml(txt)}</a>`;
     });
 }
-function renderNode(node, container) {
-    const details = document.createElement('details');
-    const summary = document.createElement('summary');
-    summary.classList.add('json-key');
-    let label = '';
-    if (node.type) label += escapeHtml(node.type);
-    if (node.number) {
-        label += (label ? ' ' : '') + escapeHtml(node.number);
-        const num = canonicalNum(node.number);
-        if (num) summary.id = `node-${num}`;
+const docDiv = document.getElementById('document-text');
+docDiv.innerHTML = formatText(docDiv.textContent);
+document.querySelectorAll('.decision-item').forEach(li => {
+    li.innerHTML = formatText(li.textContent);
+});
+document.addEventListener('click', function(ev) {
+    const link = ev.target.closest('.entity-link');
+    if (!link) return;
+    const popup = link.dataset.popup;
+    if (popup) {
+        document.getElementById('popup-content').innerHTML = popup;
+        document.getElementById('popup').style.display = 'block';
     }
-    if (node.title) {
-        label += (label ? ': ' : '') + formatText(node.title);
-    }
-    summary.innerHTML = label || formatText(node.text || '');
-    details.appendChild(summary);
-    if (node.text) {
-        const textDiv = document.createElement('div');
-        textDiv.className = 'json-value';
-        textDiv.innerHTML = formatText(node.text);
-        details.appendChild(textDiv);
-    }
-    if (Array.isArray(node.children) && node.children.length) {
-        const ul = document.createElement('ul');
-        node.children.forEach(child => {
-            const li = document.createElement('li');
-            if (child && typeof child === 'object') {
-                renderNode(child, li);
-            } else {
-                render(li, child);
-            }
-            ul.appendChild(li);
-        });
-        details.appendChild(ul);
-    }
-    container.appendChild(details);
-}
-function render(container, obj) {
-    if (Array.isArray(obj)) {
-        const ul = document.createElement('ul');
-        obj.forEach(item => {
-            const li = document.createElement('li');
-            if (item && typeof item === 'object' && (item.type || item.children || item.title || item.number || item.text)) {
-                renderNode(item, li);
-            } else {
-                render(li, item);
-            }
-            ul.appendChild(li);
-        });
-        container.appendChild(ul);
-    } else if (obj && typeof obj === 'object') {
-        if (obj.type || obj.children || obj.title || obj.number || obj.text) {
-            renderNode(obj, container);
-        } else {
-            const ul = document.createElement('ul');
-            Object.keys(obj).sort().forEach(key => {
-                const value = obj[key];
-                const li = document.createElement('li');
-                if (value && typeof value === 'object') {
-                    const details = document.createElement('details');
-                    const summary = document.createElement('summary');
-                    summary.classList.add('json-key');
-                    summary.textContent = key;
-                    details.appendChild(summary);
-                    render(details, value);
-                    li.appendChild(details);
-                } else {
-                    const keySpan = document.createElement('span');
-                    keySpan.className = 'json-key';
-                    keySpan.textContent = key + ': ';
-                    const valSpan = document.createElement('span');
-                    valSpan.className = 'json-value';
-                    valSpan.innerHTML = formatText(value);
-                    li.appendChild(keySpan);
-                    li.appendChild(valSpan);
-                }
-                ul.appendChild(li);
-            });
-            container.appendChild(ul);
-        }
-    } else {
-        const valSpan = document.createElement('span');
-        valSpan.className = 'json-value';
-        valSpan.innerHTML = formatText(obj);
-        container.appendChild(valSpan);
-    }
-}
-render(document.getElementById('json-tree'), data);
-document.querySelectorAll('.entity-link').forEach(link => {
-    link.addEventListener('click', ev => {
-        ev.preventDefault();
-        const target = link.getAttribute('data-target');
-        if (target) {
-            const el = document.getElementById(target);
-            if (el) {
-                let parent = el.closest('details');
-                while (parent) { parent.open = true; parent = parent.parentElement.closest('details'); }
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        } else {
-            const content = link.getAttribute('data-popup');
-            if (content) {
-                const popup = document.getElementById('popup');
-                const pc = document.getElementById('popup-content');
-                if (pc) pc.innerHTML = content;
-                if (popup) popup.style.display = 'block';
-            }
-        }
-    });
+    ev.preventDefault();
 });
 document.getElementById('popup-close').addEventListener('click', () => {
     document.getElementById('popup').style.display = 'none';
 });
-{% if decision %}
-document.querySelectorAll('.decision-item').forEach(li => {
-    li.innerHTML = formatText(li.textContent);
-});
-{% endif %}
 {% endif %}
 </script>
 {% endblock %}

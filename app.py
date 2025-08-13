@@ -672,6 +672,7 @@ def _load_annotation(name: str) -> tuple[str, list[dict], list[dict], str, str]:
         alt = os.path.join('court_decision_txt', f'{name}.txt')
         if os.path.exists(alt):
             txt_path = alt
+        article_texts = _collect_article_texts(data)
     ner_path = os.path.join('ner_output', f'{name}_ner.json')
     text = ''
     if os.path.exists(txt_path):
@@ -775,6 +776,8 @@ def view_legislation():
     data = None
     decision = None
     entities = None
+    text = None
+    text = None
     doc = docs.get(name)
     if doc:
         with open(doc['structure'], 'r', encoding='utf-8') as f:
@@ -851,6 +854,12 @@ def view_legal_documents():
             loaded = json.load(f)
         data = loaded.get('structure')
         decision = loaded.get('decision')
+        if isinstance(data, list):
+            texts = []
+            for block in data:
+                if isinstance(block, dict) and block.get('text'):
+                    texts.append(block.get('text', ''))
+            text = "\n\n".join(texts) if texts else None
         article_texts = _collect_article_texts(data)
         ner_path = os.path.join('ner_output', f'{name}_ner.json')
         if os.path.exists(ner_path):
@@ -893,7 +902,7 @@ def view_legal_documents():
         'legal_documents.html',
         files=files,
         selected=name,
-        data=data,
+        text=text,
         decision=decision,
         entities=entities,
     )
