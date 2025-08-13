@@ -364,12 +364,6 @@ def home():
                             json.dump(ner_saved, f, ensure_ascii=False, indent=2)
                     saved_file = base
                     saved_to = output_type
-                    if request.form.get('save_db'):
-                        try:  # pragma: no cover - optional dependency
-                            from import_db import import_json
-                            import_json(DB_PATH)
-                        except Exception as exc:
-                            process_error = str(exc)
                 except Exception as exc:  # pragma: no cover - show error
                     process_error = str(exc)
                 finally:
