@@ -10,6 +10,11 @@
   openBtn && openBtn.addEventListener('click', () => drawer.classList.add('open'));
   closeBtn && closeBtn.addEventListener('click', () => drawer.classList.remove('open'));
 
+  // Sidebar toggle for mobile
+  const menuBtn = document.getElementById('menu-button');
+  const sidebar = document.getElementById('sidebar');
+  menuBtn && sidebar && menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+
   const themeSelect = document.getElementById('theme-select');
   if (themeSelect) {
     themeSelect.value = storedTheme;
@@ -90,4 +95,36 @@
     setTimeout(() => toast.classList.add('hide'), 10);
     setTimeout(() => toast.remove(), 3100);
   };
+
+  // Help modal
+  const helpBtn = document.getElementById('help-button');
+  const helpModal = document.getElementById('help-modal');
+  const helpClose = document.getElementById('help-close');
+  helpBtn && helpModal && helpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+  helpClose && helpModal && helpClose.addEventListener('click', () => helpModal.classList.add('hidden'));
+  helpModal && helpModal.addEventListener('click', (e) => { if (e.target === helpModal) helpModal.classList.add('hidden'); });
+
+  // File drag and drop
+  const dropZone = document.getElementById('upload-drop');
+  const fileInput = document.getElementById('file-input');
+  if (dropZone && fileInput) {
+    showToast('Step 1: Drag & drop a file or click to browse.');
+    setTimeout(() => showToast('Step 1: Alternatively, enter an SQL query below.'), 3500);
+    ['dragenter','dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('hover'); }));
+    ['dragleave','drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('hover'); }));
+    dropZone.addEventListener('drop', e => { fileInput.files = e.dataTransfer.files; });
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => showToast('Step 2: Adjust options then press "Upload & Process".'), { once: true });
+    const processForm = fileInput.closest('form');
+    processForm && processForm.addEventListener('submit', () => showToast('Uploading file...'));
+  }
+
+  // SQL query guidance
+  const queryFormInput = document.querySelector('input[name="action"][value="query"]');
+  const queryForm = queryFormInput ? queryFormInput.closest('form') : null;
+  if (queryForm) {
+    const sqlArea = queryForm.querySelector('textarea[name="sql"]');
+    sqlArea && sqlArea.addEventListener('focus', () => showToast('Step 1: Enter an SQL query, then press "Run Query".'), { once: true });
+    queryForm.addEventListener('submit', () => showToast('Running query...'));
+  }
 })();

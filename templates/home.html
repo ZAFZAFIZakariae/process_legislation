@@ -1,35 +1,51 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
-<h1>Document Processing</h1>
-<form method="post" enctype="multipart/form-data">
-    <input type="hidden" name="action" value="process" />
-    <label>Upload PDF or TXT:
-        <input type="file" name="file" required />
-    </label>
-    <div class="options">
-        <label>Save output to:</label>
-        <label><input type="radio" name="output_type" value="legislation" checked /> Moroccan Legislation</label>
-        <label><input type="radio" name="output_type" value="legal" /> Legal Documents</label><br/>
-        <label><input type="checkbox" name="decision_parser" /> Add structured court decision parser</label><br/>
-        <label><input type="checkbox" name="structured_ner" /> Add structured NER extraction</label>
-    </div>
-    <button type="submit">Upload &amp; Process</button>
-</form>
-{% if saved_file %}
-<p>
-  Processed file saved as {{ saved_file }}.
-  <a class="button" href="{{ url_for('view_legislation' if saved_to=='legislation' else 'view_legal_documents', file=saved_file) }}">Open</a>
-</p>
-{% endif %}
-{% if process_error %}<div class="error">{{ process_error }}</div>{% endif %}
-<hr/>
-<form method="post">
-    <input type="hidden" name="action" value="query" />
-    <label>SQL Query:</label><br/>
-    <textarea name="sql" rows="4" cols="80">{{ sql }}</textarea><br/>
-    <button type="submit">Run Query</button>
-</form>
-{% if error %}<div class="error">{{ error }}</div>{% endif %}
-{% if result_html %}{{ result_html|safe }}{% endif %}
+<div class="home-grid">
+  <div class="card">
+    <h1>Document Processing</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="process" />
+        <label>Upload PDF or TXT:</label>
+        <div id="upload-drop" class="upload-drop">
+          <p>Drag &amp; drop file here or click to browse</p>
+          <input type="file" name="file" id="file-input" required hidden />
+        </div>
+        <div class="options">
+            <label>Save output to:</label>
+            <label><input type="radio" name="output_type" value="legislation" checked /> Moroccan Legislation</label>
+            <label><input type="radio" name="output_type" value="legal" /> Legal Documents</label><br/>
+            <label><input type="checkbox" name="decision_parser" /> Add structured court decision parser</label><br/>
+            <label><input type="checkbox" name="structured_ner" /> Add structured NER extraction</label>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload &amp; Process</button>
+    </form>
+    {% if saved_file %}
+    <p class="success">
+      Processed file saved as {{ saved_file }}.
+      <a class="btn btn-secondary" href="{{ url_for('view_legislation' if saved_to=='legislation' else 'view_legal_documents', file=saved_file) }}">Open</a>
+    </p>
+    <script>showToast('Processed file saved as {{ saved_file|escapejs }}');</script>
+    {% endif %}
+    {% if process_error %}
+    <div class="error">{{ process_error }}</div>
+    <script>showToast('{{ process_error|escapejs }}');</script>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Run SQL Query</h2>
+    <form method="post">
+        <input type="hidden" name="action" value="query" />
+        <label>SQL Query:</label><br/>
+        <textarea name="sql" rows="4" cols="80">{{ sql }}</textarea><br/>
+        <button type="submit" class="btn btn-primary">Run Query</button>
+    </form>
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    <script>showToast('{{ error|escapejs }}');</script>
+    {% endif %}
+    {% if result_html %}{{ result_html|safe }}{% endif %}
+  </div>
+</div>
 {% endblock %}

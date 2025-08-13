@@ -54,6 +54,19 @@ except BaseException:  # pragma: no cover - missing dependency
     run_structured_ner = None
 
 app = Flask(__name__)
+
+
+@app.context_processor
+def inject_globals() -> dict:
+    cfg = load_settings()
+    links = [
+        ("home", "Home", url_for("home")),
+        ("view_legislation", "Moroccan Legislation", url_for("view_legislation")),
+        ("view_legal_documents", "Legal Documents", url_for("view_legal_documents")),
+    ]
+    return {"settings": cfg, "nav_links": links}
+
+
 # Path to the SQLite database used for querying
 DB_PATH = os.environ.get("DB_PATH", "legislation.db")
 
@@ -383,7 +396,6 @@ def home():
                     shutil.rmtree(tmp_dir, ignore_errors=True)
     return render_template(
         'home.html',
-        settings=cfg,
         result_html=result_html,
         error=error,
         sql=sql,
@@ -513,15 +525,14 @@ def index():
                 relations_table=relations_table,
                 relations_csv=relations_csv,
                 graph_html=graph_html,
-                settings=cfg,
             )
-    return render_template('index.html', settings=cfg)
+    return render_template('index.html')
 
 
 @app.route('/structure', methods=['GET', 'POST'])
 def extract_structure():
     if run_passes is None or convert_to_text is None or run_structured_ner is None:
-        return render_template('structure.html', error='Structure pipeline not available', settings=load_settings())
+        return render_template('structure.html', error='Structure pipeline not available')
     cfg = load_settings()
     model = cfg.get('model', 'gpt-3.5-turbo-16k')
     if request.method == 'POST':
@@ -573,13 +584,12 @@ def extract_structure():
                     result=result,
                     saved_file=os.path.basename(out_path),
                     ner_html=ner_html,
-                    settings=cfg,
                 )
             except Exception as exc:  # pragma: no cover - display error
-                return render_template('structure.html', error=str(exc), settings=cfg)
+                return render_template('structure.html', error=str(exc))
             finally:
                 os.unlink(input_path)
-    return render_template('structure.html', settings=cfg)
+    return render_template('structure.html')
 
 @app.route('/decision', methods=['GET', 'POST'])
 def parse_decision_route():
@@ -597,8 +607,8 @@ def parse_decision_route():
             finally:
                 os.unlink(tmp_path)
             pretty = json.dumps(result, ensure_ascii=False, indent=2)
-            return render_template('decision.html', result_json=pretty, settings=cfg)
-    return render_template('decision.html', result_json=None, settings=cfg)
+            return render_template('decision.html', result_json=pretty)
+    return render_template('decision.html', result_json=None)
 
 
 def _collect_documents() -> dict[str, dict[str, str]]:
@@ -785,7 +795,6 @@ def view_legislation():
         data=data,
         decision=decision,
         entities=entities,
-        settings=load_settings(),
     )
 
 
@@ -831,13 +840,11 @@ def view_legal_documents():
         data=data,
         decision=decision,
         entities=entities,
-        settings=load_settings(),
     )
 
 
 @app.route('/legislation/edit', methods=['GET', 'POST'])
 def edit_legislation():
-    cfg = load_settings()
     docs = _collect_documents()
     name = request.args.get('file')
     if name not in docs:
@@ -884,7 +891,6 @@ def edit_legislation():
                     raw=content,
                     entities=entities,
                     error=str(exc),
-                    settings=cfg,
                 )
 
         # operations acting on existing annotations
@@ -989,7 +995,6 @@ def edit_legislation():
             raw=annotated,
             entities=entities,
             error=None,
-            settings=cfg,
         )
     annotated = ae_text_with_markers(text, entities)
     return render_template(
@@ -999,7 +1004,6 @@ def edit_legislation():
         raw=annotated,
         entities=entities,
         error=None,
-        settings=cfg,
     )
 
 
@@ -1030,7 +1034,6 @@ def run_query():
         sql=sql,
         result_html=result_html,
         error=error,
-        settings=load_settings(),
     )
 
 
