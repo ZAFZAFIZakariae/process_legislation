@@ -26,6 +26,34 @@ def _setup_dirs(tmp_path, text_dir='data_txt'):
     return legal_dir
 
 
+def _setup_nested(tmp_path):
+    legal_dir = tmp_path / 'legal_output'
+    ner_dir = tmp_path / 'ner_output'
+    txt_dir = tmp_path / 'court_decision_txt'
+    legal_dir.mkdir()
+    ner_dir.mkdir()
+    txt_dir.mkdir()
+    with open(legal_dir / 'nested.json', 'w', encoding='utf-8') as f:
+        json.dump(
+            {
+                'structure': [],
+                'text': 'abc',
+                'decision': {
+                    'facts': [],
+                    'arguments': [],
+                    'legal_reasons': [],
+                    'decision': [],
+                },
+            },
+            f,
+        )
+    with open(ner_dir / 'nested_ner.json', 'w', encoding='utf-8') as f:
+        json.dump({'entities': [], 'relations': []}, f)
+    with open(txt_dir / 'nested.txt', 'w', encoding='utf-8') as f:
+        f.write('abc')
+    return legal_dir
+
+
 def test_add_delete_sections(tmp_path, monkeypatch):
     legal_dir = _setup_dirs(tmp_path)
     monkeypatch.chdir(tmp_path)
@@ -60,3 +88,18 @@ def test_edit_decision_reads_court_decision_txt(tmp_path, monkeypatch):
     resp = client.get('/decision/edit?file=test')
     assert resp.status_code == 200
     assert b'abc' in resp.data
+
+
+def test_edit_decision_handles_nested_sections(tmp_path, monkeypatch):
+    legal_dir = _setup_nested(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    client = app.test_client()
+
+    resp = client.post(
+        '/decision/edit?file=nested',
+        data={'action': 'add_struct', 'category': 'facts', 'text': 'fact1'},
+    )
+    assert resp.status_code == 200
+    with open(legal_dir / 'nested.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    assert data['decision']['facts'] == ['fact1']
