@@ -8,6 +8,9 @@
         <input type="file" name="file" required />
     </label>
     <div class="options">
+        <label>Save output to:</label>
+        <label><input type="radio" name="output_type" value="legislation" checked /> Moroccan Legislation</label>
+        <label><input type="radio" name="output_type" value="legal" /> Legal Documents</label><br/>
         <label><input type="checkbox" name="decision_parser" /> Add structured court decision parser</label><br/>
         <label><input type="checkbox" name="structured_ner" /> Add structured NER extraction</label><br/>
         <label><input type="checkbox" name="save_db" /> Save processed data to Moroccan Legislation</label>
@@ -15,10 +18,7 @@
     <button type="submit">Upload &amp; Process</button>
 </form>
 {% if saved_file %}
-<p>Processed file saved as {{ saved_file }}. <a class="button" href="{{ url_for('view_legislation', file=saved_file) }}">Open</a></p>
-{% endif %}
-{% if decision_saved %}
-<p>Decision file saved as {{ decision_saved }}. <a class="button" href="{{ url_for('view_legal_documents', file=decision_saved) }}">Open</a></p>
+<p>Processed file saved as {{ saved_file }}. <a class="button" href="{{ url_for('view_legislation' if saved_to=='legislation' else 'view_legal_documents', file=saved_file) }}">Open</a></p>
 {% endif %}
 {% if process_error %}<div class="error">{{ process_error }}</div>{% endif %}
 <hr/>
