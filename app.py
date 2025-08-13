@@ -848,6 +848,7 @@ def view_legal_documents():
     data = None
     decision = None
     entities = None
+    text = None
     doc = docs.get(name)
     if doc:
         with open(doc, 'r', encoding='utf-8') as f:
