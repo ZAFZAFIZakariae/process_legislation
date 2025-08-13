@@ -23,6 +23,11 @@ except Exception:  # pragma: no cover - optional dependency may be missing
     date_parser = None
 
 try:
+    import tiktoken  # type: ignore
+except Exception:  # pragma: no cover - optional dependency may be missing
+    tiktoken = None
+
+try:
     from unidecode import unidecode  # type: ignore
 except Exception:  # pragma: no cover - optional dependency may be missing
 
@@ -583,9 +588,74 @@ def call_openai(prompt: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
     return json.loads(content)
 
 
+def _chunk_text(text: str, model: str, max_tokens: int) -> list[tuple[str, int]]:
+    """Split *text* into pieces each within *max_tokens* for *model*.
+
+    Returns a list of ``(chunk_text, char_offset)`` tuples."""
+    if not tiktoken:  # pragma: no cover - fallback to crude splitting
+        chunks: list[tuple[str, int]] = []
+        offset = 0
+        for i in range(0, len(text), max_tokens):
+            chunk = text[i : i + max_tokens]
+            chunks.append((chunk, offset))
+            offset += len(chunk)
+        return chunks
+
+    enc = tiktoken.encoding_for_model(model)
+    tokens = enc.encode(text)
+    chunks: list[tuple[str, int]] = []
+    offset = 0
+    for i in range(0, len(tokens), max_tokens):
+        chunk_tokens = tokens[i : i + max_tokens]
+        chunk_text = enc.decode(chunk_tokens)
+        chunks.append((chunk_text, offset))
+        offset += len(chunk_text)
+    return chunks
+
+
 def extract_entities(text: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
-    prompt = load_prompt(text)
-    return call_openai(prompt, model)
+    """Extract entities from *text* using the OpenAI model.
+
+    The text is chunked when it exceeds token limits to avoid 429 errors.
+    """
+
+    # conservative limit leaving room for prompt and reply tokens
+    MAX_TOKENS = 8000
+
+    chunks = _chunk_text(text, model, MAX_TOKENS)
+    if len(chunks) == 1:
+        prompt = load_prompt(text)
+        return call_openai(prompt, model)
+
+    merged: Dict[str, Any] = {"entities": [], "relations": []}
+    next_id = 1
+    for chunk_text, offset in chunks:
+        prompt = load_prompt(chunk_text)
+        partial = call_openai(prompt, model)
+
+        id_map: Dict[str, str] = {}
+        for ent in partial.get("entities", []):
+            try:
+                ent["start_char"] = ent.get("start_char", 0) + offset
+                ent["end_char"] = ent.get("end_char", 0) + offset
+            except Exception:
+                pass
+            old_id = str(ent.get("id", ""))
+            ent["id"] = str(next_id)
+            id_map[old_id] = str(next_id)
+            next_id += 1
+            merged["entities"].append(ent)
+
+        for rel in partial.get("relations", []):
+            src = str(rel.get("source_id", ""))
+            tgt = str(rel.get("target_id", ""))
+            if src in id_map:
+                rel["source_id"] = id_map[src]
+            if tgt in id_map:
+                rel["target_id"] = id_map[tgt]
+            merged["relations"].append(rel)
+
+    return merged
 
 
 def json_to_text(obj: Any) -> str:
