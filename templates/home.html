@@ -17,6 +17,9 @@
 {% if saved_file %}
 <p>Processed file saved as {{ saved_file }}. <a class="button" href="{{ url_for('view_legislation', file=saved_file) }}">Open</a></p>
 {% endif %}
+{% if decision_saved %}
+<p>Decision file saved as {{ decision_saved }}. <a class="button" href="{{ url_for('view_legal_documents', file=decision_saved) }}">Open</a></p>
+{% endif %}
 {% if process_error %}<div class="error">{{ process_error }}</div>{% endif %}
 <hr/>
 <form method="post">

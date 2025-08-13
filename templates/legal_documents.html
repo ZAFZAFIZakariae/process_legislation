@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Legal Documents{% endblock %}
+{% block content %}
+<h1>Legal Documents</h1>
+<section class="card">
+    <input type="text" id="search" placeholder="Search files..." />
+    <ul class="file-list" id="file-list">
+    {% for f in files %}
+        <li><a class="button" href="{{ url_for('view_legal_documents', file=f) }}">{{ f }}</a></li>
+    {% else %}
+        <li>No JSON files found.</li>
+    {% endfor %}
+    </ul>
+</section>
+{% if data %}
+<section class="card">
+    <h2>{{ selected }}</h2>
+    <pre id="json-data">{{ data | tojson(indent=2) }}</pre>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+const searchInput = document.getElementById('search');
+searchInput && searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('#file-list li').forEach(li => {
+        const text = li.textContent.toLowerCase();
+        li.style.display = text.includes(query) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

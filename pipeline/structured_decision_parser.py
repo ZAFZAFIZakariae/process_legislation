@@ -27,7 +27,7 @@ def main() -> None:
     )
     parser.add_argument("--input", required=True, help="Path to input JSON file")
     parser.add_argument(
-        "--output", help="Optional path for JSON output; defaults to decision_output/"
+        "--output", help="Optional path for JSON output; defaults to legal_output/"
     )
     parser.add_argument("--model", default=DEFAULT_MODEL, help="OpenAI model name")
     args = parser.parse_args()
@@ -40,9 +40,9 @@ def main() -> None:
     if args.output:
         out_path = args.output
     else:
-        os.makedirs("decision_output", exist_ok=True)
+        os.makedirs("legal_output", exist_ok=True)
         base = os.path.splitext(os.path.basename(args.input))[0]
-        out_path = os.path.join("decision_output", f"{base}.json")
+        out_path = os.path.join("legal_output", f"{base}.json")
 
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
