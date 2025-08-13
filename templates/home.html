@@ -25,11 +25,11 @@
       Processed file saved as {{ saved_file }}.
       <a class="btn btn-secondary" href="{{ url_for('view_legislation' if saved_to=='legislation' else 'view_legal_documents', file=saved_file) }}">Open</a>
     </p>
-    <script>showToast('Processed file saved as {{ saved_file|escapejs }}');</script>
+    <script>showToast({{ ('Processed file saved as ' ~ saved_file)|tojson }});</script>
     {% endif %}
     {% if process_error %}
     <div class="error">{{ process_error }}</div>
-    <script>showToast('{{ process_error|escapejs }}');</script>
+    <script>showToast({{ process_error|tojson }});</script>
     {% endif %}
   </div>
 
@@ -43,7 +43,7 @@
     </form>
     {% if error %}
     <div class="error">{{ error }}</div>
-    <script>showToast('{{ error|escapejs }}');</script>
+    <script>showToast({{ error|tojson }});</script>
     {% endif %}
     {% if result_html %}{{ result_html|safe }}{% endif %}
   </div>
