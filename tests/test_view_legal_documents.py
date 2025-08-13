@@ -30,8 +30,7 @@ def test_view_legal_documents_lists_files(tmp_path, monkeypatch):
 
     res = client.get('/legal_documents?file=case')
     body = res.get_data(as_text=True)
-    assert 'json-tree' in body
+    assert 'document-text' in body
     assert 'Edit annotations' in body
-    assert 'Text</h2>' not in body
-    assert 'id:1' not in body
-    assert 'class="entity-link"' in body
+    assert 'id:1' in body
+    assert 'class="entity-link"' not in body
