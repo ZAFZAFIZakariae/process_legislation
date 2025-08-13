@@ -27,7 +27,18 @@ def run_passes(txt_path: str, model: str) -> dict:
     first_chunk = gpt.split_for_pass1(arabic_text)
     msgs1 = gpt.build_messages_for_pass1(first_chunk)
     raw_full = gpt.call_gpt_on_chunk(msgs1, json_mode=True)
-    full_obj = json.loads(raw_full) if isinstance(raw_full, str) else raw_full
+    if isinstance(raw_full, str):
+        cleaned = gpt.remove_code_fences(raw_full)
+        try:
+            full_obj = json.loads(cleaned)
+        except json.JSONDecodeError as exc:  # pragma: no cover - defensive
+            repaired = gpt.repair_chunk_json(cleaned)
+            if isinstance(repaired, list):
+                full_obj = {"structure": repaired}
+            else:
+                raise RuntimeError(f"Pass 1 produced invalid JSON: {exc}") from exc
+    else:
+        full_obj = raw_full
     structure_tree = full_obj.get("structure", [])
     gpt.finalize_structure(structure_tree)
 
