@@ -357,14 +357,10 @@ def home():
                         }
                         if request.form.get('decision_parser') and result.get('decision'):
                             data_to_save['decision'] = result['decision']
-                        if request.form.get('structured_ner') and ner_saved:
-                            data_to_save['ner'] = ner_saved
                     else:
                         os.makedirs('output', exist_ok=True)
                         out_path = os.path.join('output', f'{base}.json')
                         data_to_save = result
-                        if request.form.get('structured_ner') and ner_saved:
-                            data_to_save['ner'] = ner_saved
                     with open(out_path, 'w', encoding='utf-8') as f:
                         json.dump(data_to_save, f, ensure_ascii=False, indent=2)
                     if request.form.get('structured_ner') and ner_saved:
@@ -783,19 +779,18 @@ def view_legal_documents():
     files = sorted(docs.keys())
     name = request.args.get('file')
     data = None
+    decision = None
     entities = None
-    raw_text = ''
-    ner_html = None
     doc = docs.get(name)
     if doc:
         with open(doc, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        raw_text = data.get('text', '')
+            loaded = json.load(f)
+        data = loaded.get('structure')
+        decision = loaded.get('decision')
         ner_path = os.path.join('ner_output', f'{name}_ner.json')
         if os.path.exists(ner_path):
             with open(ner_path, 'r', encoding='utf-8') as nf:
                 ner_data = json.load(nf)
-            ner_html = render_ner_html(raw_text, ner_data)
             entities = ner_data.get('entities', [])
             relations = ner_data.get('relations', [])
             ent_map = {str(e.get('id')): e for e in entities}
@@ -818,9 +813,8 @@ def view_legal_documents():
         files=files,
         selected=name,
         data=data,
+        decision=decision,
         entities=entities,
-        raw_text=raw_text,
-        ner_html=ner_html,
         settings=load_settings(),
     )
 
