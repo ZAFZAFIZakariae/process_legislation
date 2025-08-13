@@ -141,6 +141,28 @@ RELATION_LABELS = {
 }
 
 
+def _collect_article_texts(data):
+    """Return mapping of article numbers to text from *data*."""
+    texts = {}
+
+    def _collect(node):
+        if isinstance(node, dict):
+            typ = node.get("type")
+            if typ in {"الفصل", "مادة"}:
+                num = canonical_num(node.get("number"))
+                if num:
+                    texts[num] = node.get("text", "")
+            children = node.get("children")
+            if isinstance(children, list):
+                for child in children:
+                    _collect(child)
+        elif isinstance(node, list):
+            for item in node:
+                _collect(item)
+
+    _collect(data)
+    return texts
+
 def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
     """Load law articles from all JSON files under *dir_path*."""
     mapping: dict[str, dict[str, str]] = {}
@@ -767,6 +789,7 @@ def view_legislation():
             decision = loaded.get('decision')
         else:
             data = loaded
+        article_texts = _collect_article_texts(data)
         ner_path = doc.get('ner')
         if ner_path and os.path.exists(ner_path):
             with open(ner_path, 'r', encoding='utf-8') as nf:
@@ -778,15 +801,31 @@ def view_legislation():
                 src = str(rel.get('source_id'))
                 tgt = str(rel.get('target_id'))
                 typ = rel.get('type')
+                s_ent = ent_map.get(src)
+                t_ent = ent_map.get(tgt)
+                if (
+                    typ in {'refers_to', 'jumps_to'}
+                    and s_ent
+                    and t_ent
+                    and s_ent.get('type') == 'INTERNAL_REF'
+                    and t_ent.get('type') == 'ARTICLE'
+                ):
+                    num = canonical_num(t_ent.get('normalized') or t_ent.get('text'))
+                    art_txt = article_texts.get(num, '') if num else ''
+                    s_ent.setdefault('articles', []).append(f"الفصل {num}: {art_txt}")
+                    label = RELATION_LABELS.get(typ, typ)
+                    msg = f"{s_ent.get('text', '')} {label} {t_ent.get('text', '')}".strip()
+                    t_ent.setdefault('references', []).append(msg)
+                    continue
                 label = RELATION_LABELS.get(typ, typ)
-                s_txt = ent_map.get(src, {}).get('text', '')
-                t_txt = ent_map.get(tgt, {}).get('text', '')
+                s_txt = s_ent.get('text', '') if s_ent else ''
+                t_txt = t_ent.get('text', '') if t_ent else ''
                 msg = f"{s_txt} {label} {t_txt}".strip()
                 cat = 'references' if typ in {'refers_to', 'jumps_to'} else 'relations'
-                if src in ent_map:
-                    ent_map[src].setdefault(cat, []).append(msg)
-                if tgt in ent_map:
-                    ent_map[tgt].setdefault(cat, []).append(msg)
+                if s_ent:
+                    s_ent.setdefault(cat, []).append(msg)
+                if t_ent:
+                    t_ent.setdefault(cat, []).append(msg)
             entities = list(ent_map.values())
     return render_template(
         'legislation.html',
@@ -812,6 +851,7 @@ def view_legal_documents():
             loaded = json.load(f)
         data = loaded.get('structure')
         decision = loaded.get('decision')
+        article_texts = _collect_article_texts(data)
         ner_path = os.path.join('ner_output', f'{name}_ner.json')
         if os.path.exists(ner_path):
             with open(ner_path, 'r', encoding='utf-8') as nf:
@@ -823,15 +863,31 @@ def view_legal_documents():
                 src = str(rel.get('source_id'))
                 tgt = str(rel.get('target_id'))
                 typ = rel.get('type')
+                s_ent = ent_map.get(src)
+                t_ent = ent_map.get(tgt)
+                if (
+                    typ in {'refers_to', 'jumps_to'}
+                    and s_ent
+                    and t_ent
+                    and s_ent.get('type') == 'INTERNAL_REF'
+                    and t_ent.get('type') == 'ARTICLE'
+                ):
+                    num = canonical_num(t_ent.get('normalized') or t_ent.get('text'))
+                    art_txt = article_texts.get(num, '') if num else ''
+                    s_ent.setdefault('articles', []).append(f"الفصل {num}: {art_txt}")
+                    label = RELATION_LABELS.get(typ, typ)
+                    msg = f"{s_ent.get('text', '')} {label} {t_ent.get('text', '')}".strip()
+                    t_ent.setdefault('references', []).append(msg)
+                    continue
                 label = RELATION_LABELS.get(typ, typ)
-                s_txt = ent_map.get(src, {}).get('text', '')
-                t_txt = ent_map.get(tgt, {}).get('text', '')
+                s_txt = s_ent.get('text', '') if s_ent else ''
+                t_txt = t_ent.get('text', '') if t_ent else ''
                 msg = f"{s_txt} {label} {t_txt}".strip()
                 cat = 'references' if typ in {'refers_to', 'jumps_to'} else 'relations'
-                if src in ent_map:
-                    ent_map[src].setdefault(cat, []).append(msg)
-                if tgt in ent_map:
-                    ent_map[tgt].setdefault(cat, []).append(msg)
+                if s_ent:
+                    s_ent.setdefault(cat, []).append(msg)
+                if t_ent:
+                    t_ent.setdefault(cat, []).append(msg)
             entities = list(ent_map.values())
     return render_template(
         'legal_documents.html',
