@@ -96,12 +96,16 @@ function formatText(value) {
         if (target) attrs.push(`data-target=\"${target}\"`);
         const popup = [];
         if (ent.text) popup.push(`<p>${escapeHtml(ent.text)}</p>`);
-        ['references', 'relations'].forEach(key => {
-            const items = ent[key];
-            if (items && items.length) {
-                popup.push('<ul>' + items.map(r => `<li>${escapeHtml(r)}</li>`).join('') + '</ul>');
-            }
-        });
+        if (ent.articles && ent.articles.length) {
+            popup.push('<ul>' + ent.articles.map(r => `<li>${escapeHtml(r)}</li>`).join('') + '</ul>');
+        } else {
+            ['references', 'relations'].forEach(key => {
+                const items = ent[key];
+                if (items && items.length) {
+                    popup.push('<ul>' + items.map(r => `<li>${escapeHtml(r)}</li>`).join('') + '</ul>');
+                }
+            });
+        }
         if (popup.length) attrs.push(`data-popup=\"${popup.join('')}\"`);
         return `<a ${attrs.join(' ')}>${escapeHtml(txt)}</a>`;
     });
