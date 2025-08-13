@@ -769,14 +769,18 @@ def view_legal_documents():
     name = request.args.get('file')
     data = None
     entities = None
+    raw_text = ''
+    ner_html = None
     doc = docs.get(name)
     if doc:
         with open(doc, 'r', encoding='utf-8') as f:
             data = json.load(f)
+        raw_text = data.get('text', '')
         ner_path = os.path.join('ner_output', f'{name}_ner.json')
         if os.path.exists(ner_path):
             with open(ner_path, 'r', encoding='utf-8') as nf:
                 ner_data = json.load(nf)
+            ner_html = render_ner_html(raw_text, ner_data)
             entities = ner_data.get('entities', [])
             relations = ner_data.get('relations', [])
             ent_map = {str(e.get('id')): e for e in entities}
@@ -800,6 +804,8 @@ def view_legal_documents():
         selected=name,
         data=data,
         entities=entities,
+        raw_text=raw_text,
+        ner_html=ner_html,
         settings=load_settings(),
     )
 

@@ -17,6 +17,12 @@
     <h2>{{ selected }}</h2>
     <div id="json-tree" class="json-tree"></div>
 </section>
+{% if raw_text %}
+<section class="card">
+    <h2>Text</h2>
+    <div id="text-display" dir="rtl">{{ ner_html|safe if ner_html else raw_text|e }}</div>
+</section>
+{% endif %}
 <section class="card">
     <a class="button" href="{{ url_for('edit_legislation', file=selected) }}">Edit annotations</a>
 </section>
