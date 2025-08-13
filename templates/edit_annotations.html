@@ -30,6 +30,32 @@
     </tbody>
 </table>
 </div>
+{% if data and 'facts' in data %}
+<div class="card" style="margin-top:1em;">
+  <h2>Decision Sections</h2>
+  {% for section in ['facts', 'arguments', 'legal_reasons', 'decision'] %}
+  <h3>{{ section.replace('_', ' ').title() }}</h3>
+  <ul>
+    {% for item in data.get(section, []) %}
+    <li>{{ item }}
+      <form method="post" class="inline-form">
+        <input type="hidden" name="action" value="delete_struct" />
+        <input type="hidden" name="category" value="{{ section }}" />
+        <input type="hidden" name="index" value="{{ loop.index0 }}" />
+        <button type="submit" class="button small">Delete</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  <form method="post" class="inline-form">
+    <input type="hidden" name="action" value="add_struct" />
+    <input type="hidden" name="category" value="{{ section }}" />
+    <input type="text" name="text" />
+    <button type="submit" class="button small">Add</button>
+  </form>
+  {% endfor %}
+</div>
+{% endif %}
 {% endblock %}
 {% block scripts %}
 <script>
