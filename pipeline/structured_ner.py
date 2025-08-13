@@ -5,9 +5,6 @@ from typing import Any, Dict, List, Tuple
 
 try:  # Prefer relative import when available
     from ..ner import extract_entities, postprocess_result, json_to_text
-    # ``extract_entities`` ultimately calls ``ner.call_openai`` which now
-    # includes defensive JSON recovery. Importing from ``ner`` here ensures
-    # structured NER benefits from that logic without duplicating it.
 except Exception:  # Allow running as a script
     from ner import extract_entities, postprocess_result, json_to_text  # type: ignore
 

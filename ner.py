@@ -591,13 +591,7 @@ def call_openai(prompt: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
         if "Invalid \\u" in str(exc):
             fixed = re.sub(r"\\u(?![0-9a-fA-F]{4})", r"\\\\u", content)
             return json.loads(fixed)
-        match = re.search(r"\{.*\}", content, re.DOTALL)
-        if match:
-            try:
-                return json.loads(match.group(0))
-            except json.JSONDecodeError:
-                pass
-        raise RuntimeError(f"Model returned invalid JSON: {content}") from exc
+        raise
 
 
 def _chunk_text(text: str, model: str, max_tokens: int) -> list[tuple[str, int]]:
