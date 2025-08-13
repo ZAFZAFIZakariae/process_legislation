@@ -364,7 +364,7 @@ def home():
                             json.dump(ner_saved, f, ensure_ascii=False, indent=2)
                     saved_file = base
                     saved_to = output_type
-                    if request.form.get('save_db'):
+                    if output_type == 'legislation':
                         try:  # pragma: no cover - optional dependency
                             from import_db import import_json
                             import_json(DB_PATH)
