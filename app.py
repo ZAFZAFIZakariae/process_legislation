@@ -741,11 +741,22 @@ def view_legislation():
     files = sorted(docs.keys())
     name = request.args.get('file')
     data = None
+    decision = None
     entities = None
     doc = docs.get(name)
     if doc:
         with open(doc['structure'], 'r', encoding='utf-8') as f:
-            data = json.load(f)
+            loaded = json.load(f)
+        # Some JSON files produced by the pipeline store the structured
+        # legislation under a top-level "structure" key and any court decision
+        # sections under a parallel "decision" key.  Expose both pieces to the
+        # template so the UI can present the decision blocks separately while
+        # still rendering the structured legislation tree.
+        if isinstance(loaded, dict) and 'structure' in loaded:
+            data = loaded.get('structure')
+            decision = loaded.get('decision')
+        else:
+            data = loaded
         ner_path = doc.get('ner')
         if ner_path and os.path.exists(ner_path):
             with open(ner_path, 'r', encoding='utf-8') as nf:
@@ -772,6 +783,7 @@ def view_legislation():
         files=files,
         selected=name,
         data=data,
+        decision=decision,
         entities=entities,
         settings=load_settings(),
     )
