@@ -176,6 +176,7 @@ def highlight_text(
             if art is None:
                 art = article_texts.get(f"ID_{ent.get('id')}")
             if art:
+                art = re.sub(r"<([^,<>]+), id:[^>]+>", r"<mark>\1</mark>", art)
                 art = art.replace("\n", "<br/>")
                 art_data = f' data-article="{html.escape(art)}"'
 
