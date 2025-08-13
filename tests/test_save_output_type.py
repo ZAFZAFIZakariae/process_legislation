@@ -13,7 +13,10 @@ def test_save_output_type(tmp_path, monkeypatch):
         out.write_text('data', encoding='utf-8')
         return str(out)
 
+    calls = {'run_passes': 0}
+
     def mock_run_passes(txt_path, model):
+        calls['run_passes'] += 1
         return {'structure': [], 'decision': {'case': 1}}
 
     monkeypatch.setattr('app.convert_to_text', mock_convert_to_text)
@@ -34,7 +37,13 @@ def test_save_output_type(tmp_path, monkeypatch):
 
     post({'action': 'process'}, 'leg.txt')
     assert (tmp_path / 'output' / 'leg.json').exists()
+    assert calls['run_passes'] == 1
 
     post({'action': 'process', 'output_type': 'legal'}, 'doc.txt')
-    assert (tmp_path / 'legal_output' / 'doc.json').exists()
+    json_path = tmp_path / 'legal_output' / 'doc.json'
+    assert json_path.exists()
+    saved = json.loads(json_path.read_text(encoding='utf-8'))
+    assert saved['text'] == 'data'
+    assert saved['structure'] == [{'text': 'data'}]
     assert not (tmp_path / 'output' / 'doc.json').exists()
+    assert calls['run_passes'] == 1

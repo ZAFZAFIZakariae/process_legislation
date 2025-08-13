@@ -218,6 +218,29 @@ def build_graph(entities: list[dict], relations: list[dict]) -> str | None:
     return html_str.replace("</body>", script + "</body>")
 
 
+def extract_general_structure(text: str) -> list[dict]:
+    """Split *text* into paragraph blocks for generic legal documents."""
+    blocks = [b.strip() for b in re.split(r"\n\s*\n", text) if b.strip()]
+    return [{"text": b} for b in blocks]
+
+
+def process_legal_document(
+    input_path: str, uploaded_name: str, model: str, tmp_dir: str
+) -> tuple[dict, str]:
+    """Process a document without Moroccan-specific chunking."""
+    if uploaded_name.lower().endswith(".pdf"):
+        if convert_to_text is None:
+            raise RuntimeError("PDF support not available")
+        txt_path = convert_to_text(input_path, tmp_dir)
+        with open(txt_path, "r", encoding="utf-8") as f:
+            text = f.read()
+    else:
+        with open(input_path, "r", encoding="utf-8") as f:
+            text = f.read()
+    structure = extract_general_structure(text)
+    return {"structure": structure}, text
+
+
 @app.route('/settings', methods=['POST'])
 def settings_route():
     cfg = load_settings()
@@ -275,7 +298,7 @@ def home():
             uploaded = request.files.get('file')
             if not uploaded:
                 process_error = 'No file uploaded'
-            elif convert_to_text is None or run_passes is None:
+            elif convert_to_text is None and uploaded.filename.lower().endswith('.pdf'):
                 process_error = 'Structure pipeline not available'
             else:
                 suffix = os.path.splitext(uploaded.filename)[1] or '.txt'
@@ -285,36 +308,49 @@ def home():
                 try:
                     tmp_dir = tempfile.mkdtemp()
                     model = cfg.get('model', 'gpt-3.5-turbo-16k')
-                    txt_path = convert_to_text(input_path, tmp_dir)
-                    result = run_passes(txt_path, model)
-                    hier = postprocess_structure(result.get('structure', []))
-                    flatten_articles(hier)
-                    hier = merge_duplicates(hier)
-                    remove_duplicate_articles(hier)
-                    attach_stray_articles(hier)
-                    result['structure'] = hier
-                    with open(txt_path, 'r', encoding='utf-8') as f:
-                        raw_text = f.read()
+                    output_type = request.form.get('output_type', 'legislation')
                     ner_saved = None
-                    if request.form.get('decision_parser'):
-                        try:  # pragma: no cover - optional dependency
-                            from pipeline.structured_decision_parser import (
-                                run_structured_decision_parser,
+                    if output_type == 'legal':
+                        result, raw_text = process_legal_document(
+                            input_path, uploaded.filename, model, tmp_dir
+                        )
+                    else:
+                        if run_passes is None:
+                            raise RuntimeError('Structure pipeline not available')
+                        txt_path = convert_to_text(input_path, tmp_dir)
+                        result = run_passes(txt_path, model)
+                        hier = postprocess_structure(result.get('structure', []))
+                        flatten_articles(hier)
+                        hier = merge_duplicates(hier)
+                        remove_duplicate_articles(hier)
+                        attach_stray_articles(hier)
+                        result['structure'] = hier
+                        with open(txt_path, 'r', encoding='utf-8') as f:
+                            raw_text = f.read()
+                        if request.form.get('decision_parser'):
+                            try:  # pragma: no cover - optional dependency
+                                from pipeline.structured_decision_parser import (
+                                    run_structured_decision_parser,
+                                )
+                                result['decision'] = run_structured_decision_parser(
+                                    result, model
+                                )
+                            except Exception:
+                                pass
+                        if request.form.get('structured_ner') and run_structured_ner:
+                            result, ner_saved, raw_text, _ = run_structured_ner(
+                                result, model
                             )
-                            result['decision'] = run_structured_decision_parser(result, model)
-                        except Exception:
-                            pass
-                    if request.form.get('structured_ner') and run_structured_ner:
-                        result, ner_saved, raw_text, _ = run_structured_ner(result, model)
                     base = os.path.splitext(uploaded.filename)[0]
                     os.makedirs('data_txt', exist_ok=True)
-                    with open(os.path.join('data_txt', f'{base}.txt'), 'w', encoding='utf-8') as f:
+                    with open(
+                        os.path.join('data_txt', f'{base}.txt'), 'w', encoding='utf-8'
+                    ) as f:
                         f.write(raw_text)
-                    output_type = request.form.get('output_type', 'legislation')
                     if output_type == 'legal':
                         os.makedirs('legal_output', exist_ok=True)
                         out_path = os.path.join('legal_output', f'{base}.json')
-                        data_to_save = result.get('decision') or result
+                        data_to_save = {"structure": result.get('structure', []), "text": raw_text}
                     else:
                         os.makedirs('output', exist_ok=True)
                         out_path = os.path.join('output', f'{base}.json')
