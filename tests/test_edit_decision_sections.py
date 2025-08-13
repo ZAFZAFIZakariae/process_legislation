@@ -5,10 +5,10 @@ flask = pytest.importorskip('flask')
 from app import app
 
 
-def _setup_dirs(tmp_path):
+def _setup_dirs(tmp_path, text_dir='data_txt'):
     legal_dir = tmp_path / 'legal_output'
     ner_dir = tmp_path / 'ner_output'
-    txt_dir = tmp_path / 'data_txt'
+    txt_dir = tmp_path / text_dir
     legal_dir.mkdir()
     ner_dir.mkdir()
     txt_dir.mkdir()
@@ -50,3 +50,13 @@ def test_add_delete_sections(tmp_path, monkeypatch):
     with open(legal_dir / 'test.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
     assert data['facts'] == []
+
+
+def test_edit_decision_reads_court_decision_txt(tmp_path, monkeypatch):
+    _setup_dirs(tmp_path, text_dir='court_decision_txt')
+    monkeypatch.chdir(tmp_path)
+    client = app.test_client()
+
+    resp = client.get('/decision/edit?file=test')
+    assert resp.status_code == 200
+    assert b'abc' in resp.data
