@@ -17,10 +17,17 @@
     <h2>{{ selected }}</h2>
     <div id="json-tree" class="json-tree"></div>
 </section>
-{% if raw_text %}
+{% if decision %}
 <section class="card">
-    <h2>Text</h2>
-    <div id="text-display" dir="rtl">{{ ner_html|safe if ner_html else raw_text|e }}</div>
+    <h2>Decision</h2>
+    {% for key, items in decision.items() %}
+        <h3>{{ key.replace('_', ' ') }}</h3>
+        <ul>
+        {% for item in items %}
+            <li>{{ item }}</li>
+        {% endfor %}
+        </ul>
+    {% endfor %}
 </section>
 {% endif %}
 <section class="card">

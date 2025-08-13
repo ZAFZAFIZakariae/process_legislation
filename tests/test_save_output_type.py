@@ -82,7 +82,7 @@ def test_save_output_type(tmp_path, monkeypatch):
     assert saved['text'] == 'data'
     assert saved['structure'] == [{'text': 'data'}]
     assert saved['decision'] == {'case': 1}
-    assert saved['ner'] == {'entities': []}
+    assert 'ner' not in saved
     assert (tmp_path / 'ner_output' / 'doc_ner.json').exists()
     assert not (tmp_path / 'output' / 'doc.json').exists()
     assert calls['run_passes'] == 1

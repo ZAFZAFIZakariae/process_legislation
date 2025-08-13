@@ -11,7 +11,8 @@ def test_view_legal_documents_lists_files(tmp_path, monkeypatch):
     out.mkdir()
     ner_dir.mkdir()
     (out / 'case.json').write_text(
-        json.dumps({'structure': [], 'text': 'hello world'}), encoding='utf-8'
+        json.dumps({'structure': [{'text': '<hello, id:1> world'}], 'text': 'hello world'}),
+        encoding='utf-8',
     )
     ner_data = {
         'entities': [
@@ -31,5 +32,5 @@ def test_view_legal_documents_lists_files(tmp_path, monkeypatch):
     body = res.get_data(as_text=True)
     assert 'json-tree' in body
     assert 'Edit annotations' in body
-    assert 'hello world' in body
-    assert 'ent-1' in body
+    assert 'Text</h2>' not in body
+    assert 'id:1' in body

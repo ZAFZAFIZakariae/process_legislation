@@ -104,6 +104,8 @@ pre { background: var(--color-surface); padding:10px; border-radius:var(--radius
 
 .entity-mark { background-color: #ffff00; }
 .entity-mark.selected { background-color: orange; }
+.entity-link { background-color: #ffff00; color: inherit; text-decoration: underline; }
+.entity-link.selected { background-color: orange; }
 .entity-handle { position:absolute; z-index:100; font-weight:bold; cursor:ew-resize; user-select:none; color:red; touch-action:none; }
 
 .annotation-popup { position:absolute; z-index:200; background:var(--color-surface); border:1px solid var(--color-border); padding:4px; border-radius:var(--radius); box-shadow: var(--shadow); }
