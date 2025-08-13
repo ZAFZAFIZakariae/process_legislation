@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import argparse
 
 try:
@@ -48,7 +49,13 @@ def call_openai(prompt: str, model: str = DEFAULT_MODEL) -> dict:
         response_format={"type": "json_object"},
     )
     content = resp.choices[0].message.content
-    return json.loads(content)
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as exc:
+        if "Invalid \\u" in str(exc):
+            fixed = re.sub(r"\\u(?![0-9a-fA-F]{4})", r"\\\\u", content)
+            return json.loads(fixed)
+        raise
 
 
 def process_file(path: str, model: str = DEFAULT_MODEL) -> dict:

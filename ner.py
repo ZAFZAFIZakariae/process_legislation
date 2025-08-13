@@ -585,7 +585,13 @@ def call_openai(prompt: str, model: str = DEFAULT_MODEL) -> Dict[str, Any]:
         response_format={"type": "json_object"},
     )
     content = resp.choices[0].message.content
-    return json.loads(content)
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as exc:
+        if "Invalid \\u" in str(exc):
+            fixed = re.sub(r"\\u(?![0-9a-fA-F]{4})", r"\\\\u", content)
+            return json.loads(fixed)
+        raise
 
 
 def _chunk_text(text: str, model: str, max_tokens: int) -> list[tuple[str, int]]:
