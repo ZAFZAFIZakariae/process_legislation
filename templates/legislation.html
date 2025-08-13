@@ -81,7 +81,15 @@ function formatText(value) {
         const attrs = [`class=\"entity-link\"`, `href=\"#\"`];
         const target = articleTargets[id];
         if (target) attrs.push(`data-target=\"${target}\"`);
-        if (ent.text) attrs.push(`data-popup=\"${escapeHtml(ent.text)}\"`);
+        const popup = [];
+        if (ent.text) popup.push(`<p>${escapeHtml(ent.text)}</p>`);
+        ['references', 'relations'].forEach(key => {
+            const items = ent[key];
+            if (items && items.length) {
+                popup.push('<ul>' + items.map(r => `<li>${escapeHtml(r)}</li>`).join('') + '</ul>');
+            }
+        });
+        if (popup.length) attrs.push(`data-popup=\"${popup.join('')}\"`);
         return `<a ${attrs.join(' ')}>${escapeHtml(txt)}</a>`;
     });
 }
