@@ -62,7 +62,7 @@ def test_save_output_type(tmp_path, monkeypatch):
     assert plain_json.exists()
     plain_saved = json.loads(plain_json.read_text(encoding='utf-8'))
     assert 'decision' not in plain_saved
-    assert 'ner' not in plain_saved
+    assert 'ner_result' not in plain_saved
     assert not (tmp_path / 'ner_output' / 'plain_ner.json').exists()
     assert calls['ner'] == 0
     assert calls['decision'] == 0
@@ -82,7 +82,7 @@ def test_save_output_type(tmp_path, monkeypatch):
     assert saved['text'] == 'data'
     assert saved['structure'] == [{'text': 'data'}]
     assert saved['decision'] == {'case': 1}
-    assert 'ner' not in saved
+    assert 'ner_result' not in saved
     assert (tmp_path / 'ner_output' / 'doc_ner.json').exists()
     assert not (tmp_path / 'output' / 'doc.json').exists()
     assert calls['run_passes'] == 1
