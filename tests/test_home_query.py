@@ -3,6 +3,7 @@ import pytest
 
 flask = pytest.importorskip('flask')
 
+
 def test_home_sql_query(tmp_path, monkeypatch):
     db = tmp_path / 'test.db'
     con = sqlite3.connect(db)
@@ -11,7 +12,7 @@ def test_home_sql_query(tmp_path, monkeypatch):
     cur.execute('INSERT INTO t (id) VALUES (1)')
     con.commit()
     con.close()
-    monkeypatch.setenv('DB_PATH', str(db))
+    monkeypatch.setenv('DB_DSN', f'sqlite:///{db}')
     import importlib
     import app as app_mod
     importlib.reload(app_mod)
