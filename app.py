@@ -8,7 +8,7 @@ try:
     import pandas as pd
 except Exception:  # pragma: no cover
     pd = None
-import sqlite3
+from sqlalchemy import create_engine, text
 from flask import Flask, render_template, request, redirect, url_for
 from types import SimpleNamespace
 
@@ -33,7 +33,7 @@ except Exception:  # pragma: no cover
 from ner import extract_entities, postprocess_result, parse_marked_text
 from ocr import pdf_to_arabic_text
 from highlight import canonical_num, highlight_text, render_ner_html
-from crossref import get_article_hits, find_person_docs, ensure_indices, format_article_popup
+from crossref_postgres import get_article_hits, find_person_docs, format_article_popup
 try:
     from decision_parser import process_file as parse_decision
 except Exception:  # pragma: no cover - optional dependency
@@ -69,8 +69,11 @@ def inject_globals() -> dict:
     return {"settings": cfg, "nav_links": links}
 
 
-# Path to the SQLite database used for querying
-DB_PATH = os.environ.get("DB_PATH", "legislation.db")
+# Database connection string
+DB_DSN = os.environ.get(
+    "DB_DSN", "postgresql+psycopg://postgres:postgres@localhost:5432/legislation"
+)
+engine = create_engine(DB_DSN)
 
 # Configuration for model and API credentials
 SETTINGS_FILE = "settings.json"
@@ -305,32 +308,25 @@ def home():
         if action == 'query':
             sql = request.form.get('sql', '')
             try:
-                con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
-                if pd:
-                    df = pd.read_sql_query(sql, con)
-                    result_html = df.to_html(index=False)
-                else:  # pragma: no cover - fallback when pandas missing
-                    cur = con.cursor()
-                    cur.execute(sql)
-                    rows = cur.fetchall()
-                    headers = [d[0] for d in cur.description or []]
-                    result_html = (
-                        '<table><thead><tr>'
-                        + ''.join(f'<th>{h}</th>' for h in headers)
-                        + '</tr></thead><tbody>'
-                        + ''.join(
-                            '<tr>' + ''.join(f'<td>{c}</td>' for c in row) + '</tr>'
-                            for row in rows
+                with engine.connect() as con:
+                    if pd:
+                        df = pd.read_sql_query(sql, con)
+                        result_html = df.to_html(index=False)
+                    else:  # pragma: no cover - fallback when pandas missing
+                        rows = con.execute(text(sql)).fetchall()
+                        headers = rows[0].keys() if rows else []
+                        result_html = (
+                            '<table><thead><tr>'
+                            + ''.join(f'<th>{h}</th>' for h in headers)
+                            + '</tr></thead><tbody>'
+                            + ''.join(
+                                '<tr>' + ''.join(f'<td>{c}</td>' for c in row) + '</tr>'
+                                for row in rows
+                            )
+                            + '</tbody></table>'
                         )
-                        + '</tbody></table>'
-                    )
             except Exception as exc:  # pragma: no cover - display error
                 error = str(exc)
-            finally:
-                try:
-                    con.close()
-                except Exception:  # pragma: no cover - defensive
-                    pass
         elif action == 'process':
             uploaded = request.files.get('file')
             if not uploaded:
@@ -409,12 +405,8 @@ def home():
                     saved_to = output_type
                     if output_type == 'legislation':
                         try:  # pragma: no cover - optional dependency
-                            from import_db import import_json
-                            import_json(DB_PATH)
-                            try:
-                                ensure_indices(DB_PATH)
-                            except Exception:
-                                pass
+                            from db.postgres_import import import_json_dir
+                            import_json_dir("output")
                         except Exception as exc:
                             process_error = str(exc)
                 except Exception as exc:  # pragma: no cover - show error
@@ -485,7 +477,6 @@ def index():
                 hits = get_article_hits(
                     article_number_raw=art_hint,
                     law_number_raw=law_hint,
-                    db_path=DB_PATH,
                     limit=3,
                 )
                 if hits:
@@ -531,7 +522,6 @@ def index():
                         hits = get_article_hits(
                             article_number_raw=num,
                             law_number_raw=law_hint,
-                            db_path=DB_PATH,
                             limit=1,
                         )
                         if hits:
@@ -921,7 +911,7 @@ def view_legal_documents():
 
 @app.route("/person/<path:name>")
 def person_occurrences(name: str):
-    docs = find_person_docs(name, db_path=DB_PATH, limit=200)
+    docs = find_person_docs(name, limit=200)
     items: list[str] = []
     for d in docs:
         title = d.get("short_title") or d.get("file_name") or f"Doc {d['document_id']}"
@@ -1119,9 +1109,8 @@ def run_query():
     if request.method == 'POST':
         sql = request.form.get('sql', '')
         try:
-            con = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
-            df = pd.read_sql_query(sql, con)
-            con.close()
+            with engine.connect() as con:
+                df = pd.read_sql_query(sql, con)
             result_html = df.to_html(index=False)
         except Exception as exc:  # pragma: no cover - just display error
             error = str(exc)
