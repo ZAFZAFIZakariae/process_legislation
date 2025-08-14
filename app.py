@@ -1070,10 +1070,14 @@ def edit_legal_document():
 
 @app.route('/decision/edit', methods=['GET', 'POST'])
 def edit_decision():
-    """Edit court decision documents (alias for edit_legislation)."""
+    """Edit court decision documents from either source."""
     docs = _collect_legislation_documents()
+    legal_docs = _collect_legal_documents()
+    for k, v in legal_docs.items():
+        docs.setdefault(k, {})['structure'] = v
     name = request.args.get('file')
-    return _edit_document(docs, name, 'view_legislation')
+    view = 'view_legal_documents' if name in legal_docs else 'view_legislation'
+    return _edit_document(docs, name, view)
 
 
 @app.route('/query', methods=['GET', 'POST'])
