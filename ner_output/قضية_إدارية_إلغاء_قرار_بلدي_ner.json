@@ -1,0 +1,174 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "type": "COURT",
+      "text": "المحكمة الإدارية بالرباط",
+      "normalized": "المحكمة الإدارية بالرباط"
+    },
+    {
+      "id": 2,
+      "type": "CASE",
+      "text": "حكم رقم: 305/2024",
+      "normalized": "305/2024"
+    },
+    {
+      "id": 3,
+      "type": "DATE",
+      "text": "18 يونيو 2024",
+      "normalized": "2024-06-18"
+    },
+    {
+      "id": 4,
+      "type": "CASE",
+      "text": "ملف إداري عدد: 1120/2023",
+      "normalized": "1120/2023"
+    },
+    {
+      "id": 5,
+      "type": "JUDGE",
+      "text": "الأستاذ عبد المجيد بنمسعود",
+      "normalized": "عبد المجيد بنمسعود"
+    },
+    {
+      "id": 6,
+      "type": "JUDGE",
+      "text": "الأستاذة هناء الطويل",
+      "normalized": "هناء الطويل"
+    },
+    {
+      "id": 7,
+      "type": "JUDGE",
+      "text": "الأستاذ ياسر القاسمي",
+      "normalized": "ياسر القاسمي"
+    },
+    {
+      "id": 8,
+      "type": "ATTORNEY_GENERAL",
+      "text": "السيد مصطفى النجار",
+      "normalized": "مصطفى النجار"
+    },
+    {
+      "id": 9,
+      "type": "COURT_CLERK",
+      "text": "السيدة كوثر الحديوي",
+      "normalized": "كوثر الحديوي"
+    },
+    {
+      "id": 10,
+      "type": "PERSON",
+      "text": "السيد الطاهر لغروس",
+      "normalized": "الطاهر لغروس"
+    },
+    {
+      "id": 11,
+      "type": "GOVERNMENT_BODY",
+      "text": "رئيس المجلس البلدي لجماعة الهرهورة",
+      "normalized": "رئيس المجلس البلدي لجماعة الهرهورة"
+    },
+    {
+      "id": 12,
+      "type": "DATE",
+      "text": "12 أكتوبر 2023",
+      "normalized": "2023-10-12"
+    },
+    {
+      "id": 13,
+      "type": "LAW",
+      "text": "القانون رقم 41.90",
+      "normalized": "41.90 القانون"
+    },
+    {
+      "id": 14,
+      "type": "DATE",
+      "text": "5 أغسطس 2023",
+      "normalized": "2023-08-05"
+    },
+    {
+      "id": 15,
+      "type": "DATE",
+      "text": "20 يناير 2023",
+      "normalized": "2023-01-20"
+    },
+    {
+      "id": 16,
+      "type": "DATE",
+      "text": "10 أغسطس 2023",
+      "normalized": "2023-08-10"
+    },
+    {
+      "id": 17,
+      "type": "DATE",
+      "text": "25 أغسطس 2023",
+      "normalized": "2023-08-25"
+    },
+    {
+      "id": 18,
+      "type": "LAW",
+      "text": "القانون رقم 12.90",
+      "normalized": "12.90 القانون"
+    },
+    {
+      "id": 19,
+      "type": "LAW",
+      "text": "القرار الإداري رقم 17/2023",
+      "normalized": "17/2023 القرار"
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": 1,
+      "type": "decides",
+      "source_id": 1,
+      "target_id": 2
+    },
+    {
+      "relation_id": 2,
+      "type": "judged_by",
+      "source_id": 2,
+      "target_id": 5
+    },
+    {
+      "relation_id": 3,
+      "type": "judged_by",
+      "source_id": 2,
+      "target_id": 6
+    },
+    {
+      "relation_id": 4,
+      "type": "judged_by",
+      "source_id": 2,
+      "target_id": 7
+    },
+    {
+      "relation_id": 5,
+      "type": "prosecuted_by",
+      "source_id": 2,
+      "target_id": 8
+    },
+    {
+      "relation_id": 6,
+      "type": "clerk_for",
+      "source_id": 9,
+      "target_id": 1
+    },
+    {
+      "relation_id": 7,
+      "type": "approved_by",
+      "source_id": 13,
+      "target_id": 11
+    },
+    {
+      "relation_id": 8,
+      "type": "effective_on",
+      "source_id": 19,
+      "target_id": 14
+    },
+    {
+      "relation_id": 9,
+      "type": "amended_by",
+      "source_id": 13,
+      "target_id": 18
+    }
+  ]
+}

@@ -1,0 +1,2016 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "type": "LAW",
+      "text": "الدستور",
+      "normalized": "الدستور"
+    },
+    {
+      "id": 2,
+      "type": "DECRET",
+      "text": "ظهير شريف رقم 1.11.91",
+      "normalized": "1.11.91 الظهير الشريف"
+    },
+    {
+      "id": 3,
+      "type": "DATE",
+      "text": "29 يوليو 2011",
+      "normalized": "2011-07-29"
+    },
+    {
+      "id": 4,
+      "type": "DATE",
+      "text": "27 من شعبان 1432",
+      "normalized": "2011-07-28"
+    },
+    {
+      "id": 5,
+      "type": "OFFICIAL_JOURNAL",
+      "text": "5964 مكرر",
+      "normalized": "5964 مكرر"
+    },
+    {
+      "id": 6,
+      "type": "DATE",
+      "text": "30 يوليو 2011",
+      "normalized": "2011-07-30"
+    },
+    {
+      "id": 7,
+      "type": "DECRET",
+      "text": "ظهير شريف رقم 1.11.82",
+      "normalized": "1.11.82 الظهير الشريف"
+    },
+    {
+      "id": 8,
+      "type": "LAW",
+      "text": "قانون تنظيمي 29.93",
+      "normalized": "29.93"
+    },
+    {
+      "id": 9,
+      "type": "LAW",
+      "text": "ظهير شريف رقم 1.94.124",
+      "normalized": "1.94.124 الظهير الشريف"
+    },
+    {
+      "id": 10,
+      "type": "CASE",
+      "text": "قرار 815.2011",
+      "normalized": "815.2011 القرار"
+    },
+    {
+      "id": 11,
+      "type": "GOVERNMENT_BODY",
+      "text": "المجلس الدستوري",
+      "normalized": "المجلس الدستوري"
+    },
+    {
+      "id": 12,
+      "type": "CHAPTER",
+      "text": "الباب الأول",
+      "normalized": "1 الباب"
+    },
+    {
+      "id": 13,
+      "type": "ARTICLE",
+      "text": "الفصل 1",
+      "normalized": "1 الفصل"
+    },
+    {
+      "id": 14,
+      "type": "ARTICLE",
+      "text": "الفصل 2",
+      "normalized": "2 الفصل"
+    },
+    {
+      "id": 15,
+      "type": "ARTICLE",
+      "text": "الفصل 3",
+      "normalized": "3 الفصل"
+    },
+    {
+      "id": 16,
+      "type": "ARTICLE",
+      "text": "الفصل 4",
+      "normalized": "4 الفصل"
+    },
+    {
+      "id": 17,
+      "type": "ARTICLE",
+      "text": "الفصل 5",
+      "normalized": "5 الفصل"
+    },
+    {
+      "id": 18,
+      "type": "AGENCY",
+      "text": "مديرية التشريع والدرامات",
+      "normalized": "مديرية التشريع والدرامات"
+    },
+    {
+      "id": 19,
+      "type": "ARTICLE",
+      "text": "الفصل 6",
+      "normalized": "6 الفصل"
+    },
+    {
+      "id": 20,
+      "type": "ARTICLE",
+      "text": "الفصل 7",
+      "normalized": "7 الفصل"
+    },
+    {
+      "id": 21,
+      "type": "ARTICLE",
+      "text": "الفصل 8",
+      "normalized": "8 الفصل"
+    },
+    {
+      "id": 22,
+      "type": "ARTICLE",
+      "text": "الفصل 9",
+      "normalized": "9 الفصل"
+    },
+    {
+      "id": 23,
+      "type": "ARTICLE",
+      "text": "الفصل 10",
+      "normalized": "10 الفصل"
+    },
+    {
+      "id": 24,
+      "type": "ARTICLE",
+      "text": "الفصل 11",
+      "normalized": "11 الفصل"
+    },
+    {
+      "id": 25,
+      "type": "ARTICLE",
+      "text": "الفصل 12",
+      "normalized": "12 الفصل"
+    },
+    {
+      "id": 26,
+      "type": "ARTICLE",
+      "text": "الفصل 13",
+      "normalized": "13 الفصل"
+    },
+    {
+      "id": 27,
+      "type": "ARTICLE",
+      "text": "الفصل 14",
+      "normalized": "14 الفصل"
+    },
+    {
+      "id": 28,
+      "type": "ARTICLE",
+      "text": "الفصل 15",
+      "normalized": "15 الفصل"
+    },
+    {
+      "id": 29,
+      "type": "ARTICLE",
+      "text": "الفصل 16",
+      "normalized": "16 الفصل"
+    },
+    {
+      "id": 30,
+      "type": "ARTICLE",
+      "text": "الفصل 17",
+      "normalized": "17 الفصل"
+    },
+    {
+      "id": 31,
+      "type": "ARTICLE",
+      "text": "الفصل 18",
+      "normalized": "18 الفصل"
+    },
+    {
+      "id": 32,
+      "type": "CHAPTER",
+      "text": "الباب الثاني",
+      "normalized": "2 الباب"
+    },
+    {
+      "id": 33,
+      "type": "ARTICLE",
+      "text": "الفصل 19",
+      "normalized": "19 الفصل"
+    },
+    {
+      "id": 34,
+      "type": "ARTICLE",
+      "text": "الفصل 20",
+      "normalized": "20 الفصل"
+    },
+    {
+      "id": 35,
+      "type": "ARTICLE",
+      "text": "الفصل 21",
+      "normalized": "21 الفصل"
+    },
+    {
+      "id": 36,
+      "type": "ARTICLE",
+      "text": "الفصل 22",
+      "normalized": "22 الفصل"
+    },
+    {
+      "id": 37,
+      "type": "ARTICLE",
+      "text": "الفصل 23",
+      "normalized": "23 الفصل"
+    },
+    {
+      "id": 38,
+      "type": "ARTICLE",
+      "text": "الفصل 24",
+      "normalized": "24 الفصل"
+    },
+    {
+      "id": 39,
+      "type": "ARTICLE",
+      "text": "الفصل 25",
+      "normalized": "25 الفصل"
+    },
+    {
+      "id": 40,
+      "type": "ARTICLE",
+      "text": "الفصل 26",
+      "normalized": "26 الفصل"
+    },
+    {
+      "id": 41,
+      "type": "ARTICLE",
+      "text": "الفصل 27",
+      "normalized": "27 الفصل"
+    },
+    {
+      "id": 42,
+      "type": "ARTICLE",
+      "text": "الفصل 28",
+      "normalized": "28 الفصل"
+    },
+    {
+      "id": 43,
+      "type": "ARTICLE",
+      "text": "الفصل 29",
+      "normalized": "29 الفصل"
+    },
+    {
+      "id": 44,
+      "type": "ARTICLE",
+      "text": "الفصل 30",
+      "normalized": "30 الفصل"
+    },
+    {
+      "id": 45,
+      "type": "ARTICLE",
+      "text": "الفصل 31",
+      "normalized": "31 الفصل"
+    },
+    {
+      "id": 46,
+      "type": "ARTICLE",
+      "text": "الفصل 32",
+      "normalized": "32 الفصل"
+    },
+    {
+      "id": 47,
+      "type": "ARTICLE",
+      "text": "الفصل 33",
+      "normalized": "33 الفصل"
+    },
+    {
+      "id": 48,
+      "type": "ARTICLE",
+      "text": "الفصل 34",
+      "normalized": "34 الفصل"
+    },
+    {
+      "id": 49,
+      "type": "ARTICLE",
+      "text": "الفصل 35",
+      "normalized": "35 الفصل"
+    },
+    {
+      "id": 50,
+      "type": "ARTICLE",
+      "text": "الفصل 36",
+      "normalized": "36 الفصل"
+    },
+    {
+      "id": 51,
+      "type": "ARTICLE",
+      "text": "الفصل 37",
+      "normalized": "37 الفصل"
+    },
+    {
+      "id": 52,
+      "type": "ARTICLE",
+      "text": "الفصل 38",
+      "normalized": "38 الفصل"
+    },
+    {
+      "id": 53,
+      "type": "ARTICLE",
+      "text": "الفصل 39",
+      "normalized": "39 الفصل"
+    },
+    {
+      "id": 54,
+      "type": "ARTICLE",
+      "text": "الفصل 40",
+      "normalized": "40 الفصل"
+    },
+    {
+      "id": 55,
+      "type": "CHAPTER",
+      "text": "الباب الثالث",
+      "normalized": "3 الباب"
+    },
+    {
+      "id": 56,
+      "type": "ARTICLE",
+      "text": "الفصل 41",
+      "normalized": "41 الفصل"
+    },
+    {
+      "id": 57,
+      "type": "ARTICLE",
+      "text": "الفصل 42",
+      "normalized": "42 الفصل"
+    },
+    {
+      "id": 58,
+      "type": "ARTICLE",
+      "text": "الفصل 43",
+      "normalized": "43 الفصل"
+    },
+    {
+      "id": 59,
+      "type": "ARTICLE",
+      "text": "الفصل 44",
+      "normalized": "44 الفصل"
+    },
+    {
+      "id": 60,
+      "type": "ARTICLE",
+      "text": "الفصل 45",
+      "normalized": "45 الفصل"
+    },
+    {
+      "id": 61,
+      "type": "ARTICLE",
+      "text": "الفصل 46",
+      "normalized": "46 الفصل"
+    },
+    {
+      "id": 62,
+      "type": "ARTICLE",
+      "text": "الفصل 47",
+      "normalized": "47 الفصل"
+    },
+    {
+      "id": 63,
+      "type": "ARTICLE",
+      "text": "الفصل 48",
+      "normalized": "48 الفصل"
+    },
+    {
+      "id": 64,
+      "type": "ARTICLE",
+      "text": "الفصل 49",
+      "normalized": "49 الفصل"
+    },
+    {
+      "id": 65,
+      "type": "ARTICLE",
+      "text": "الفصل 50",
+      "normalized": "50 الفصل"
+    },
+    {
+      "id": 66,
+      "type": "ARTICLE",
+      "text": "الفصل 51",
+      "normalized": "51 الفصل"
+    },
+    {
+      "id": 67,
+      "type": "ARTICLE",
+      "text": "الفصل 52",
+      "normalized": "52 الفصل"
+    },
+    {
+      "id": 68,
+      "type": "ARTICLE",
+      "text": "الفصل 53",
+      "normalized": "53 الفصل"
+    },
+    {
+      "id": 69,
+      "type": "ARTICLE",
+      "text": "الفصل 54",
+      "normalized": "54 الفصل"
+    },
+    {
+      "id": 70,
+      "type": "ARTICLE",
+      "text": "الفصل 55",
+      "normalized": "55 الفصل"
+    },
+    {
+      "id": 71,
+      "type": "ARTICLE",
+      "text": "الفصل 56",
+      "normalized": "56 الفصل"
+    },
+    {
+      "id": 72,
+      "type": "ARTICLE",
+      "text": "الفصل 57",
+      "normalized": "57 الفصل"
+    },
+    {
+      "id": 73,
+      "type": "ARTICLE",
+      "text": "الفصل 58",
+      "normalized": "58 الفصل"
+    },
+    {
+      "id": 74,
+      "type": "ARTICLE",
+      "text": "الفصل 59",
+      "normalized": "59 الفصل"
+    },
+    {
+      "id": 75,
+      "type": "CHAPTER",
+      "text": "الباب الرابع",
+      "normalized": "4 الباب"
+    },
+    {
+      "id": 76,
+      "type": "ARTICLE",
+      "text": "الفصل 60",
+      "normalized": "60 الفصل"
+    },
+    {
+      "id": 77,
+      "type": "ARTICLE",
+      "text": "الفصل 61",
+      "normalized": "61 الفصل"
+    },
+    {
+      "id": 78,
+      "type": "COURT",
+      "text": "المحكمة الدستورية",
+      "normalized": "المحكمة الدستورية"
+    },
+    {
+      "id": 79,
+      "type": "ARTICLE",
+      "text": "الفصل 62",
+      "normalized": "62 الفصل"
+    },
+    {
+      "id": 80,
+      "type": "LAW",
+      "text": "قانون تنظيمي",
+      "normalized": "قانون تنظيمي"
+    },
+    {
+      "id": 81,
+      "type": "ARTICLE",
+      "text": "الفصل 63",
+      "normalized": "63 الفصل"
+    },
+    {
+      "id": 82,
+      "type": "LAW",
+      "text": "قانون تنظيمي",
+      "normalized": "قانون تنظيمي"
+    },
+    {
+      "id": 83,
+      "type": "ARTICLE",
+      "text": "الفصل 64",
+      "normalized": "64 الفصل"
+    },
+    {
+      "id": 84,
+      "type": "ARTICLE",
+      "text": "الفصل 65",
+      "normalized": "65 الفصل"
+    },
+    {
+      "id": 85,
+      "type": "DECRET",
+      "text": "مرسوم",
+      "normalized": "مرسوم"
+    },
+    {
+      "id": 86,
+      "type": "ARTICLE",
+      "text": "الفصل 66",
+      "normalized": "66 الفصل"
+    },
+    {
+      "id": 87,
+      "type": "DECRET",
+      "text": "مرسوم",
+      "normalized": "مرسوم"
+    },
+    {
+      "id": 88,
+      "type": "ARTICLE",
+      "text": "الفصل 67",
+      "normalized": "67 الفصل"
+    },
+    {
+      "id": 89,
+      "type": "GOVERNMENT_BODY",
+      "text": "الملك",
+      "normalized": "الملك"
+    },
+    {
+      "id": 90,
+      "type": "ARTICLE",
+      "text": "الفصل 68",
+      "normalized": "68 الفصل"
+    },
+    {
+      "id": 91,
+      "type": "OFFICIAL_JOURNAL",
+      "text": "الجريدة الرسمية",
+      "normalized": "الجريدة الرسمية"
+    },
+    {
+      "id": 92,
+      "type": "ARTICLE",
+      "text": "الفصل 69",
+      "normalized": "69 الفصل"
+    },
+    {
+      "id": 93,
+      "type": "COURT",
+      "text": "المحكمة الدستورية",
+      "normalized": "المحكمة الدستورية"
+    },
+    {
+      "id": 94,
+      "type": "ARTICLE",
+      "text": "الفصل 70",
+      "normalized": "70 الفصل"
+    },
+    {
+      "id": 95,
+      "type": "ARTICLE",
+      "text": "الفصل 71",
+      "normalized": "71 الفصل"
+    },
+    {
+      "id": 96,
+      "type": "ARTICLE",
+      "text": "الفصل 72",
+      "normalized": "72 الفصل"
+    },
+    {
+      "id": 97,
+      "type": "ARTICLE",
+      "text": "الفصل 73",
+      "normalized": "73 الفصل"
+    },
+    {
+      "id": 98,
+      "type": "DECRET",
+      "text": "مرسوم",
+      "normalized": "مرسوم"
+    },
+    {
+      "id": 99,
+      "type": "COURT",
+      "text": "المحكمة الدستورية",
+      "normalized": "المحكمة الدستورية"
+    },
+    {
+      "id": 100,
+      "type": "ARTICLE",
+      "text": "الفصل 74",
+      "normalized": "74 الفصل"
+    },
+    {
+      "id": 101,
+      "type": "DECRET",
+      "text": "ظهير",
+      "normalized": "ظهير"
+    },
+    {
+      "id": 102,
+      "type": "ARTICLE",
+      "text": "الفصل 75",
+      "normalized": "75 الفصل"
+    },
+    {
+      "id": 103,
+      "type": "LAW",
+      "text": "قانون المالية",
+      "normalized": "قانون المالية"
+    },
+    {
+      "id": 104,
+      "type": "LAW",
+      "text": "قانون تنظيمي",
+      "normalized": "قانون تنظيمي"
+    },
+    {
+      "id": 105,
+      "type": "COURT",
+      "text": "المحكمة الدستورية",
+      "normalized": "المحكمة الدستورية"
+    },
+    {
+      "id": 106,
+      "type": "ARTICLE",
+      "text": "الفصل 76",
+      "normalized": "76 الفصل"
+    },
+    {
+      "id": 107,
+      "type": "LAW",
+      "text": "قانون التصفية",
+      "normalized": "قانون التصفية"
+    },
+    {
+      "id": 108,
+      "type": "ARTICLE",
+      "text": "الفصل 77",
+      "normalized": "77 الفصل"
+    },
+    {
+      "id": 109,
+      "type": "ARTICLE",
+      "text": "الفصل 78",
+      "normalized": "78 الفصل"
+    },
+    {
+      "id": 110,
+      "type": "ARTICLE",
+      "text": "الفصل 79",
+      "normalized": "79 الفصل"
+    },
+    {
+      "id": 111,
+      "type": "COURT",
+      "text": "المحكمة الدستورية",
+      "normalized": "المحكمة الدستورية"
+    },
+    {
+      "id": 112,
+      "type": "ARTICLE",
+      "text": "الفصل 80",
+      "normalized": "80 الفصل"
+    },
+    {
+      "id": 113,
+      "type": "ARTICLE",
+      "text": "الفصل 81",
+      "normalized": "81 الفصل"
+    },
+    {
+      "id": 114,
+      "type": "DECRET",
+      "text": "مرسوم",
+      "normalized": "مرسوم"
+    },
+    {
+      "id": 115,
+      "type": "ARTICLE",
+      "text": "الفصل 82",
+      "normalized": "82 الفصل"
+    },
+    {
+      "id": 116,
+      "type": "ARTICLE",
+      "text": "الفصل 83",
+      "normalized": "83 الفصل"
+    },
+    {
+      "id": 117,
+      "type": "ARTICLE",
+      "text": "الفصل 84",
+      "normalized": "84 الفصل"
+    },
+    {
+      "id": 118,
+      "type": "ARTICLE",
+      "text": "الفصل 85",
+      "normalized": "85 الفصل"
+    },
+    {
+      "id": 119,
+      "type": "ARTICLE",
+      "text": "الفصل 86",
+      "normalized": "86 الفصل"
+    },
+    {
+      "id": 120,
+      "type": "CHAPTER",
+      "text": "الباب الخامس",
+      "normalized": "5 الباب"
+    },
+    {
+      "id": 121,
+      "type": "ARTICLE",
+      "text": "الفصل 87",
+      "normalized": "87 الفصل"
+    },
+    {
+      "id": 122,
+      "type": "LAW",
+      "text": "قانون تنظيمي",
+      "normalized": "قانون تنظيمي"
+    },
+    {
+      "id": 123,
+      "type": "ARTICLE",
+      "text": "الفصل 88",
+      "normalized": "88 الفصل"
+    },
+    {
+      "id": 124,
+      "type": "GOVERNMENT_BODY",
+      "text": "الملك",
+      "normalized": "الملك"
+    },
+    {
+      "id": 125,
+      "type": "ARTICLE",
+      "text": "الفصل 89",
+      "normalized": "89 الفصل"
+    },
+    {
+      "id": 126,
+      "type": "ARTICLE",
+      "text": "الفصل 90",
+      "normalized": "90 الفصل"
+    },
+    {
+      "id": 127,
+      "type": "ARTICLE",
+      "text": "الفصل 91",
+      "normalized": "91 الفصل"
+    },
+    {
+      "id": 128,
+      "type": "ARTICLE",
+      "text": "الفصل 92",
+      "normalized": "92 الفصل"
+    },
+    {
+      "id": 129,
+      "type": "ARTICLE",
+      "text": "الفصل 93",
+      "normalized": "93 الفصل"
+    },
+    {
+      "id": 130,
+      "type": "ARTICLE",
+      "text": "الفصل 94",
+      "normalized": "94 الفصل"
+    },
+    {
+      "id": 131,
+      "type": "CHAPTER",
+      "text": "الباب السادس",
+      "normalized": "6 الباب"
+    },
+    {
+      "id": 132,
+      "type": "ARTICLE",
+      "text": "الفصل 95",
+      "normalized": "95 الفصل"
+    },
+    {
+      "id": 133,
+      "type": "ARTICLE",
+      "text": "الفصل 96",
+      "normalized": "96 الفصل"
+    },
+    {
+      "id": 134,
+      "type": "COURT",
+      "text": "المحكمة الدستورية",
+      "normalized": "المحكمة الدستورية"
+    },
+    {
+      "id": 135,
+      "type": "GOVERNMENT_BODY",
+      "text": "الملك",
+      "normalized": "الملك"
+    },
+    {
+      "id": 136,
+      "type": "ARTICLE",
+      "text": "الفصل 97",
+      "normalized": "97 الفصل"
+    },
+    {
+      "id": 137,
+      "type": "ARTICLE",
+      "text": "الفصل 98",
+      "normalized": "98 الفصل"
+    },
+    {
+      "id": 138,
+      "type": "ARTICLE",
+      "text": "الفصل 99",
+      "normalized": "99 الفصل"
+    },
+    {
+      "id": 139,
+      "type": "ARTICLE",
+      "text": "الفصل 100",
+      "normalized": "100 الفصل"
+    },
+    {
+      "id": 140,
+      "type": "ARTICLE",
+      "text": "الفصل 101",
+      "normalized": "101 الفصل"
+    },
+    {
+      "id": 141,
+      "type": "ARTICLE",
+      "text": "الفصل 102",
+      "normalized": "102 الفصل"
+    },
+    {
+      "id": 142,
+      "type": "ARTICLE",
+      "text": "الفصل 103",
+      "normalized": "103 الفصل"
+    },
+    {
+      "id": 143,
+      "type": "ARTICLE",
+      "text": "الفصل 104",
+      "normalized": "104 الفصل"
+    },
+    {
+      "id": 144,
+      "type": "ARTICLE",
+      "text": "الفصل 105",
+      "normalized": "105 الفصل"
+    },
+    {
+      "id": 145,
+      "type": "ARTICLE",
+      "text": "الفصل 106",
+      "normalized": "106 الفصل"
+    },
+    {
+      "id": 146,
+      "type": "CHAPTER",
+      "text": "الباب السابع",
+      "normalized": "7 الباب"
+    },
+    {
+      "id": 147,
+      "type": "ARTICLE",
+      "text": "الفصل 107",
+      "normalized": "107 الفصل"
+    },
+    {
+      "id": 148,
+      "type": "GOVERNMENT_BODY",
+      "text": "الملك",
+      "normalized": "الملك"
+    },
+    {
+      "id": 149,
+      "type": "ARTICLE",
+      "text": "الفصل 108",
+      "normalized": "108 الفصل"
+    },
+    {
+      "id": 150,
+      "type": "ARTICLE",
+      "text": "الفصل 109",
+      "normalized": "109 الفصل"
+    },
+    {
+      "id": 151,
+      "type": "ARTICLE",
+      "text": "الفصل 110",
+      "normalized": "110 الفصل"
+    },
+    {
+      "id": 152,
+      "type": "ARTICLE",
+      "text": "الفصل 111",
+      "normalized": "111 الفصل"
+    },
+    {
+      "id": 153,
+      "type": "ARTICLE",
+      "text": "الفصل 112",
+      "normalized": "112 الفصل"
+    },
+    {
+      "id": 154,
+      "type": "ARTICLE",
+      "text": "الفصل 113",
+      "normalized": "113 الفصل"
+    },
+    {
+      "id": 155,
+      "type": "ARTICLE",
+      "text": "الفصل 114",
+      "normalized": "114 الفصل"
+    },
+    {
+      "id": 156,
+      "type": "ARTICLE",
+      "text": "الفصل 115",
+      "normalized": "115 الفصل"
+    },
+    {
+      "id": 157,
+      "type": "COURT",
+      "text": "محكمة النقض",
+      "normalized": "محكمة النقض"
+    },
+    {
+      "id": 158,
+      "type": "ARTICLE",
+      "text": "الفصل 116",
+      "normalized": "116 الفصل"
+    },
+    {
+      "id": 159,
+      "type": "ARTICLE",
+      "text": "الفصل 117",
+      "normalized": "117 الفصل"
+    },
+    {
+      "id": 160,
+      "type": "ARTICLE",
+      "text": "الفصل 118",
+      "normalized": "118 الفصل"
+    },
+    {
+      "id": 161,
+      "type": "ARTICLE",
+      "text": "الفصل 119",
+      "normalized": "119 الفصل"
+    },
+    {
+      "id": 162,
+      "type": "ARTICLE",
+      "text": "الفصل 120",
+      "normalized": "120 الفصل"
+    },
+    {
+      "id": 163,
+      "type": "ARTICLE",
+      "text": "الفصل 121",
+      "normalized": "121 الفصل"
+    },
+    {
+      "id": 164,
+      "type": "ARTICLE",
+      "text": "الفصل 122",
+      "normalized": "122 الفصل"
+    },
+    {
+      "id": 165,
+      "type": "ARTICLE",
+      "text": "الفصل 123",
+      "normalized": "123 الفصل"
+    },
+    {
+      "id": 166,
+      "type": "ARTICLE",
+      "text": "الفصل 124",
+      "normalized": "124 الفصل"
+    },
+    {
+      "id": 167,
+      "type": "ARTICLE",
+      "text": "الفصل 125",
+      "normalized": "125 الفصل"
+    },
+    {
+      "id": 168,
+      "type": "ARTICLE",
+      "text": "الفصل 126",
+      "normalized": "126 الفصل"
+    },
+    {
+      "id": 169,
+      "type": "ARTICLE",
+      "text": "الفصل 127",
+      "normalized": "127 الفصل"
+    },
+    {
+      "id": 170,
+      "type": "ARTICLE",
+      "text": "الفصل 128",
+      "normalized": "128 الفصل"
+    },
+    {
+      "id": 171,
+      "type": "CHAPTER",
+      "text": "الباب الثامن",
+      "normalized": "8 الباب"
+    },
+    {
+      "id": 172,
+      "type": "COURT",
+      "text": "المحكمة الدستورية",
+      "normalized": "المحكمة الدستورية"
+    },
+    {
+      "id": 173,
+      "type": "ARTICLE",
+      "text": "الفصل 129",
+      "normalized": "129 الفصل"
+    },
+    {
+      "id": 174,
+      "type": "ARTICLE",
+      "text": "الفصل 130",
+      "normalized": "130 الفصل"
+    },
+    {
+      "id": 175,
+      "type": "GOVERNMENT_BODY",
+      "text": "الملك",
+      "normalized": "الملك"
+    },
+    {
+      "id": 176,
+      "type": "ARTICLE",
+      "text": "الفصل 131",
+      "normalized": "131 الفصل"
+    },
+    {
+      "id": 177,
+      "type": "ARTICLE",
+      "text": "الفصل 132",
+      "normalized": "132 الفصل"
+    },
+    {
+      "id": 178,
+      "type": "ARTICLE",
+      "text": "الفصل 133",
+      "normalized": "133 الفصل"
+    },
+    {
+      "id": 179,
+      "type": "ARTICLE",
+      "text": "الفصل 134",
+      "normalized": "134 الفصل"
+    },
+    {
+      "id": 180,
+      "type": "CHAPTER",
+      "text": "الباب التاسع",
+      "normalized": "9 الباب"
+    },
+    {
+      "id": 181,
+      "type": "ARTICLE",
+      "text": "الفصل 135",
+      "normalized": "135 الفصل"
+    },
+    {
+      "id": 182,
+      "type": "ARTICLE",
+      "text": "الفصل 136",
+      "normalized": "136 الفصل"
+    },
+    {
+      "id": 183,
+      "type": "ARTICLE",
+      "text": "الفصل 137",
+      "normalized": "137 الفصل"
+    },
+    {
+      "id": 184,
+      "type": "ARTICLE",
+      "text": "الفصل 138",
+      "normalized": "138 الفصل"
+    },
+    {
+      "id": 185,
+      "type": "ARTICLE",
+      "text": "الفصل 139",
+      "normalized": "139 الفصل"
+    },
+    {
+      "id": 186,
+      "type": "ARTICLE",
+      "text": "الفصل 140",
+      "normalized": "140 الفصل"
+    },
+    {
+      "id": 187,
+      "type": "ARTICLE",
+      "text": "الفصل 141",
+      "normalized": "141 الفصل"
+    },
+    {
+      "id": 188,
+      "type": "ARTICLE",
+      "text": "الفصل 142",
+      "normalized": "142 الفصل"
+    },
+    {
+      "id": 189,
+      "type": "ARTICLE",
+      "text": "الفصل 143",
+      "normalized": "143 الفصل"
+    },
+    {
+      "id": 190,
+      "type": "ARTICLE",
+      "text": "الفصل 144",
+      "normalized": "144 الفصل"
+    },
+    {
+      "id": 191,
+      "type": "ARTICLE",
+      "text": "الفصل 145",
+      "normalized": "145 الفصل"
+    },
+    {
+      "id": 192,
+      "type": "ARTICLE",
+      "text": "الفصل 146",
+      "normalized": "146 الفصل"
+    },
+    {
+      "id": 193,
+      "type": "CHAPTER",
+      "text": "الباب العاشر",
+      "normalized": "10 الباب"
+    },
+    {
+      "id": 194,
+      "type": "GOVERNMENT_BODY",
+      "text": "المجلس الأعلى للحسابات",
+      "normalized": "المجلس الأعلى للحسابات"
+    },
+    {
+      "id": 195,
+      "type": "ARTICLE",
+      "text": "الفصل 147",
+      "normalized": "147 الفصل"
+    },
+    {
+      "id": 196,
+      "type": "ARTICLE",
+      "text": "الفصل 148",
+      "normalized": "148 الفصل"
+    },
+    {
+      "id": 197,
+      "type": "ARTICLE",
+      "text": "الفصل 149",
+      "normalized": "149 الفصل"
+    },
+    {
+      "id": 198,
+      "type": "ARTICLE",
+      "text": "الفصل 150",
+      "normalized": "150 الفصل"
+    },
+    {
+      "id": 199,
+      "type": "CHAPTER",
+      "text": "الباب الحادي عشر",
+      "normalized": "11 الباب"
+    },
+    {
+      "id": 200,
+      "type": "GOVERNMENT_BODY",
+      "text": "المجلس الاقتصادي والاجتماعي والبيئي",
+      "normalized": "المجلس الاقتصادي والاجتماعي والبيئي"
+    },
+    {
+      "id": 201,
+      "type": "ARTICLE",
+      "text": "الفصل 151",
+      "normalized": "151 الفصل"
+    },
+    {
+      "id": 202,
+      "type": "ARTICLE",
+      "text": "الفصل 152",
+      "normalized": "152 الفصل"
+    },
+    {
+      "id": 203,
+      "type": "ARTICLE",
+      "text": "الفصل 153",
+      "normalized": "153 الفصل"
+    },
+    {
+      "id": 204,
+      "type": "CHAPTER",
+      "text": "الباب الثاني عشر",
+      "normalized": "12 الباب"
+    },
+    {
+      "id": 205,
+      "type": "ARTICLE",
+      "text": "الفصل 154",
+      "normalized": "154 الفصل"
+    },
+    {
+      "id": 206,
+      "type": "ARTICLE",
+      "text": "الفصل 155",
+      "normalized": "155 الفصل"
+    },
+    {
+      "id": 207,
+      "type": "ARTICLE",
+      "text": "الفصل 156",
+      "normalized": "156 الفصل"
+    },
+    {
+      "id": 208,
+      "type": "ARTICLE",
+      "text": "الفصل 157",
+      "normalized": "157 الفصل"
+    },
+    {
+      "id": 209,
+      "type": "ARTICLE",
+      "text": "الفصل 158",
+      "normalized": "158 الفصل"
+    },
+    {
+      "id": 210,
+      "type": "ARTICLE",
+      "text": "الفصل 159",
+      "normalized": "159 الفصل"
+    },
+    {
+      "id": 211,
+      "type": "ARTICLE",
+      "text": "الفصل 160",
+      "normalized": "160 الفصل"
+    },
+    {
+      "id": 212,
+      "type": "CHAPTER",
+      "text": "الباب الثالث عشر",
+      "normalized": "13 الباب"
+    },
+    {
+      "id": 213,
+      "type": "ARTICLE",
+      "text": "الفصل 172",
+      "normalized": "172 الفصل"
+    },
+    {
+      "id": 214,
+      "type": "ARTICLE",
+      "text": "الفصل 173",
+      "normalized": "173 الفصل"
+    },
+    {
+      "id": 215,
+      "type": "ARTICLE",
+      "text": "الفصل 174",
+      "normalized": "174 الفصل"
+    },
+    {
+      "id": 216,
+      "type": "COURT",
+      "text": "المحكمة الدستورية",
+      "normalized": "المحكمة الدستورية"
+    },
+    {
+      "id": 217,
+      "type": "ARTICLE",
+      "text": "الفصل 175",
+      "normalized": "175 الفصل"
+    },
+    {
+      "id": 218,
+      "type": "CHAPTER",
+      "text": "الباب الرابع عشر",
+      "normalized": "14 الباب"
+    },
+    {
+      "id": 219,
+      "type": "ARTICLE",
+      "text": "الفصل 176",
+      "normalized": "176 الفصل"
+    },
+    {
+      "id": 220,
+      "type": "ARTICLE",
+      "text": "الفصل 177",
+      "normalized": "177 الفصل"
+    },
+    {
+      "id": 221,
+      "type": "ARTICLE",
+      "text": "الفصل 178",
+      "normalized": "178 الفصل"
+    },
+    {
+      "id": 222,
+      "type": "ARTICLE",
+      "text": "الفصل 179",
+      "normalized": "179 الفصل"
+    },
+    {
+      "id": 223,
+      "type": "ARTICLE",
+      "text": "الفصل 180",
+      "normalized": "180 الفصل"
+    },
+    {
+      "id": 224,
+      "type": "LAW",
+      "text": "الدستور المراجع",
+      "normalized": "الدستور المراجع"
+    },
+    {
+      "id": 225,
+      "type": "DECRET",
+      "text": "الظهير الشريف رقم 1.96.157",
+      "normalized": "1.96.157 الظهير الشريف"
+    },
+    {
+      "id": 226,
+      "type": "DATE",
+      "text": "23 من جمادى الأولى 1417",
+      "normalized": "1996-10-07"
+    },
+    {
+      "id": 227,
+      "type": "DATE",
+      "text": "7 أكتوبر 1996",
+      "normalized": "1996-10-07"
+    },
+    {
+      "id": 228,
+      "type": "INTERNAL_REF",
+      "text": "الفصول 41 و44",
+      "normalized": "الفصل 41_44"
+    },
+    {
+      "id": 229,
+      "type": "INTERNAL_REF",
+      "text": "الفصول\n96 و 97 و98",
+      "normalized": "الفصل 96_97_98"
+    },
+    {
+      "id": 230,
+      "type": "INTERNAL_REF",
+      "text": "الفصول 65",
+      "normalized": "الفصل 65"
+    },
+    {
+      "id": 231,
+      "type": "INTERNAL_REF",
+      "text": "الفصول 161",
+      "normalized": "الفصل 161"
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": 1,
+      "type": "enacted_by",
+      "source_id": 1,
+      "target_id": 2
+    },
+    {
+      "relation_id": 2,
+      "type": "published_in",
+      "source_id": 1,
+      "target_id": 5
+    },
+    {
+      "relation_id": 3,
+      "type": "effective_on",
+      "source_id": 2,
+      "target_id": 3
+    },
+    {
+      "relation_id": 4,
+      "type": "effective_on",
+      "source_id": 2,
+      "target_id": 4
+    },
+    {
+      "relation_id": 5,
+      "type": "enacted_by",
+      "source_id": 8,
+      "target_id": 9
+    },
+    {
+      "relation_id": 6,
+      "type": "decides",
+      "source_id": 11,
+      "target_id": 10
+    },
+    {
+      "relation_id": 7,
+      "type": "contains",
+      "source_id": 12,
+      "target_id": 13
+    },
+    {
+      "relation_id": 8,
+      "type": "contains",
+      "source_id": 12,
+      "target_id": 14
+    },
+    {
+      "relation_id": 9,
+      "type": "contains",
+      "source_id": 12,
+      "target_id": 15
+    },
+    {
+      "relation_id": 10,
+      "type": "contains",
+      "source_id": 12,
+      "target_id": 16
+    },
+    {
+      "relation_id": 11,
+      "type": "contains",
+      "source_id": 12,
+      "target_id": 17
+    },
+    {
+      "relation_id": 12,
+      "type": "implements",
+      "source_id": 18,
+      "target_id": 1
+    },
+    {
+      "relation_id": 13,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 33
+    },
+    {
+      "relation_id": 14,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 34
+    },
+    {
+      "relation_id": 15,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 35
+    },
+    {
+      "relation_id": 16,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 36
+    },
+    {
+      "relation_id": 17,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 37
+    },
+    {
+      "relation_id": 18,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 38
+    },
+    {
+      "relation_id": 19,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 39
+    },
+    {
+      "relation_id": 20,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 40
+    },
+    {
+      "relation_id": 21,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 41
+    },
+    {
+      "relation_id": 22,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 42
+    },
+    {
+      "relation_id": 23,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 43
+    },
+    {
+      "relation_id": 24,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 44
+    },
+    {
+      "relation_id": 25,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 45
+    },
+    {
+      "relation_id": 26,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 46
+    },
+    {
+      "relation_id": 27,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 47
+    },
+    {
+      "relation_id": 28,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 48
+    },
+    {
+      "relation_id": 29,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 49
+    },
+    {
+      "relation_id": 30,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 50
+    },
+    {
+      "relation_id": 31,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 51
+    },
+    {
+      "relation_id": 32,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 52
+    },
+    {
+      "relation_id": 33,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 53
+    },
+    {
+      "relation_id": 34,
+      "type": "contains",
+      "source_id": 32,
+      "target_id": 54
+    },
+    {
+      "relation_id": 35,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 56
+    },
+    {
+      "relation_id": 36,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 57
+    },
+    {
+      "relation_id": 37,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 58
+    },
+    {
+      "relation_id": 38,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 59
+    },
+    {
+      "relation_id": 39,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 60
+    },
+    {
+      "relation_id": 40,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 61
+    },
+    {
+      "relation_id": 41,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 62
+    },
+    {
+      "relation_id": 42,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 63
+    },
+    {
+      "relation_id": 43,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 64
+    },
+    {
+      "relation_id": 44,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 65
+    },
+    {
+      "relation_id": 45,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 66
+    },
+    {
+      "relation_id": 46,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 67
+    },
+    {
+      "relation_id": 47,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 68
+    },
+    {
+      "relation_id": 48,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 69
+    },
+    {
+      "relation_id": 49,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 70
+    },
+    {
+      "relation_id": 50,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 71
+    },
+    {
+      "relation_id": 51,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 72
+    },
+    {
+      "relation_id": 52,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 73
+    },
+    {
+      "relation_id": 53,
+      "type": "contains",
+      "source_id": 55,
+      "target_id": 74
+    },
+    {
+      "relation_id": 54,
+      "type": "contains",
+      "source_id": 75,
+      "target_id": 76
+    },
+    {
+      "relation_id": 55,
+      "type": "contains",
+      "source_id": 75,
+      "target_id": 77
+    },
+    {
+      "relation_id": 56,
+      "type": "contains",
+      "source_id": 79,
+      "target_id": 80
+    },
+    {
+      "relation_id": 57,
+      "type": "contains",
+      "source_id": 81,
+      "target_id": 82
+    },
+    {
+      "relation_id": 58,
+      "type": "contains",
+      "source_id": 120,
+      "target_id": 121
+    },
+    {
+      "relation_id": 59,
+      "type": "contains",
+      "source_id": 131,
+      "target_id": 132
+    },
+    {
+      "relation_id": 60,
+      "type": "contains",
+      "source_id": 146,
+      "target_id": 147
+    },
+    {
+      "relation_id": 61,
+      "type": "contains",
+      "source_id": 171,
+      "target_id": 172
+    },
+    {
+      "relation_id": 62,
+      "type": "contains",
+      "source_id": 180,
+      "target_id": 181
+    },
+    {
+      "relation_id": 63,
+      "type": "decides",
+      "source_id": 78,
+      "target_id": 93
+    },
+    {
+      "relation_id": 64,
+      "type": "decides",
+      "source_id": 78,
+      "target_id": 99
+    },
+    {
+      "relation_id": 65,
+      "type": "decides",
+      "source_id": 78,
+      "target_id": 105
+    },
+    {
+      "relation_id": 66,
+      "type": "decides",
+      "source_id": 78,
+      "target_id": 111
+    },
+    {
+      "relation_id": 67,
+      "type": "decides",
+      "source_id": 78,
+      "target_id": 134
+    },
+    {
+      "relation_id": 68,
+      "type": "contains",
+      "source_id": 186,
+      "target_id": 187
+    },
+    {
+      "relation_id": 69,
+      "type": "contains",
+      "source_id": 186,
+      "target_id": 188
+    },
+    {
+      "relation_id": 70,
+      "type": "contains",
+      "source_id": 186,
+      "target_id": 189
+    },
+    {
+      "relation_id": 71,
+      "type": "contains",
+      "source_id": 186,
+      "target_id": 190
+    },
+    {
+      "relation_id": 72,
+      "type": "contains",
+      "source_id": 186,
+      "target_id": 191
+    },
+    {
+      "relation_id": 73,
+      "type": "contains",
+      "source_id": 186,
+      "target_id": 192
+    },
+    {
+      "relation_id": 74,
+      "type": "contains",
+      "source_id": 193,
+      "target_id": 195
+    },
+    {
+      "relation_id": 75,
+      "type": "contains",
+      "source_id": 193,
+      "target_id": 196
+    },
+    {
+      "relation_id": 76,
+      "type": "contains",
+      "source_id": 193,
+      "target_id": 197
+    },
+    {
+      "relation_id": 77,
+      "type": "contains",
+      "source_id": 193,
+      "target_id": 198
+    },
+    {
+      "relation_id": 78,
+      "type": "contains",
+      "source_id": 199,
+      "target_id": 201
+    },
+    {
+      "relation_id": 79,
+      "type": "contains",
+      "source_id": 199,
+      "target_id": 202
+    },
+    {
+      "relation_id": 80,
+      "type": "contains",
+      "source_id": 199,
+      "target_id": 203
+    },
+    {
+      "relation_id": 81,
+      "type": "contains",
+      "source_id": 204,
+      "target_id": 205
+    },
+    {
+      "relation_id": 82,
+      "type": "contains",
+      "source_id": 204,
+      "target_id": 206
+    },
+    {
+      "relation_id": 83,
+      "type": "contains",
+      "source_id": 204,
+      "target_id": 207
+    },
+    {
+      "relation_id": 84,
+      "type": "contains",
+      "source_id": 204,
+      "target_id": 208
+    },
+    {
+      "relation_id": 85,
+      "type": "contains",
+      "source_id": 204,
+      "target_id": 209
+    },
+    {
+      "relation_id": 86,
+      "type": "contains",
+      "source_id": 204,
+      "target_id": 210
+    },
+    {
+      "relation_id": 87,
+      "type": "contains",
+      "source_id": 204,
+      "target_id": 211
+    },
+    {
+      "relation_id": 88,
+      "type": "contains",
+      "source_id": 212,
+      "target_id": 213
+    },
+    {
+      "relation_id": 89,
+      "type": "contains",
+      "source_id": 212,
+      "target_id": 214
+    },
+    {
+      "relation_id": 90,
+      "type": "contains",
+      "source_id": 212,
+      "target_id": 215
+    },
+    {
+      "relation_id": 91,
+      "type": "contains",
+      "source_id": 218,
+      "target_id": 219
+    },
+    {
+      "relation_id": 92,
+      "type": "contains",
+      "source_id": 218,
+      "target_id": 220
+    },
+    {
+      "relation_id": 93,
+      "type": "contains",
+      "source_id": 218,
+      "target_id": 221
+    },
+    {
+      "relation_id": 94,
+      "type": "contains",
+      "source_id": 218,
+      "target_id": 222
+    },
+    {
+      "relation_id": 95,
+      "type": "contains",
+      "source_id": 218,
+      "target_id": 223
+    },
+    {
+      "relation_id": 96,
+      "type": "enacted_by",
+      "source_id": 224,
+      "target_id": 225
+    },
+    {
+      "relation_id": 97,
+      "type": "effective_on",
+      "source_id": 225,
+      "target_id": 226
+    },
+    {
+      "relation_id": 98,
+      "type": "effective_on",
+      "source_id": 225,
+      "target_id": 227
+    },
+    {
+      "relation_id": 99,
+      "type": "refers_to",
+      "source_id": 228,
+      "target_id": 56
+    },
+    {
+      "relation_id": 100,
+      "type": "refers_to",
+      "source_id": 228,
+      "target_id": 59
+    },
+    {
+      "relation_id": 101,
+      "type": "refers_to",
+      "source_id": 229,
+      "target_id": 133
+    },
+    {
+      "relation_id": 102,
+      "type": "refers_to",
+      "source_id": 229,
+      "target_id": 136
+    },
+    {
+      "relation_id": 103,
+      "type": "refers_to",
+      "source_id": 229,
+      "target_id": 137
+    },
+    {
+      "relation_id": 104,
+      "type": "refers_to",
+      "source_id": 230,
+      "target_id": 84
+    }
+  ]
+}

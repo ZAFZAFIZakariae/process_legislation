@@ -1,0 +1,150 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "type": "COURT",
+      "text": "محكمة الأسرة بفاس",
+      "normalized": "محكمة الأسرة بفاس"
+    },
+    {
+      "id": 2,
+      "type": "CASE",
+      "text": "حكم رقم: 214/2024",
+      "normalized": "214/2024"
+    },
+    {
+      "id": 3,
+      "type": "DATE",
+      "text": "30 ماي 2024",
+      "normalized": "2024-05-30"
+    },
+    {
+      "id": 4,
+      "type": "CASE",
+      "text": "ملف أسري عدد: 902/2023",
+      "normalized": "902/2023"
+    },
+    {
+      "id": 5,
+      "type": "JUDGE",
+      "text": "الأستاذة مونية الأندلسي",
+      "normalized": "الأستاذة مونية الأندلسي"
+    },
+    {
+      "id": 6,
+      "type": "JUDGE",
+      "text": "الأستاذ سعيد الفتاحي",
+      "normalized": "الأستاذ سعيد الفتاحي"
+    },
+    {
+      "id": 7,
+      "type": "JUDGE",
+      "text": "الأستاذة أميمة السباعي",
+      "normalized": "الأستاذة أميمة السباعي"
+    },
+    {
+      "id": 8,
+      "type": "ATTORNEY_GENERAL",
+      "text": "السيد عبد الصمد الركيك",
+      "normalized": "السيد عبد الصمد الركيك"
+    },
+    {
+      "id": 9,
+      "type": "COURT_CLERK",
+      "text": "السيدة حياة بنحمزة",
+      "normalized": "السيدة حياة بنحمزة"
+    },
+    {
+      "id": 10,
+      "type": "PERSON",
+      "text": "نادية السعدي",
+      "normalized": "نادية السعدي"
+    },
+    {
+      "id": 11,
+      "type": "PERSON",
+      "text": "حمزة الزيتوني",
+      "normalized": "حمزة الزيتوني"
+    },
+    {
+      "id": 12,
+      "type": "PERSON",
+      "text": "مريم",
+      "normalized": "مريم"
+    },
+    {
+      "id": 13,
+      "type": "DATE",
+      "text": "10 أكتوبر 2015",
+      "normalized": "2015-10-10"
+    },
+    {
+      "id": 14,
+      "type": "LAW",
+      "text": "مدونة الأسرة",
+      "normalized": "مدونة الأسرة"
+    },
+    {
+      "id": 15,
+      "type": "INTERNAL_REF",
+      "text": "المادة 94",
+      "normalized": "94 المادة"
+    },
+    {
+      "id": 16,
+      "type": "INTERNAL_REF",
+      "text": "المادة 97",
+      "normalized": "97 المادة"
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": 1,
+      "type": "decides",
+      "source_id": 1,
+      "target_id": 2
+    },
+    {
+      "relation_id": 2,
+      "type": "judged_by",
+      "source_id": 2,
+      "target_id": 5
+    },
+    {
+      "relation_id": 3,
+      "type": "judged_by",
+      "source_id": 2,
+      "target_id": 6
+    },
+    {
+      "relation_id": 4,
+      "type": "judged_by",
+      "source_id": 2,
+      "target_id": 7
+    },
+    {
+      "relation_id": 5,
+      "type": "prosecuted_by",
+      "source_id": 2,
+      "target_id": 8
+    },
+    {
+      "relation_id": 6,
+      "type": "clerk_for",
+      "source_id": 9,
+      "target_id": 1
+    },
+    {
+      "relation_id": 7,
+      "type": "refers_to",
+      "source_id": 15,
+      "target_id": 14
+    },
+    {
+      "relation_id": 8,
+      "type": "refers_to",
+      "source_id": 16,
+      "target_id": 14
+    }
+  ]
+}

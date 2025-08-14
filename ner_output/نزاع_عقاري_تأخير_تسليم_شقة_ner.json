@@ -1,0 +1,168 @@
+{
+  "entities": [
+    {
+      "id": 1,
+      "type": "COURT",
+      "text": "محكمة الاستئناف بالرباط",
+      "normalized": "محكمة الاستئناف بالرباط"
+    },
+    {
+      "id": 2,
+      "type": "CASE",
+      "text": "ملف عدد: 457/2022",
+      "normalized": "457/2022"
+    },
+    {
+      "id": 3,
+      "type": "DATE",
+      "text": "12 يونيو 2023",
+      "normalized": "2023-06-12"
+    },
+    {
+      "id": 4,
+      "type": "JUDGE",
+      "text": "الأستاذ عبد الرحمن بن الطيب",
+      "normalized": "عبد الرحمن بن الطيب"
+    },
+    {
+      "id": 5,
+      "type": "COURT_CLERK",
+      "text": "السيد يوسف العلوي",
+      "normalized": "يوسف العلوي"
+    },
+    {
+      "id": 6,
+      "type": "PERSON",
+      "text": "محمد بن عبد الله",
+      "normalized": "محمد بن عبد الله"
+    },
+    {
+      "id": 7,
+      "type": "DATE",
+      "text": "14 مارس 1985",
+      "normalized": "1985-03-14"
+    },
+    {
+      "id": 8,
+      "type": "PERSON",
+      "text": "أحمد الشدادي",
+      "normalized": "أحمد الشدادي"
+    },
+    {
+      "id": 9,
+      "type": "GOVERNMENT_BODY",
+      "text": "شركة العمران المغرب",
+      "normalized": "شركة العمران المغرب"
+    },
+    {
+      "id": 10,
+      "type": "LAWYER",
+      "text": "الأستاذة خديجة بنشقرون",
+      "normalized": "خديجة بنشقرون"
+    },
+    {
+      "id": 11,
+      "type": "DATE",
+      "text": "10 يناير 2021",
+      "normalized": "2021-01-10"
+    },
+    {
+      "id": 12,
+      "type": "DATE",
+      "text": "30 يونيو 2022",
+      "normalized": "2022-06-30"
+    },
+    {
+      "id": 13,
+      "type": "DATE",
+      "text": "15 يونيو 2022",
+      "normalized": "2022-06-15"
+    },
+    {
+      "id": 14,
+      "type": "DATE",
+      "text": "1 يوليو 2022",
+      "normalized": "2022-07-01"
+    },
+    {
+      "id": 15,
+      "type": "DATE",
+      "text": "15 أغسطس 2022",
+      "normalized": "2022-08-15"
+    },
+    {
+      "id": 16,
+      "type": "DATE",
+      "text": "5 يوليو 2022",
+      "normalized": "2022-07-05"
+    },
+    {
+      "id": 17,
+      "type": "LAW",
+      "text": "قانون حماية المستهلك",
+      "normalized": "قانون حماية المستهلك"
+    },
+    {
+      "id": 18,
+      "type": "LAW",
+      "text": "قانون الالتزامات والعقود",
+      "normalized": "قانون الالتزامات والعقود"
+    },
+    {
+      "id": 19,
+      "type": "ARTICLE",
+      "text": "الفصل 63",
+      "normalized": "63 الفصل"
+    },
+    {
+      "id": 20,
+      "type": "ARTICLE",
+      "text": "المادة 269",
+      "normalized": "269 المادة"
+    }
+  ],
+  "relations": [
+    {
+      "relation_id": 1,
+      "type": "decides",
+      "source_id": 1,
+      "target_id": 2
+    },
+    {
+      "relation_id": 2,
+      "type": "judged_by",
+      "source_id": 2,
+      "target_id": 4
+    },
+    {
+      "relation_id": 3,
+      "type": "clerk_for",
+      "source_id": 5,
+      "target_id": 1
+    },
+    {
+      "relation_id": 4,
+      "type": "effective_on",
+      "source_id": 17,
+      "target_id": 3
+    },
+    {
+      "relation_id": 5,
+      "type": "effective_on",
+      "source_id": 18,
+      "target_id": 3
+    },
+    {
+      "relation_id": 6,
+      "type": "refers_to",
+      "source_id": 19,
+      "target_id": 17
+    },
+    {
+      "relation_id": 7,
+      "type": "refers_to",
+      "source_id": 20,
+      "target_id": 18
+    }
+  ]
+}
