@@ -645,7 +645,8 @@ def _collect_legislation_documents() -> dict[str, dict[str, str]]:
         for f in os.listdir('ner_output'):
             if f.endswith('_ner.json'):
                 base = f[:-9]  # remove '_ner.json'
-                docs.setdefault(base, {})['ner'] = os.path.join('ner_output', f)
+                if base in docs:
+                    docs[base]['ner'] = os.path.join('ner_output', f)
     return docs
 
 
@@ -904,22 +905,13 @@ def view_legal_documents():
     )
 
 
-@app.route('/legislation/edit', methods=['GET', 'POST'])
-def edit_legislation():
-    docs = _collect_legislation_documents()
-    name = request.args.get('file')
+def _edit_document(docs: dict[str, dict[str, str]], name: str, view_endpoint: str):
     if name not in docs:
         return "File not found", 404
 
     doc = docs.get(name, {})
     structure_path = doc.get('structure')
 
-    # When editing a court decision the JSON produced by the pipeline stores
-    # the decision sections under a top-level "decision" key.  The original
-    # editor expected the sections (facts/arguments/...) at the root which
-    # meant the UI failed to display them.  Detect this scenario and expose
-    # the nested decision object to the template while keeping a reference to
-    # the full document for persistence.
     is_decision = request.path.startswith('/decision')
     full_doc: dict | None = None
     structure: dict | None = None
@@ -928,7 +920,7 @@ def edit_legislation():
             loaded = json.load(sf)
         if is_decision and isinstance(loaded, dict) and 'decision' in loaded:
             full_doc = loaded
-            structure = loaded.get('decision')  # sections to edit
+            structure = loaded.get('decision')
         else:
             structure = loaded
             full_doc = loaded
@@ -943,7 +935,7 @@ def edit_legislation():
             try:
                 text, entities = ae_parse_marked_text(content)
                 _save_annotation(text, entities, relations, txt_path, ner_path, structure_path)
-                return redirect(url_for('view_legislation', file=name))
+                return redirect(url_for(view_endpoint, file=name))
             except Exception as exc:
                 return render_template(
                     'edit_annotations.html',
@@ -954,7 +946,6 @@ def edit_legislation():
                     error=str(exc),
                 )
 
-        # operations acting on existing annotations
         if action == 'add':
             args = SimpleNamespace(
                 add=(request.form.get('start'), request.form.get('end'), request.form.get('type')),
@@ -981,15 +972,13 @@ def edit_legislation():
                 items.append(f"text={request.form.get('text')}")
             args = SimpleNamespace(update=items)
             ae_update_entity(args, entities)
-            # Ensure no overlaps remain after changing the boundaries.
             ae_fix_offsets(text, {'entities': entities})
-            # Keep the stored text in sync with the final offsets.
             for ent in entities:
                 if str(ent.get('id')) == uid:
                     try:
                         s = int(ent.get('start_char', -1))
                         e = int(ent.get('end_char', -1))
-                    except Exception:  # pragma: no cover - defensive
+                    except Exception:
                         s = e = -1
                     if 0 <= s < e <= len(text):
                         ent['text'] = text[s:e]
@@ -1033,9 +1022,6 @@ def edit_legislation():
 
         _save_annotation(text, entities, relations, txt_path, ner_path, structure_path)
 
-        # Reload from disk so the editor shows the persisted state even if in-memory
-        # objects were only partially updated. This also validates that the files
-        # were written correctly.
         text, entities, relations, _, _ = _load_annotation(name)
 
         if structure_path and os.path.exists(structure_path):
@@ -1068,10 +1054,26 @@ def edit_legislation():
     )
 
 
+@app.route('/legislation/edit', methods=['GET', 'POST'])
+def edit_legislation():
+    docs = _collect_legislation_documents()
+    name = request.args.get('file')
+    return _edit_document(docs, name, 'view_legislation')
+
+
+@app.route('/legal_documents/edit', methods=['GET', 'POST'])
+def edit_legal_document():
+    docs = {k: {'structure': v} for k, v in _collect_legal_documents().items()}
+    name = request.args.get('file')
+    return _edit_document(docs, name, 'view_legal_documents')
+
+
 @app.route('/decision/edit', methods=['GET', 'POST'])
 def edit_decision():
     """Edit court decision documents (alias for edit_legislation)."""
-    return edit_legislation()
+    docs = _collect_legislation_documents()
+    name = request.args.get('file')
+    return _edit_document(docs, name, 'view_legislation')
 
 
 @app.route('/query', methods=['GET', 'POST'])
