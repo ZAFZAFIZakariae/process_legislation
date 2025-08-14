@@ -146,6 +146,15 @@ def import_json(db_path: str, dir_path: str = OUTPUT_DIR) -> None:
                     rel.get("target_id"),
                 ),
             )
+    cur.executescript(
+        """
+        CREATE INDEX IF NOT EXISTS idx_documents_doc_number ON Documents(doc_number);
+        CREATE INDEX IF NOT EXISTS idx_documents_filename ON Documents(file_name);
+        CREATE INDEX IF NOT EXISTS idx_articles_docid_number ON Articles(document_id, number);
+        CREATE INDEX IF NOT EXISTS idx_entities_norm_type ON Entities(normalized, type);
+        CREATE INDEX IF NOT EXISTS idx_entities_docid ON Entities(document_id);
+        """
+    )
     con.commit()
     con.close()
     print(f"[+] Imported JSON files from {dir_path} into {db_path}")
