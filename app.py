@@ -633,19 +633,14 @@ def parse_decision_route():
     return render_template('decision.html', result_json=None)
 
 
-def _collect_documents() -> dict[str, dict[str, str]]:
-    """Return mapping of base names to structure and NER paths."""
+def _collect_legislation_documents() -> dict[str, dict[str, str]]:
+    """Return mapping of legislation base names to structure and NER paths."""
     docs: dict[str, dict[str, str]] = {}
     if os.path.isdir('output'):
         for f in os.listdir('output'):
             if f.endswith('.json'):
                 base = f.rsplit('.', 1)[0]
                 docs.setdefault(base, {})['structure'] = os.path.join('output', f)
-    if os.path.isdir('legal_output'):
-        for f in os.listdir('legal_output'):
-            if f.endswith('.json'):
-                base = f.rsplit('.', 1)[0]
-                docs.setdefault(base, {})['structure'] = os.path.join('legal_output', f)
     if os.path.isdir('ner_output'):
         for f in os.listdir('ner_output'):
             if f.endswith('_ner.json'):
@@ -770,7 +765,7 @@ def _save_annotation(
 
 @app.route('/legislation')
 def view_legislation():
-    docs = _collect_documents()
+    docs = _collect_legislation_documents()
     files = sorted(docs.keys())
     name = request.args.get('file')
     data = None
@@ -911,7 +906,7 @@ def view_legal_documents():
 
 @app.route('/legislation/edit', methods=['GET', 'POST'])
 def edit_legislation():
-    docs = _collect_documents()
+    docs = _collect_legislation_documents()
     name = request.args.get('file')
     if name not in docs:
         return "File not found", 404
