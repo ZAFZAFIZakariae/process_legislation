@@ -3,6 +3,7 @@ import json
 import re
 import tempfile
 import shutil
+from typing import Optional
 try:
     import pandas as pd
 except Exception:  # pragma: no cover
@@ -32,6 +33,7 @@ except Exception:  # pragma: no cover
 from ner import extract_entities, postprocess_result, parse_marked_text
 from ocr import pdf_to_arabic_text
 from highlight import canonical_num, highlight_text, render_ner_html
+from crossref import get_article_hits, find_person_docs, ensure_indices, format_article_popup
 try:
     from decision_parser import process_file as parse_decision
 except Exception:  # pragma: no cover - optional dependency
@@ -409,6 +411,10 @@ def home():
                         try:  # pragma: no cover - optional dependency
                             from import_db import import_json
                             import_json(DB_PATH)
+                            try:
+                                ensure_indices(DB_PATH)
+                            except Exception:
+                                pass
                         except Exception as exc:
                             process_error = str(exc)
                 except Exception as exc:  # pragma: no cover - show error
@@ -473,56 +479,64 @@ def index():
                             tooltip_map[src] = msg
 
             article_texts: dict[str, str] = {}
-            id_to_ent = {str(e.get('id')): e for e in entities}
-            for ent in entities:
-                if ent.get('type') != 'ARTICLE':
-                    continue
-                num = canonical_num(ent.get('normalized') or ent.get('text'))
-                if not num:
-                    continue
-                law_nums: list[str] = []
-                for tgt in ref_targets.get(str(ent.get('id')), []):
-                    target_ent = id_to_ent.get(str(tgt))
-                    if target_ent and target_ent.get('type') in {'LAW', 'DECREE'}:
-                        ln = canonical_num(target_ent.get('normalized') or target_ent.get('text'))
-                        if ln:
-                            law_nums.append(ln)
-                search_laws = law_nums or list(LAW_ARTICLES.keys())
-                found_msg = None
-                for ln in search_laws:
-                    art_map = LAW_ARTICLES.get(ln)
-                    if art_map and num in art_map:
-                        found_msg = f"{ln}: {art_map[num]}"
-                        break
-                if not found_msg:
-                    found_msg = "No matching article found"
-                article_texts[num] = found_msg
 
-            # Build popup text for article references
-            ref_article_texts: dict[str, str] = {}
+            # Helper to attach first best hit as popup for an entity id
+            def _attach_article_popup_for_ent(ent_id: str, law_hint: Optional[str], art_hint: str) -> None:
+                hits = get_article_hits(
+                    article_number_raw=art_hint,
+                    law_number_raw=law_hint,
+                    db_path=DB_PATH,
+                    limit=3,
+                )
+                if hits:
+                    html_snip = format_article_popup(hits[0])
+                    article_texts[f"ID_{ent_id}"] = html_snip
+
+            # 1) If your NER produced explicit ARTICLE entities, resolve via law context when available
             for ent in entities:
-                if ent.get('type') != 'INTERNAL_REF':
-                    continue
-                lines: list[str] = []
-                for tgt in ref_targets.get(str(ent.get('id')), []):
-                    tgt_ent = id_to_ent.get(str(tgt))
-                    if tgt_ent and tgt_ent.get('type') == 'ARTICLE':
-                        num = canonical_num(tgt_ent.get('normalized') or tgt_ent.get('text'))
-                        if not num:
-                            continue
-                        art_txt = article_texts.get(num, '')
-                        lines.append(f"الفصل {num}<br/>{art_txt}")
-                if not lines:
-                    ref_text = str(ent.get('normalized') or ent.get('text') or '')
-                    for raw in re.findall(r'[0-9٠-٩]+', ref_text):
-                        num = canonical_num(raw)
-                        if not num:
-                            continue
-                        art_txt = article_texts.get(num, '')
-                        lines.append(f"الفصل {num}<br/>{art_txt}")
-                if lines:
-                    ref_article_texts[f"ID_{ent.get('id')}"] = '<br/><br/>'.join(lines)
-            article_texts.update(ref_article_texts)
+                if ent.get("type") == "ARTICLE":
+                    art_txt = ent.get("normalized") or ent.get("text") or ""
+                    law_hint: Optional[str] = None
+                    for rel in relations:
+                        s = str(rel.get("source_id"))
+                        t = str(rel.get("target_id"))
+                        if s == str(ent.get("id")):
+                            tgt_ent = next((e for e in entities if str(e.get("id")) == t), None)
+                            if tgt_ent and tgt_ent.get("type") in {"LAW", "DECREE", "DAHIR", "STATUTE"}:
+                                law_hint = tgt_ent.get("normalized") or tgt_ent.get("text")
+                                break
+                        if t == str(ent.get("id")):
+                            src_ent = next((e for e in entities if str(e.get("id")) == s), None)
+                            if src_ent and src_ent.get("type") in {"LAW", "DECREE", "DAHIR", "STATUTE"}:
+                                law_hint = src_ent.get("normalized") or src_ent.get("text")
+                                break
+                    _attach_article_popup_for_ent(str(ent.get("id")), law_hint, art_txt)
+
+            # 2) For INTERNAL_REF or “reference-like” entities, mine likely article numbers and attempt lookups
+            import re
+            for ent in entities:
+                if ent.get("type") in {"INTERNAL_REF", "REFERENCE", "CITATION"}:
+                    txt = ent.get("normalized") or ent.get("text") or ""
+                    cand_nums = re.findall(r"\d+[./]?\d*", txt)
+                    if not cand_nums:
+                        continue
+                    law_hint = None
+                    for rel in relations:
+                        if str(rel.get("source_id")) == str(ent.get("id")):
+                            tgt = next((e for e in entities if str(e.get("id")) == str(rel.get("target_id"))), None)
+                            if tgt and tgt.get("type") in {"LAW", "DECREE", "DAHIR", "STATUTE"}:
+                                law_hint = tgt.get("normalized") or tgt.get("text")
+                                break
+                    for num in cand_nums:
+                        hits = get_article_hits(
+                            article_number_raw=num,
+                            law_number_raw=law_hint,
+                            db_path=DB_PATH,
+                            limit=1,
+                        )
+                        if hits:
+                            article_texts[f"ID_{ent.get('id')}"] = format_article_popup(hits[0])
+                            break
 
             annotated = highlight_text(raw_text, entities, None, ref_targets, tooltip_map, article_texts)
 
@@ -902,6 +916,22 @@ def view_legal_documents():
         text=text,
         decision=decision,
         entities=entities,
+    )
+
+
+@app.route("/person/<path:name>")
+def person_occurrences(name: str):
+    docs = find_person_docs(name, db_path=DB_PATH, limit=200)
+    items: list[str] = []
+    for d in docs:
+        title = d.get("short_title") or d.get("file_name") or f"Doc {d['document_id']}"
+        items.append(
+            f'<li><a href="/legislation?file={d["file_name"]}">{title}</a> '
+            f'({d.get("doc_number") or "—"})</li>'
+        )
+    return (
+        f"<h2>الوثائق التي تحتوي: {name}</h2><ul>"
+        f"{''.join(items) or '<li>لا يوجد</li>'}</ul>"
     )
 
 
