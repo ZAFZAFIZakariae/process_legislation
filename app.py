@@ -403,12 +403,16 @@ def home():
                             json.dump(ner_saved, f, ensure_ascii=False, indent=2)
                     saved_file = base
                     saved_to = output_type
-                    if output_type == 'legislation':
-                        try:  # pragma: no cover - optional dependency
-                            from db.postgres_import import import_json_dir
-                            import_json_dir("output")
-                        except Exception as exc:
-                            process_error = str(exc)
+                    try:  # pragma: no cover - optional dependency
+                        from db.postgres_import import import_json_dir
+                        if os.path.isdir('output'):
+                            import_json_dir('output')
+                        if os.path.isdir('legal_output'):
+                            import_json_dir('legal_output')
+                        if os.path.isdir('ner_output'):
+                            import_json_dir('ner_output')
+                    except Exception as exc:
+                        process_error = str(exc)
                 except Exception as exc:  # pragma: no cover - show error
                     process_error = str(exc)
                 finally:
