@@ -58,7 +58,10 @@ except BaseException:  # pragma: no cover - missing dependency
 app = Flask(__name__)
 
 
-@app.before_first_request
+# Flask 3 removed ``before_first_request``. ``before_serving`` runs once per
+# process before handling the first request and is the closest replacement.
+# If running on an older Flask without that hook, fall back to executing the
+# initialization immediately so directory watching still works.
 def _init_import_watcher() -> None:
     """Import existing JSON files and start directory watchers."""
     try:
@@ -67,6 +70,12 @@ def _init_import_watcher() -> None:
         watch_dirs(["output", "legal_output", "ner_output"])
     except Exception as exc:  # pragma: no cover - optional database
         print(f"Initial import failed: {exc}")
+
+
+if hasattr(app, "before_serving"):
+    app.before_serving(_init_import_watcher)
+else:  # pragma: no cover - compatibility with older Flask versions
+    _init_import_watcher()
 
 
 @app.context_processor
