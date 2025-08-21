@@ -58,6 +58,17 @@ except BaseException:  # pragma: no cover - missing dependency
 app = Flask(__name__)
 
 
+@app.before_first_request
+def _init_import_watcher() -> None:
+    """Import existing JSON files and start directory watchers."""
+    try:
+        from db.postgres_import import import_paths, watch_dirs
+        import_paths(["output", "legal_output", "ner_output"])
+        watch_dirs(["output", "legal_output", "ner_output"])
+    except Exception as exc:  # pragma: no cover - optional database
+        print(f"Initial import failed: {exc}")
+
+
 @app.context_processor
 def inject_globals() -> dict:
     cfg = load_settings()
@@ -427,6 +438,20 @@ def home():
         saved_to=saved_to,
         process_error=process_error,
     )
+
+
+@app.route('/sync_db', methods=['POST'])
+def sync_db():
+    """Manually import JSON files into PostgreSQL."""
+    msg = 'Database synchronised'
+    status = 200
+    try:
+        from db.postgres_import import import_paths
+        import_paths(['output', 'legal_output', 'ner_output'])
+    except Exception as exc:  # pragma: no cover - optional database
+        msg = f'Sync failed: {exc}'
+        status = 500
+    return msg, status
 
 @app.route('/entities', methods=['GET', 'POST'])
 def index():
