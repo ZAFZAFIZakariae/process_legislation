@@ -456,9 +456,19 @@ def sync_db():
     msg = 'Database synchronised'
     status = 200
     try:
-        from db.postgres_import import import_paths, init_db
+        from db.postgres_import import import_paths, init_db, engine
         init_db()
         import_paths(['output', 'legal_output', 'ner_output'])
+        with engine.begin() as conn:
+            doc_count = conn.execute(text('SELECT COUNT(*) FROM documents')).scalar() or 0
+            art_count = conn.execute(text('SELECT COUNT(*) FROM articles')).scalar() or 0
+            ent_count = conn.execute(text('SELECT COUNT(*) FROM entities')).scalar() or 0
+            rel_count = conn.execute(text('SELECT COUNT(*) FROM relations')).scalar() or 0
+        msg = (
+            'Database synchronised: '
+            f"{doc_count} documents, {art_count} articles, "
+            f"{ent_count} entities, {rel_count} relations"
+        )
     except Exception as exc:  # pragma: no cover - optional database
         app.logger.exception("Sync failed")
         msg = f'Sync failed: {exc}'
