@@ -72,23 +72,31 @@ def _import_file(conn, p: str) -> None:
             text("DELETE FROM articles WHERE document_id=:d"),
             {"d": doc_id},
         )
-        for node in data.get("structure", []):
-            if node.get("type") == "ARTICLE":
-                conn.execute(
-                    text(
-                        """
+
+        def _collect(nodes: list[dict]) -> None:
+            for node in nodes:
+                typ = node.get("type")
+                if typ in {"ARTICLE", "الفصل", "مادة"}:
+                    conn.execute(
+                        text(
+                            """
                 INSERT INTO articles(document_id, number, text)
                 VALUES (:d, :n, :t)
             """
-                    ),
-                    {
-                        "d": doc_id,
-                        "n": node.get("number")
-                        or node.get("normalized")
-                        or node.get("title"),
-                        "t": node.get("text") or "",
-                    },
-                )
+                        ),
+                        {
+                            "d": doc_id,
+                            "n": node.get("number")
+                            or node.get("normalized")
+                            or node.get("title"),
+                            "t": node.get("text") or "",
+                        },
+                    )
+                children = node.get("children")
+                if isinstance(children, list):
+                    _collect(children)
+
+        _collect(data.get("structure", []))
 
     ner_root = data.get("ner_result") or data
     ents = ner_root.get("entities", [])
