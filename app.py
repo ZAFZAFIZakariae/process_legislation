@@ -456,7 +456,8 @@ def sync_db():
     msg = 'Database synchronised'
     status = 200
     try:
-        from db.postgres_import import import_paths
+        from db.postgres_import import import_paths, init_db
+        init_db()
         import_paths(['output', 'legal_output', 'ner_output'])
     except Exception as exc:  # pragma: no cover - optional database
         app.logger.exception("Sync failed")
