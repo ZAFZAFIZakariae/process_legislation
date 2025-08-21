@@ -92,7 +92,7 @@ def inject_globals() -> dict:
 
 # Database connection string
 DB_DSN = os.environ.get(
-    "DB_DSN", "postgresql+psycopg://postgres:postgres@localhost:5432/legislation"
+    "DB_DSN", "postgresql+psycopg:///legislation"
 )
 engine = create_engine(DB_DSN)
 

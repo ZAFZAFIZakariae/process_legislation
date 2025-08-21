@@ -134,7 +134,9 @@ python db/postgres_import.py           # imports from output/ and legal_output/
 ```
 
 Set the `PG_DSN` environment variable to point at your PostgreSQL server
-if it differs from the default `postgresql+psycopg://postgres:postgres@localhost:5432/legislation`.
+if it differs from the default `postgresql+psycopg:///legislation`.
+The default relies on peer authentication with the current operating system
+user; include a username and password in the DSN if your setup requires them.
 
 Once the data is loaded, the `crossref_postgres.py` module provides helper
 functions such as `get_article_hits` and `find_person_docs` to resolve cross
