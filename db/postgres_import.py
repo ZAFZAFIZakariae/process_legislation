@@ -25,7 +25,7 @@ except Exception:  # pragma: no cover - watchdog not installed
     Observer = None
 
 PG_DSN = os.environ.get(
-    "PG_DSN", "postgresql+psycopg://postgres:postgres@localhost:5432/legislation"
+    "PG_DSN", "postgresql+psycopg:///legislation"
 )
 engine = create_engine(PG_DSN, poolclass=QueuePool, pool_size=10, max_overflow=20)
 
