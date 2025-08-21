@@ -57,10 +57,13 @@ except BaseException:  # pragma: no cover - missing dependency
 
 app = Flask(__name__)
 
+# ``before_first_request`` was removed in Flask 3.0, while older Flask
+# versions do not provide ``before_serving``. Pick whichever hook exists so
+# that the initial import runs once on startup across supported versions.
+init_hook = getattr(app, "before_serving", app.before_first_request)
 
-# Flask 3 removed ``before_first_request``. ``before_serving`` runs once per
-# process before handling the first request and is the closest replacement.
-@app.before_serving
+
+@init_hook
 def _init_import_watcher() -> None:
     """Import existing JSON files and start directory watchers."""
     try:
