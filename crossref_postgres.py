@@ -1,3 +1,11 @@
+"""Helpers for resolving cross‑references stored in PostgreSQL.
+
+These utilities mirror the functions in :mod:`crossref` but operate on a
+PostgreSQL database loaded via ``db/postgres_import.py``.  They are used by the
+Flask web app when a ``PG_DSN`` is configured and can also be imported directly
+for programmatic access.
+"""
+
 from __future__ import annotations
 import os, re
 from functools import lru_cache
@@ -5,7 +13,9 @@ from typing import Optional, List, Dict, Any
 from sqlalchemy import create_engine, text
 from sqlalchemy.pool import QueuePool
 
-PG_DSN = os.environ.get("PG_DSN", "postgresql+psycopg://postgres:postgres@localhost:5432/legislation")
+PG_DSN = os.environ.get(
+    "PG_DSN", "postgresql+psycopg://postgres:postgres@localhost:5432/legislation"
+)
 engine = create_engine(PG_DSN, poolclass=QueuePool, pool_size=10, max_overflow=20)
 
 _DIGIT_TRANS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")

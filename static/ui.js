@@ -37,6 +37,16 @@
     });
   }
 
+  const syncForm = document.getElementById('sync-db-form');
+  if (syncForm) {
+    syncForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const resp = await fetch('/sync_db', { method: 'POST' });
+      const msg = await resp.text();
+      showToast(msg);
+    });
+  }
+
   // Command palette
   const palette = document.getElementById('command-palette');
   const cmdInput = document.getElementById('command-input');

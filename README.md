@@ -123,6 +123,36 @@ python import_db.py --export-graph relations.graphml --db legislation.db
 ```
 Load the generated GraphML file in networkx or Gephi for further analysis.
 
+## Import results into PostgreSQL
+If you prefer using PostgreSQL, the `db/postgres_import.py` helper can
+initialise a database and ingest JSON files from the `output/` and
+`legal_output/` directories (or any paths you specify):
+
+```bash
+python db/postgres_import.py --init-db  # creates tables
+python db/postgres_import.py           # imports from output/ and legal_output/
+```
+
+Set the `PG_DSN` environment variable to point at your PostgreSQL server
+if it differs from the default `postgresql+psycopg://postgres:postgres@localhost:5432/legislation`.
+
+Once the data is loaded, the `crossref_postgres.py` module provides helper
+functions such as `get_article_hits` and `find_person_docs` to resolve cross
+references.  The Flask web app imports these functions automatically, but you
+can also use them directly:
+
+```python
+from crossref_postgres import get_article_hits
+hits = get_article_hits("5", law_number_raw="2004")
+```
+
+The Flask app also keeps the PostgreSQL database in sync with the JSON
+directories. On startup it imports any existing files from `output/`,
+`legal_output/` and `ner_output/`. If the optional `watchdog` package is
+installed, the app watches these folders and ingests new or modified JSON files
+as they appear. Use the **Sync Database** button in the settings panel to
+trigger a manual import at any time.
+
 ## Querying the database from the UI
 
 Both the Flask and Streamlit interfaces include a page to run read‑only SQL
