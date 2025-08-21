@@ -60,7 +60,12 @@ app = Flask(__name__)
 # ``before_first_request`` was removed in Flask 3.0, while older Flask
 # versions do not provide ``before_serving``. Pick whichever hook exists so
 # that the initial import runs once on startup across supported versions.
-init_hook = getattr(app, "before_serving", app.before_first_request)
+# Using ``getattr`` with a nested fallback avoids eager attribute access
+# errors when running under Flask 3 where ``before_first_request`` no longer
+# exists.
+init_hook = getattr(app, "before_serving", None) or getattr(
+    app, "before_first_request", lambda f: f
+)
 
 
 @init_hook
