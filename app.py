@@ -459,6 +459,7 @@ def sync_db():
         from db.postgres_import import import_paths
         import_paths(['output', 'legal_output', 'ner_output'])
     except Exception as exc:  # pragma: no cover - optional database
+        app.logger.exception("Sync failed")
         msg = f'Sync failed: {exc}'
         status = 500
     return msg, status

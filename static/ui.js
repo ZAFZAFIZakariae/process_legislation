@@ -102,8 +102,8 @@
     toast.className = 'toast';
     toast.textContent = msg;
     container.appendChild(toast);
-    setTimeout(() => toast.classList.add('hide'), 10);
-    setTimeout(() => toast.remove(), 3100);
+    setTimeout(() => toast.classList.add('hide'), 3000);
+    setTimeout(() => toast.remove(), 3300);
   };
 
   // Help modal
