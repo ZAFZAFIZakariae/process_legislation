@@ -58,7 +58,9 @@ except BaseException:  # pragma: no cover - missing dependency
 app = Flask(__name__)
 
 
-@app.before_first_request
+# Flask 3 removed ``before_first_request``. ``before_serving`` runs once per
+# process before handling the first request and is the closest replacement.
+@app.before_serving
 def _init_import_watcher() -> None:
     """Import existing JSON files and start directory watchers."""
     try:
