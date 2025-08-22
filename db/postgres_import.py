@@ -35,7 +35,20 @@ def init_db() -> None:
     schema_path = Path(__file__).with_name("schema_postgres.sql")
     ddl = schema_path.read_text(encoding="utf-8")
     with engine.begin() as conn:
-        conn.execute(text(ddl))
+        # Execute schema statements individually so we can skip the
+        # ``idx_entity_gid`` index when the column doesn't exist yet.
+        # Older databases may lack the ``global_id`` column, and attempting to
+        # create the index before adding the column would raise an
+        # ``UndefinedColumn`` error.
+        for stmt in ddl.split(";"):
+            s = stmt.strip()
+            if not s or "idx_entity_gid" in s:
+                continue
+            conn.execute(text(s))
+        # Ensure ``global_id`` column and its index exist for backwards
+        # compatibility.
+        conn.execute(text("ALTER TABLE entities ADD COLUMN IF NOT EXISTS global_id TEXT"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_entity_gid ON entities(global_id)"))
 
 
 def upsert_document(conn, file_name, short_title, doc_number):
@@ -108,8 +121,8 @@ def _import_file(conn, p: str) -> None:
         conn.execute(
             text(
                 """
-            INSERT INTO entities(document_id, type, text, normalized)
-            VALUES (:d, :ty, :tx, :nz)
+            INSERT INTO entities(document_id, type, text, normalized, global_id)
+            VALUES (:d, :ty, :tx, :nz, :gid)
         """
             ),
             {
@@ -117,6 +130,7 @@ def _import_file(conn, p: str) -> None:
                 "ty": e.get("type"),
                 "tx": e.get("text"),
                 "nz": e.get("normalized") or e.get("text"),
+                "gid": e.get("global_id"),
             },
         )
 
@@ -144,12 +158,14 @@ def _import_file(conn, p: str) -> None:
 
 def import_json_file(path: str) -> None:
     """Import a single JSON *path* into the database."""
+    init_db()
     with engine.begin() as conn:
         _import_file(conn, path)
 
 
 def import_json_dir(path: str) -> None:
     """Import all ``*.json`` files found directly under *path*."""
+    init_db()
     with engine.begin() as conn:
         for p in glob.glob(os.path.join(path, "*.json")):
             _import_file(conn, p)
@@ -157,6 +173,7 @@ def import_json_dir(path: str) -> None:
 
 def import_paths(paths: Iterable[str]) -> None:
     """Import JSON files from each directory in *paths*."""
+    init_db()
     for p in paths:
         import_json_dir(p)
 
