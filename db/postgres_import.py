@@ -108,8 +108,8 @@ def _import_file(conn, p: str) -> None:
         conn.execute(
             text(
                 """
-            INSERT INTO entities(document_id, type, text, normalized)
-            VALUES (:d, :ty, :tx, :nz)
+            INSERT INTO entities(document_id, type, text, normalized, global_id)
+            VALUES (:d, :ty, :tx, :nz, :gid)
         """
             ),
             {
@@ -117,6 +117,7 @@ def _import_file(conn, p: str) -> None:
                 "ty": e.get("type"),
                 "tx": e.get("text"),
                 "nz": e.get("normalized") or e.get("text"),
+                "gid": e.get("global_id"),
             },
         )
 

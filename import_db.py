@@ -55,6 +55,7 @@ def init_db(path: str) -> None:
             end_char INTEGER,
             normalized TEXT,
             canonical_num TEXT,
+            global_id TEXT,
             FOREIGN KEY(document_id) REFERENCES Documents(id)
         );
 
@@ -123,7 +124,7 @@ def import_json(db_path: str, dir_path: str = OUTPUT_DIR) -> None:
 
         for ent in data.get("entities", []):
             cur.execute(
-                "INSERT INTO Entities(document_id, ent_id, type, text, start_char, end_char, normalized, canonical_num) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO Entities(document_id, ent_id, type, text, start_char, end_char, normalized, canonical_num, global_id) VALUES (?,?,?,?,?,?,?,?,?)",
                 (
                     doc_id,
                     ent.get("id"),
@@ -133,6 +134,7 @@ def import_json(db_path: str, dir_path: str = OUTPUT_DIR) -> None:
                     ent.get("end_char"),
                     ent.get("normalized"),
                     canonical_num(ent.get("normalized") or ent.get("text")),
+                    ent.get("global_id"),
                 ),
             )
         for rel in data.get("relations", []):
@@ -153,6 +155,7 @@ def import_json(db_path: str, dir_path: str = OUTPUT_DIR) -> None:
         CREATE INDEX IF NOT EXISTS idx_articles_docid_number ON Articles(document_id, number);
         CREATE INDEX IF NOT EXISTS idx_entities_norm_type ON Entities(normalized, type);
         CREATE INDEX IF NOT EXISTS idx_entities_docid ON Entities(document_id);
+        CREATE INDEX IF NOT EXISTS idx_entities_global_id ON Entities(global_id);
         """
     )
     con.commit()
