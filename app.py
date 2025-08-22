@@ -891,6 +891,23 @@ def view_legislation():
     )
 
 
+def _law_hints_from_text(txt: str) -> tuple[list[str], list[str]]:
+    """Extract possible law numbers and names from a snippet of text."""
+    nums: list[str] = []
+    names: list[str] = []
+    if not isinstance(txt, str):
+        return nums, names
+    m = re.search(r"من\s+([^\n]+)", txt)
+    if m:
+        name = m.group(1).strip()
+        names.append(name)
+        m_num = re.search(r"(?:رقم\s*)?([\d\.]+)", name)
+        if m_num:
+            num = canonical_num(m_num.group(1))
+            if num:
+                nums.append(num)
+    return nums, names
+
 @app.route('/legal_documents')
 def _law_hints_from_text(txt: str) -> tuple[list[str], list[str]]:
     """Extract possible law numbers and names from a snippet of text."""
