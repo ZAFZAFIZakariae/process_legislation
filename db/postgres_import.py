@@ -35,9 +35,9 @@ def init_db() -> None:
     schema_path = Path(__file__).with_name("schema_postgres.sql")
     ddl = schema_path.read_text(encoding="utf-8")
     with engine.begin() as conn:
+        # ``schema_postgres.sql`` now ensures the ``global_id`` column and index
+        # exist even for databases created with an older schema.
         conn.execute(text(ddl))
-        conn.execute(text("ALTER TABLE entities ADD COLUMN IF NOT EXISTS global_id TEXT"))
-        conn.execute(text("CREATE INDEX IF NOT EXISTS idx_entity_gid ON entities(global_id)"))
 
 
 def upsert_document(conn, file_name, short_title, doc_number):
