@@ -5,6 +5,7 @@ import tempfile
 from typing import Dict, Any
 
 import re
+import hashlib
 from datetime import datetime
 
 try:
@@ -553,6 +554,60 @@ def assign_numeric_ids(result: Dict[str, Any]) -> None:
         rel["target_id"] = id_map.get(tgt, tgt)
 
 
+def assign_global_ids(result: Dict[str, Any]) -> None:
+    """Assign deterministic ``global_id`` values for cross-document linking.
+
+    The ``global_id`` is derived from each entity's normalized text so that the
+    same real-world entity mentioned in different documents receives the same
+    identifier.  This enables lightweight cross-document references without a
+    separate resolution module.
+    """
+
+    entities = result.get("entities", [])
+    relations = result.get("relations", [])
+
+    id_lookup = {e.get("id"): e for e in entities}
+
+    for ent in entities:
+        typ = ent.get("type")
+        norm = ent.get("normalized") or ent.get("text")
+        if not norm:
+            continue
+
+        if typ in {"LAW", "DECRET", "DAHIR", "CONSTITUTION"}:
+            num = _canonical_number(norm)
+            if num:
+                ent["global_id"] = f"{typ}_{num}"
+            continue
+
+        if typ == "ARTICLE":
+            num = _canonical_number(norm)
+            if not num:
+                continue
+            law_num = None
+            law_typ = None
+            for rel in relations:
+                if rel.get("source_id") == ent.get("id"):
+                    tgt = id_lookup.get(rel.get("target_id"))
+                    if tgt and tgt.get("type") in {"LAW", "DECRET", "DAHIR", "CONSTITUTION"}:
+                        law_val = _canonical_number(
+                            tgt.get("normalized") or tgt.get("text")
+                        )
+                        if law_val:
+                            law_num = law_val
+                            law_typ = tgt.get("type")
+                            break
+            if law_num:
+                ent["global_id"] = f"{law_typ}_{law_num}_ART_{num}"
+            else:
+                ent["global_id"] = f"ART_{num}"
+            continue
+
+        # Fallback: hash the normalized text for a deterministic ID
+        digest = hashlib.sha1(str(norm).encode("utf-8")).hexdigest()[:8]
+        ent["global_id"] = f"{typ}_{digest}"
+
+
 def postprocess_result(text: str, result: Dict[str, Any]) -> None:
     """Apply post-processing steps to raw NER result."""
     expand_article_ranges(text, result)
@@ -562,6 +617,7 @@ def postprocess_result(text: str, result: Dict[str, Any]) -> None:
     _remove_overlapping_articles(result)
     normalize_entities(result)
     assign_numeric_ids(result)
+    assign_global_ids(result)
 
 
 def load_prompt(text: str) -> str:

@@ -89,6 +89,28 @@ def find_person_docs(normalized_name: str, limit: int = 200) -> List[Dict[str, A
         return [{"document_id": r["id"], "file_name": r["file_name"],
                  "short_title": r["short_title"], "doc_number": r["doc_number"]} for r in rows]
 
+@lru_cache(maxsize=4096)
+def find_entity_docs(global_id: str, limit: int = 200) -> List[Dict[str, Any]]:
+    """Return documents containing an entity with the given ``global_id``."""
+    if not global_id:
+        return []
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT DISTINCT d.id, d.file_name, d.short_title, d.doc_number
+            FROM entities e JOIN documents d ON d.id=e.document_id
+            WHERE e.global_id=:gid
+            LIMIT :lim
+        """), dict(gid=global_id, lim=limit)).mappings().all()
+        return [
+            {
+                "document_id": r["id"],
+                "file_name": r["file_name"],
+                "short_title": r["short_title"],
+                "doc_number": r["doc_number"],
+            }
+            for r in rows
+        ]
+
 def format_article_popup(hit: Dict[str, Any]) -> str:
     title = hit.get("short_title") or hit.get("file_name") or f"Doc {hit.get('document_id')}"
     num   = hit.get("article_number","")
