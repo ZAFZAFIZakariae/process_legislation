@@ -973,20 +973,19 @@ def view_legal_documents():
                             law_names.append(law_ent.get('text') or '')
                 hit = None
                 for ln in law_nums:
-                    hits = get_article_hits(num, ln, limit=1)
+                    hits = get_article_hits(num, law_number_raw=ln, limit=1)
                     if hits:
                         hit = hits[0]
                         break
+                if hit is None and law_names:
+                    hits = get_article_hits(
+                        num, law_names_raw=tuple(law_names), limit=1
+                    )
+                    if hits:
+                        hit = hits[0]
                 if hit is None:
-                    hits = get_article_hits(num, limit=5)
-                    if law_names:
-                        low_names = [n.lower() for n in law_names if n]
-                        for h in hits:
-                            title = (h.get('short_title') or h.get('file_name') or '').lower()
-                            if any(n in title for n in low_names):
-                                hit = h
-                                break
-                    if hit is None and hits:
+                    hits = get_article_hits(num, limit=1)
+                    if hits:
                         hit = hits[0]
                 if hit:
                     law_title = (
