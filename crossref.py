@@ -32,6 +32,7 @@ CREATE INDEX IF NOT EXISTS idx_documents_filename ON Documents(file_name);
 CREATE INDEX IF NOT EXISTS idx_articles_docid_number ON Articles(document_id, number);
 CREATE INDEX IF NOT EXISTS idx_entities_norm_type ON Entities(normalized, type);
 CREATE INDEX IF NOT EXISTS idx_entities_docid ON Entities(document_id);
+CREATE INDEX IF NOT EXISTS idx_entities_global_id ON Entities(global_id);
 """
 
 def _connect(db_path: str) -> sqlite3.Connection:
@@ -130,6 +131,37 @@ def get_article_hits(
                 })
                 seen.add(key)
         return hits
+    finally:
+        con.close()
+
+@lru_cache(maxsize=2048)
+def find_entity_docs(
+    global_id: str,
+    db_path: str = DEFAULT_DB,
+    limit: int = 100,
+) -> List[Dict[str, Any]]:
+    """Return documents containing an entity with the given ``global_id``."""
+    if not global_id:
+        return []
+    con = _connect(db_path)
+    try:
+        sql = """
+          SELECT DISTINCT d.id AS document_id, d.file_name, d.short_title, d.doc_number
+          FROM Entities e
+          JOIN Documents d ON d.id = e.document_id
+          WHERE e.global_id = ?
+          LIMIT ?
+        """
+        rows = _fetchall(con, sql, (global_id, limit))
+        return [
+            {
+                "document_id": r["document_id"],
+                "file_name": r["file_name"],
+                "short_title": r["short_title"],
+                "doc_number": r["doc_number"],
+            }
+            for r in rows
+        ]
     finally:
         con.close()
 

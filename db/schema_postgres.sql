@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS entities (
   document_id INT REFERENCES documents(id) ON DELETE CASCADE,
   type TEXT,
   text TEXT,
-  normalized TEXT
+  normalized TEXT,
+  global_id TEXT
 );
 
 CREATE TABLE IF NOT EXISTS relations (
