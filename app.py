@@ -949,6 +949,53 @@ def view_legal_documents():
                     s_ent.setdefault(cat, []).append(msg)
                 if t_ent:
                     t_ent.setdefault(cat, []).append(msg)
+            # Attach article text for references to external laws
+            for ent in ent_map.values():
+                if ent.get('type') != 'INTERNAL_REF':
+                    continue
+                num = canonical_num(ent.get('normalized') or ent.get('text'))
+                if not num:
+                    continue
+                law_nums: list[str] = []
+                law_names: list[str] = []
+                for rel in relations:
+                    if (
+                        rel.get('source_id') == ent.get('id')
+                        and rel.get('type') in {'refers_to', 'jumps_to'}
+                    ):
+                        law_ent = ent_map.get(str(rel.get('target_id')))
+                        if law_ent and law_ent.get('type') == 'LAW':
+                            ln = canonical_num(
+                                law_ent.get('normalized') or law_ent.get('text')
+                            )
+                            if ln:
+                                law_nums.append(ln)
+                            law_names.append(law_ent.get('text') or '')
+                hit = None
+                for ln in law_nums:
+                    hits = get_article_hits(num, law_number_raw=ln, limit=1)
+                    if hits:
+                        hit = hits[0]
+                        break
+                if hit is None and law_names:
+                    hits = get_article_hits(
+                        num, law_names_raw=tuple(law_names), limit=1
+                    )
+                    if hits:
+                        hit = hits[0]
+                if hit is None:
+                    hits = get_article_hits(num, limit=1)
+                    if hits:
+                        hit = hits[0]
+                if hit:
+                    law_title = (
+                        hit.get('short_title') or hit.get('file_name') or f"Doc {hit.get('document_id')}"
+                    )
+                    art_no = hit.get('article_number') or num
+                    art_txt = (hit.get('text') or '').replace('\n', ' ')
+                    ent.setdefault('articles', []).append(
+                        f"{law_title} — الفصل {art_no}: {art_txt}"
+                    )
             entities = list(ent_map.values())
     return render_template(
         'legal_documents.html',

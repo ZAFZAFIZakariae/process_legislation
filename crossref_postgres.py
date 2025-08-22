@@ -9,7 +9,7 @@ for programmatic access.
 from __future__ import annotations
 import os, re
 from functools import lru_cache
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy import create_engine, text
 from sqlalchemy.pool import QueuePool
 
@@ -34,46 +34,98 @@ def canonical_num(value: str) -> Optional[str]:
     return out
 
 @lru_cache(maxsize=8192)
-def get_article_hits(article_number_raw: str, law_number_raw: Optional[str] = None, limit: int = 5) -> List[Dict[str, Any]]:
+def get_article_hits(
+    article_number_raw: str,
+    law_number_raw: Optional[str] = None,
+    law_names_raw: Optional[Tuple[str, ...]] = None,
+    limit: int = 5,
+) -> List[Dict[str, Any]]:
     art = canonical_num(article_number_raw or "")
     law = canonical_num(law_number_raw) if law_number_raw else None
+    law_names = [n.strip().lower() for n in (law_names_raw or []) if n]
     if not art:
         return []
     with engine.connect() as conn:
-        hits: List[Dict[str, Any]] = []
+        # 1) Try an explicit law number if supplied
         if law:
-            rows = conn.execute(text("""
+            rows = conn.execute(
+                text(
+                    """
                 SELECT a.text, a.number, d.id, d.file_name, d.short_title, d.doc_number
                 FROM articles a JOIN documents d ON d.id=a.document_id
                 WHERE d.doc_number=:law AND a.number=:art
                 LIMIT :lim
-            """), dict(law=law, art=art, lim=limit)).mappings().all()
-            hits.extend([
-                {
-                    "document_id": r["id"], "file_name": r["file_name"], "short_title": r["short_title"],
-                    "doc_number": r["doc_number"], "article_number": r["number"], "text": r["text"]
-                } for r in rows
-            ])
-        if len(hits) < limit:
-            rows = conn.execute(text("""
+            """
+                ),
+                dict(law=law, art=art, lim=limit),
+            ).mappings().all()
+            if rows:
+                return [
+                    {
+                        "document_id": r["id"],
+                        "file_name": r["file_name"],
+                        "short_title": r["short_title"],
+                        "doc_number": r["doc_number"],
+                        "article_number": r["number"],
+                        "text": r["text"],
+                    }
+                    for r in rows
+                ]
+
+        # 2) Match against law names if provided
+        if law_names:
+            conds = []
+            params: Dict[str, Any] = {"art": art, "lim": limit}
+            for i, name in enumerate(law_names):
+                key = f"p{i}"
+                params[key] = f"%{name}%"
+                conds.append(f"LOWER(d.short_title) LIKE :{key} OR LOWER(d.file_name) LIKE :{key}")
+            where_clause = " OR ".join(conds)
+            sql = f"""
                 SELECT a.text, a.number, d.id, d.file_name, d.short_title, d.doc_number
                 FROM articles a JOIN documents d ON d.id=a.document_id
-                WHERE a.number=:art
+                WHERE a.number=:art AND ({where_clause})
                 ORDER BY d.doc_number NULLS LAST, d.id
                 LIMIT :lim
-            """), dict(art=art, lim=limit)).mappings().all()
-            seen = {(h["document_id"], h["article_number"]) for h in hits}
-            for r in rows:
-                key = (r["id"], r["number"])
-                if key in seen:
-                    continue
-                hits.append({
-                    "document_id": r["id"], "file_name": r["file_name"], "short_title": r["short_title"],
-                    "doc_number": r["doc_number"], "article_number": r["number"], "text": r["text"]
-                })
-                if len(hits) >= limit:
-                    break
-        return hits
+            """
+            rows = conn.execute(text(sql), params).mappings().all()
+            if rows:
+                return [
+                    {
+                        "document_id": r["id"],
+                        "file_name": r["file_name"],
+                        "short_title": r["short_title"],
+                        "doc_number": r["doc_number"],
+                        "article_number": r["number"],
+                        "text": r["text"],
+                    }
+                    for r in rows
+                ]
+
+        # 3) Fallback: any article with matching number
+        rows = conn.execute(
+            text(
+                """
+            SELECT a.text, a.number, d.id, d.file_name, d.short_title, d.doc_number
+            FROM articles a JOIN documents d ON d.id=a.document_id
+            WHERE a.number=:art
+            ORDER BY d.doc_number NULLS LAST, d.id
+            LIMIT :lim
+        """
+            ),
+            dict(art=art, lim=limit),
+        ).mappings().all()
+        return [
+            {
+                "document_id": r["id"],
+                "file_name": r["file_name"],
+                "short_title": r["short_title"],
+                "doc_number": r["doc_number"],
+                "article_number": r["number"],
+                "text": r["text"],
+            }
+            for r in rows
+        ]
 
 @lru_cache(maxsize=4096)
 def find_person_docs(normalized_name: str, limit: int = 200) -> List[Dict[str, Any]]:
