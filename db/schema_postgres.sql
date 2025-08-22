@@ -30,6 +30,11 @@ CREATE TABLE IF NOT EXISTS relations (
   type TEXT
 );
 
+-- Ensure the ``global_id`` column exists for databases created with an older
+-- schema that lacked it. Adding it here allows the subsequent index creation
+-- to succeed even if the table already existed without the column.
+ALTER TABLE entities ADD COLUMN IF NOT EXISTS global_id TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_doc_docnum      ON documents(doc_number);
 CREATE INDEX IF NOT EXISTS idx_article_doc_num ON articles(document_id, number);
 CREATE INDEX IF NOT EXISTS idx_entity_norm     ON entities(normalized, type);
