@@ -892,6 +892,24 @@ def view_legislation():
 
 
 @app.route('/legal_documents')
+def _law_hints_from_text(txt: str) -> tuple[list[str], list[str]]:
+    """Extract possible law numbers and names from a snippet of text."""
+    nums: list[str] = []
+    names: list[str] = []
+    if not isinstance(txt, str):
+        return nums, names
+    m = re.search(r"من\s+([^\n]+)", txt)
+    if m:
+        name = m.group(1).strip()
+        names.append(name)
+        m_num = re.search(r"(?:رقم\s*)?([\d\.]+)", name)
+        if m_num:
+            num = canonical_num(m_num.group(1))
+            if num:
+                nums.append(num)
+    return nums, names
+
+@app.route('/legal_documents')
 def view_legal_documents():
     docs = _collect_legal_documents()
     files = sorted(docs.keys())
@@ -920,10 +938,13 @@ def view_legal_documents():
             entities = ner_data.get('entities', [])
             relations = ner_data.get('relations', [])
             ent_map = {str(e.get('id')): e for e in entities}
+            adj: dict[str, set[str]] = {}
             for rel in relations:
                 src = str(rel.get('source_id'))
                 tgt = str(rel.get('target_id'))
                 typ = rel.get('type')
+                adj.setdefault(src, set()).add(tgt)
+                adj.setdefault(tgt, set()).add(src)
                 s_ent = ent_map.get(src)
                 t_ent = ent_map.get(tgt)
                 if (
@@ -951,26 +972,39 @@ def view_legal_documents():
                     t_ent.setdefault(cat, []).append(msg)
             # Attach article text for references to external laws
             for ent in ent_map.values():
-                if ent.get('type') != 'INTERNAL_REF':
+                if ent.get('type') not in {'INTERNAL_REF', 'ARTICLE'}:
                     continue
                 num = canonical_num(ent.get('normalized') or ent.get('text'))
                 if not num:
                     continue
                 law_nums: list[str] = []
                 law_names: list[str] = []
-                for rel in relations:
-                    if (
-                        rel.get('source_id') == ent.get('id')
-                        and rel.get('type') in {'refers_to', 'jumps_to'}
-                    ):
-                        law_ent = ent_map.get(str(rel.get('target_id')))
-                        if law_ent and law_ent.get('type') == 'LAW':
-                            ln = canonical_num(
-                                law_ent.get('normalized') or law_ent.get('text')
-                            )
-                            if ln:
-                                law_nums.append(ln)
-                            law_names.append(law_ent.get('text') or '')
+                for nid in adj.get(str(ent.get('id')), set()):
+                    law_ent = ent_map.get(str(nid))
+                    if not law_ent:
+                        continue
+                    if law_ent.get('type') == 'LAW':
+                        ln = canonical_num(
+                            law_ent.get('normalized') or law_ent.get('text')
+                        )
+                        if ln:
+                            law_nums.append(ln)
+                        law_names.append(law_ent.get('text') or '')
+                    elif law_ent.get('type') == 'ARTICLE':
+                        lnums, lnames = _law_hints_from_text(
+                            law_ent.get('text') or ''
+                        )
+                        law_nums.extend([n for n in lnums if n])
+                        law_names.extend(lnames)
+                if not law_nums and not law_names:
+                    lnums, lnames = _law_hints_from_text(ent.get('text') or '')
+                    law_nums.extend([n for n in lnums if n])
+                    law_names.extend(lnames)
+                # deduplicate
+                seen: set[str] = set()
+                law_nums = [n for n in law_nums if not (n in seen or seen.add(n))]
+                seen.clear()
+                law_names = [n for n in law_names if not (n in seen or seen.add(n))]
                 hit = None
                 for ln in law_nums:
                     hits = get_article_hits(num, law_number_raw=ln, limit=1)
@@ -978,9 +1012,7 @@ def view_legal_documents():
                         hit = hits[0]
                         break
                 if hit is None and law_names:
-                    hits = get_article_hits(
-                        num, law_names_raw=tuple(law_names), limit=1
-                    )
+                    hits = get_article_hits(num, law_names_raw=tuple(law_names), limit=1)
                     if hits:
                         hit = hits[0]
                 if hit is None:
