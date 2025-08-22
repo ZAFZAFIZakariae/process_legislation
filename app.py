@@ -891,7 +891,6 @@ def view_legislation():
     )
 
 
-@app.route('/legal_documents')
 def _law_hints_from_text(txt: str) -> tuple[list[str], list[str]]:
     """Extract possible law numbers and names from a snippet of text."""
     nums: list[str] = []
