@@ -51,13 +51,41 @@ def get_article_hits(
             rows = conn.execute(
                 text(
                     """
-                SELECT a.text, a.number, d.id, d.file_name, d.short_title, d.doc_number
+                SELECT a.text, a.number, d.id, d.file_name, d.short_title, d.doc_number, d.law_number
                 FROM articles a JOIN documents d ON d.id=a.document_id
-                WHERE d.doc_number=:law AND a.number=:art
+                WHERE (d.doc_number=:law OR d.law_number=:law) AND a.number=:art
                 LIMIT :lim
             """
                 ),
                 dict(law=law, art=art, lim=limit),
+            ).mappings().all()
+            if rows:
+                return [
+                    {
+                        "document_id": r["id"],
+                        "file_name": r["file_name"],
+                        "short_title": r["short_title"],
+                        "doc_number": r["doc_number"],
+                        "article_number": r["number"],
+                        "text": r["text"],
+                    }
+                    for r in rows
+                ]
+
+            # As a fallback for legacy rows without ``law_number`` populated,
+            # match the law digits inside titles or file names.
+            law_like = f"%{law}%"
+            rows = conn.execute(
+                text(
+                    """
+                SELECT a.text, a.number, d.id, d.file_name, d.short_title, d.doc_number, d.law_number
+                FROM articles a JOIN documents d ON d.id=a.document_id
+                WHERE a.number=:art AND (d.short_title LIKE :law_like OR d.file_name LIKE :law_like)
+                ORDER BY d.doc_number NULLS LAST, d.id
+                LIMIT :lim
+            """
+                ),
+                dict(art=art, law_like=law_like, lim=limit),
             ).mappings().all()
             if rows:
                 return [

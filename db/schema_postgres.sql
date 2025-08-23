@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS documents (
   file_name TEXT UNIQUE,
   short_title TEXT,
   doc_number TEXT,
+  law_number TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -34,8 +35,10 @@ CREATE TABLE IF NOT EXISTS relations (
 -- schema that lacked it. Adding it here allows the subsequent index creation
 -- to succeed even if the table already existed without the column.
 ALTER TABLE entities ADD COLUMN IF NOT EXISTS global_id TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS law_number TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_doc_docnum      ON documents(doc_number);
+CREATE INDEX IF NOT EXISTS idx_doc_lawnum     ON documents(law_number);
 CREATE INDEX IF NOT EXISTS idx_article_doc_num ON articles(document_id, number);
 CREATE INDEX IF NOT EXISTS idx_entity_norm     ON entities(normalized, type);
 CREATE INDEX IF NOT EXISTS idx_entity_doc      ON entities(document_id);
