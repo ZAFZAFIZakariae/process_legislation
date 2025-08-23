@@ -71,3 +71,31 @@ def test_law_entity_with_article_popup(tmp_path, monkeypatch):
     res = client.get('/legal_documents?file=case')
     body = res.get_data(as_text=True)
     assert '"articles": ["snippet 1"]' in body
+
+
+def test_existing_article_markers_stripped(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    out = tmp_path / 'legal_output'
+    ner_dir = tmp_path / 'ner_output'
+    out.mkdir()
+    ner_dir.mkdir()
+    structure = {'structure': [{'text': 'hello'}], 'text': 'hello'}
+    (out / 'case.json').write_text(json.dumps(structure, ensure_ascii=False), encoding='utf-8')
+    ner_data = {
+        'entities': [
+            {
+                'id': 1,
+                'type': 'LAW',
+                'text': 'law',
+                'articles': ['<foo, id:2> bar'],
+            }
+        ],
+        'relations': [],
+    }
+    (ner_dir / 'case_ner.json').write_text(json.dumps(ner_data, ensure_ascii=False), encoding='utf-8')
+    import app as app_mod
+    client = app_mod.app.test_client()
+    res = client.get('/legal_documents?file=case')
+    body = res.get_data(as_text=True)
+    assert 'id:2' not in body
+    assert 'foo bar' in body
