@@ -1032,7 +1032,7 @@ def _resolve_article_text(
         hit = None
 
     if hit:
-        law_title = (
+        law_title = _strip_entity_markers(
             hit.get("short_title")
             or hit.get("file_name")
             or f"Doc {hit.get('document_id')}"
