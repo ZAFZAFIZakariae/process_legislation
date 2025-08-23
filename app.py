@@ -1137,6 +1137,17 @@ def view_legal_documents():
                 article_entry = _resolve_article_text(num, law_nums, law_names)
                 if article_entry:
                     ent.setdefault('articles', []).append(article_entry)
+            # Handle LAW entities that directly mention an article number
+            for ent in ent_map.values():
+                if ent.get('type') != 'LAW':
+                    continue
+                parsed = parse_law_article_nums(ent)
+                if not parsed:
+                    continue
+                art_num, law_num = parsed
+                article_entry = _resolve_article_text(art_num, [law_num], [])
+                if article_entry:
+                    ent.setdefault('articles', []).append(article_entry)
             entities = list(ent_map.values())
     return render_template(
         'legal_documents.html',
