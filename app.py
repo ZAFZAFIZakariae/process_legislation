@@ -8,8 +8,26 @@ try:
     import pandas as pd
 except Exception:  # pragma: no cover
     pd = None
-from sqlalchemy import create_engine, text
-from flask import Flask, render_template, request, redirect, url_for
+try:
+    from sqlalchemy import create_engine, text
+except Exception:  # pragma: no cover - optional dependency may be missing
+    create_engine = text = None
+try:
+    from flask import Flask, render_template, request, redirect, url_for
+except Exception:  # pragma: no cover - optional dependency may be missing
+    Flask = None
+
+    def render_template(*args, **kwargs):  # pragma: no cover
+        raise RuntimeError("Flask is not installed")
+
+    def request(*args, **kwargs):  # pragma: no cover
+        raise RuntimeError("Flask is not installed")
+
+    def redirect(*args, **kwargs):  # pragma: no cover
+        raise RuntimeError("Flask is not installed")
+
+    def url_for(*args, **kwargs):  # pragma: no cover
+        raise RuntimeError("Flask is not installed")
 from types import SimpleNamespace
 
 from annotation_editor import (
@@ -30,10 +48,33 @@ except Exception:  # pragma: no cover
     nx = None
     Network = None
 
-from ner import extract_entities, postprocess_result, parse_marked_text
-from ocr import pdf_to_arabic_text
+from ner import (
+    extract_entities,
+    postprocess_result,
+    parse_marked_text,
+    parse_law_article_nums,
+)
+try:
+    from ocr import pdf_to_arabic_text
+except Exception:  # pragma: no cover - optional dependency may be missing
+    def pdf_to_arabic_text(path: str) -> str:  # pragma: no cover
+        raise RuntimeError("OCR functionality is unavailable")
 from highlight import canonical_num, highlight_text, render_ner_html
-from crossref_postgres import get_article_hits, find_person_docs, format_article_popup
+try:
+    from crossref_postgres import (
+        get_article_hits,
+        find_person_docs,
+        format_article_popup,
+    )
+except Exception:  # pragma: no cover - optional dependency may be missing
+    def get_article_hits(*args, **kwargs):  # pragma: no cover
+        raise RuntimeError("crossref_postgres is unavailable")
+
+    def find_person_docs(*args, **kwargs):  # pragma: no cover
+        raise RuntimeError("crossref_postgres is unavailable")
+
+    def format_article_popup(*args, **kwargs):  # pragma: no cover
+        raise RuntimeError("crossref_postgres is unavailable")
 try:
     from decision_parser import process_file as parse_decision
 except Exception:  # pragma: no cover - optional dependency
@@ -55,7 +96,10 @@ except BaseException:  # pragma: no cover - missing dependency
     run_passes = None
     run_structured_ner = None
 
-app = Flask(__name__)
+if Flask is not None:
+    app = Flask(__name__)
+else:  # pragma: no cover - Flask not installed
+    app = None
 
 # ``before_first_request`` was removed in Flask 3.0, while older Flask
 # versions do not provide ``before_serving``. Pick whichever hook exists so
@@ -537,15 +581,12 @@ def index():
             # 0) Some NER outputs tag a full reference like "المادة 15 من القانون رقم 30.09"
             # as a LAW entity.  Extract article and law numbers from the same span
             # and attach a popup for it.
-            digit_trans = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
             for ent in entities:
                 if ent.get("type") == "LAW":
-                    txt = ent.get("normalized") or ent.get("text") or ""
-                    if "المادة" in txt or "الفصل" in txt:
-                        nums = re.findall(r"\d+(?:[./]\d+)*", txt.translate(digit_trans))
-                        if len(nums) >= 2:
-                            art_hint, law_hint = nums[0], nums[1]
-                            _attach_article_popup_for_ent(str(ent.get("id")), law_hint, art_hint)
+                    parsed = parse_law_article_nums(ent)
+                    if parsed:
+                        art_hint, law_hint = parsed
+                        _attach_article_popup_for_ent(str(ent.get("id")), law_hint, art_hint)
 
             # 1) If your NER produced explicit ARTICLE entities, resolve via law context when available
             for ent in entities:
