@@ -193,7 +193,8 @@ def find_entity_docs(global_id: str, limit: int = 200) -> List[Dict[str, Any]]:
 
 def format_article_popup(hit: Dict[str, Any]) -> str:
     title = hit.get("short_title") or hit.get("file_name") or f"Doc {hit.get('document_id')}"
-    num   = hit.get("article_number","")
-    text  = (hit.get("text") or "").replace("\n"," ").strip()
-    text  = re.sub(r"<([^,<>]+), id:[^>]+>", r" \1 ", text)
+    num = hit.get("article_number", "")
+    text = (hit.get("text") or "").replace("\n", " ").strip()
+    title = re.sub(r"<([^,<>]+), id:[^>]+>", r"\1", title)
+    text = re.sub(r"<([^,<>]+), id:[^>]+>", r" \1 ", text)
     return f"<b>{title} — الفصل {num}</b><br>{text}"
