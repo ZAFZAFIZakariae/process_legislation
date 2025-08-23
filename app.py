@@ -936,6 +936,11 @@ def view_legislation():
             with open(ner_path, 'r', encoding='utf-8') as nf:
                 ner_data = json.load(nf)
             entities = ner_data.get('entities', [])
+            for ent in entities:
+                for key in ('articles', 'references', 'relations'):
+                    vals = ent.get(key)
+                    if isinstance(vals, list):
+                        ent[key] = [_strip_entity_markers(v) for v in vals]
             relations = ner_data.get('relations', [])
             ent_map = {str(e.get('id')): e for e in entities}
             for rel in relations:
