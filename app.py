@@ -908,6 +908,58 @@ def _law_hints_from_text(txt: str) -> tuple[list[str], list[str]]:
                 nums.append(num)
     return nums, names
 
+
+def _resolve_article_text(
+    num: str, law_nums: list[str], law_names: list[str]
+) -> str | None:
+    """Return a formatted article snippet for *num*.
+
+    This first attempts to resolve the article via the PostgreSQL database
+    using :func:`get_article_hits`.  If that fails (either due to missing
+    results or database connectivity issues), it falls back to the
+    preloaded ``LAW_ARTICLES`` mapping which contains article text from the
+    local JSON files in ``output``.
+    """
+
+    hit = None
+    try:  # pragma: no cover - database may be unavailable in tests
+        for ln in law_nums:
+            hits = get_article_hits(num, law_number_raw=ln, limit=1)
+            if hits:
+                hit = hits[0]
+                break
+        if hit is None and law_names:
+            hits = get_article_hits(num, law_names_raw=tuple(law_names), limit=1)
+            if hits:
+                hit = hits[0]
+        if hit is None:
+            hits = get_article_hits(num, limit=1)
+            if hits:
+                hit = hits[0]
+    except Exception:  # pragma: no cover - fall back to local lookup
+        hit = None
+
+    if hit:
+        law_title = (
+            hit.get("short_title")
+            or hit.get("file_name")
+            or f"Doc {hit.get('document_id')}"
+        )
+        art_no = hit.get("article_number") or num
+        art_txt = (hit.get("text") or "").replace("\n", " ")
+        return f"{law_title} — الفصل {art_no}: {art_txt}"
+
+    # Fallback using locally loaded legislation articles
+    for ln in law_nums:
+        articles = LAW_ARTICLES.get(canonical_num(ln))
+        if articles:
+            art_txt = articles.get(num)
+            if art_txt:
+                art_txt = art_txt.replace("\n", " ")
+                title = f"القانون رقم {ln}"
+                return f"{title} — الفصل {num}: {art_txt}"
+    return None
+
 @app.route('/legal_documents')
 def view_legal_documents():
     docs = _collect_legal_documents()
@@ -1004,29 +1056,9 @@ def view_legal_documents():
                 law_nums = [n for n in law_nums if not (n in seen or seen.add(n))]
                 seen.clear()
                 law_names = [n for n in law_names if not (n in seen or seen.add(n))]
-                hit = None
-                for ln in law_nums:
-                    hits = get_article_hits(num, law_number_raw=ln, limit=1)
-                    if hits:
-                        hit = hits[0]
-                        break
-                if hit is None and law_names:
-                    hits = get_article_hits(num, law_names_raw=tuple(law_names), limit=1)
-                    if hits:
-                        hit = hits[0]
-                if hit is None:
-                    hits = get_article_hits(num, limit=1)
-                    if hits:
-                        hit = hits[0]
-                if hit:
-                    law_title = (
-                        hit.get('short_title') or hit.get('file_name') or f"Doc {hit.get('document_id')}"
-                    )
-                    art_no = hit.get('article_number') or num
-                    art_txt = (hit.get('text') or '').replace('\n', ' ')
-                    ent.setdefault('articles', []).append(
-                        f"{law_title} — الفصل {art_no}: {art_txt}"
-                    )
+                article_entry = _resolve_article_text(num, law_nums, law_names)
+                if article_entry:
+                    ent.setdefault('articles', []).append(article_entry)
             entities = list(ent_map.values())
     return render_template(
         'legal_documents.html',
