@@ -2,7 +2,7 @@ import os
 import json
 import argparse
 import tempfile
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import re
 import hashlib
@@ -119,6 +119,57 @@ def _canonical_number(text: str) -> str | None:
     return num
 
 
+def _law_number(text: str) -> str | None:
+    """Extract the law number from *text*, ignoring article numbers.
+
+    The NER output sometimes tags a full reference like
+    "المادة 4 من القانون التنظيمي رقم 29.11" as a LAW entity.  The generic
+    ``_canonical_number`` helper would return "4" for that span (the article
+    number).  This function instead looks for the number following the keyword
+    "رقم" or, when two or more numeric sequences are present alongside an
+    article indicator, returns the last sequence assuming it denotes the law
+    identifier.
+    """
+    if not isinstance(text, str):
+        return None
+
+    s = text.translate(_DIGIT_TRANS)
+
+    # Prefer a number explicitly introduced by "رقم"
+    m = re.search(r"رقم\s*([0-9]+(?:[./]+[0-9]+)*)", s)
+    if m:
+        return _canonical_number(m.group(1))
+
+    nums = re.findall(r"\d+(?:[./]+\d+)*", s)
+    if ("المادة" in text or "الفصل" in text) and len(nums) >= 2:
+        # When an article is mentioned, the law number typically comes last
+        return _canonical_number(nums[-1])
+
+    if nums:
+        return _canonical_number(nums[0])
+
+    return None
+
+
+def parse_law_article_nums(ent: dict) -> Optional[tuple[str, str]]:
+    """Return ``(article, law)`` numbers extracted from entity text.
+
+    The normalized form now starts with the article heading followed by the
+    law reference (e.g. "المادة 15 القانون 30.09").  We therefore parse the
+    article number first and recover the law number via ``_law_number``.
+    """
+    norm = ent.get("normalized") or ent.get("text") or ""
+    norm = norm.translate(_DIGIT_TRANS)
+
+    art_match = re.search(r"(?:المادة|الفصل)\s*(\d+(?:[./]+\d+)*)", norm)
+    law_num = _law_number(norm)
+    if art_match and law_num:
+        art_num = _canonical_number(art_match.group(1))
+        if art_num:
+            return art_num, law_num
+    return None
+
+
 def _parse_date(text: str) -> str | None:
     """Parse Arabic or ISO date text to YYYY-MM-DD."""
     if not isinstance(text, str):
@@ -183,23 +234,55 @@ def normalize_entities(result: Dict[str, Any]) -> None:
         if typ == "DATE":
             norm = _parse_date(text)
         elif typ in {"LAW", "DECRET"}:
-            num = _canonical_number(text)
-            if num:
-                # include the Arabic legal type when available
-                if "ظهير" in text:
-                    norm = f"{num} الظهير الشريف"
-                elif "القانون التنظيمي" in text:
-                    norm = f"{num} القانون التنظيمي"
-                elif "القانون" in text:
-                    norm = f"{num} القانون"
-                elif "دستور" in text:
-                    norm = f"{num} الدستور"
-                elif "مرسوم" in text:
-                    norm = f"{num} المرسوم"
-                elif "قرار" in text:
-                    norm = f"{num} القرار"
-                else:
-                    norm = num
+            pattern = re.compile(
+                r"(الظهير الشريف|القانون التنظيمي|القانون|الدستور|المرسوم|مرسوم|القرار|قرار)\s*(?:رقم\s*)?(\d+(?:[./]+\d+)*)"
+            )
+            matches = list(pattern.finditer(text))
+            parts: list[str] = []
+            for m in matches:
+                law_type = m.group(1)
+                law_num = _canonical_number(m.group(2))
+                if law_num:
+                    parts.append(f"{law_type} {law_num}")
+            art_match = re.search(
+                r"(?:المادة|الفصل)\s*([0-9٠-٩]+(?:[./]+[0-9٠-٩]+)*)",
+                text,
+            )
+            if art_match:
+                art_num = _canonical_number(art_match.group(1))
+                heading = "المادة" if "المادة" in text or "مادة" in text else "الفصل"
+                if art_num:
+                    parts.insert(0, f"{heading} {art_num}")
+            if parts:
+                norm = " ".join(parts)
+            else:
+                law_num = _law_number(text)
+                if law_num:
+                    if "ظهير" in text:
+                        law_type = "الظهير الشريف"
+                    elif "القانون التنظيمي" in text:
+                        law_type = "القانون التنظيمي"
+                    elif "القانون" in text:
+                        law_type = "القانون"
+                    elif "دستور" in text:
+                        law_type = "الدستور"
+                    elif "مرسوم" in text:
+                        law_type = "المرسوم"
+                    elif "قرار" in text:
+                        law_type = "القرار"
+                    else:
+                        law_type = ""
+                    art_match = re.search(
+                        r"(?:المادة|الفصل)\s*([0-9٠-٩]+(?:[./]+[0-9٠-٩]+)*)",
+                        text,
+                    )
+                    if art_match:
+                        art_num = _canonical_number(art_match.group(1))
+                        heading = "المادة" if "المادة" in text or "مادة" in text else "الفصل"
+                        if art_num:
+                            norm = f"{heading} {art_num} {law_type} {law_num}".strip()
+                    if not norm:
+                        norm = f"{law_type} {law_num}".strip()
         elif typ in {"ARTICLE", "CHAPTER", "SECTION"}:
             nums = re.findall(r"[0-9٠-٩]+", text.translate(_DIGIT_TRANS))
             if "المادة" in text or "مادة" in text or "المواد" in text or "مواد" in text or "المادتين" in text:
@@ -575,7 +658,7 @@ def assign_global_ids(result: Dict[str, Any]) -> None:
             continue
 
         if typ in {"LAW", "DECRET", "DAHIR", "CONSTITUTION"}:
-            num = _canonical_number(norm)
+            num = _law_number(norm) or _law_number(ent.get("text", ""))
             if num:
                 ent["global_id"] = f"{typ}_{num}"
             continue
