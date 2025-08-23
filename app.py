@@ -211,6 +211,14 @@ RELATION_LABELS = {
 }
 
 
+ENT_ID_PATTERN = re.compile(r"<([^,<>]+), id:[^>]+>")
+
+
+def _strip_entity_markers(text: str) -> str:
+    """Remove ``<entity, id:n>`` markers from *text*."""
+    return ENT_ID_PATTERN.sub(r"\1", text)
+
+
 def _collect_article_texts(data):
     """Return mapping of article numbers to text from *data*."""
     texts = {}
@@ -221,7 +229,8 @@ def _collect_article_texts(data):
             if typ in {"الفصل", "مادة"}:
                 num = canonical_num(node.get("number"))
                 if num:
-                    texts[num] = node.get("text", "")
+                    raw = node.get("text", "")
+                    texts[num] = _strip_entity_markers(raw)
             children = node.get("children")
             if isinstance(children, list):
                 for child in children:
@@ -927,6 +936,11 @@ def view_legislation():
             with open(ner_path, 'r', encoding='utf-8') as nf:
                 ner_data = json.load(nf)
             entities = ner_data.get('entities', [])
+            for ent in entities:
+                for key in ('articles', 'references', 'relations'):
+                    vals = ent.get(key)
+                    if isinstance(vals, list):
+                        ent[key] = [_strip_entity_markers(v) for v in vals]
             relations = ner_data.get('relations', [])
             ent_map = {str(e.get('id')): e for e in entities}
             for rel in relations:
@@ -1018,13 +1032,13 @@ def _resolve_article_text(
         hit = None
 
     if hit:
-        law_title = (
+        law_title = _strip_entity_markers(
             hit.get("short_title")
             or hit.get("file_name")
             or f"Doc {hit.get('document_id')}"
         )
         art_no = hit.get("article_number") or num
-        art_txt = (hit.get("text") or "").replace("\n", " ")
+        art_txt = _strip_entity_markers((hit.get("text") or "").replace("\n", " "))
         return f"{law_title} — الفصل {art_no}: {art_txt}"
 
     # Fallback using locally loaded legislation articles
@@ -1033,7 +1047,7 @@ def _resolve_article_text(
         if articles:
             art_txt = articles.get(num)
             if art_txt:
-                art_txt = art_txt.replace("\n", " ")
+                art_txt = _strip_entity_markers(art_txt.replace("\n", " "))
                 title = f"القانون رقم {ln}"
                 return f"{title} — الفصل {num}: {art_txt}"
     return None
