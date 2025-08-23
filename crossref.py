@@ -204,5 +204,6 @@ def format_article_popup(hit: Dict[str, Any]) -> str:
     text = (hit.get("text") or "").replace("\n", " ").strip()
     # minimal cleanup of angle brackets that clash with your highlighter's id markup
     import re
+    title = re.sub(r"<([^,<>]+), id:[^>]+>", r"\1", title)
     text = re.sub(r"<([^,<>]+), id:[^>]+>", r" \1 ", text)
     return f"<b>{title} — الفصل {num}</b><br>{text}"
