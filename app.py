@@ -534,6 +534,19 @@ def index():
                     html_snip = format_article_popup(hits[0])
                     article_texts[f"ID_{ent_id}"] = html_snip
 
+            # 0) Some NER outputs tag a full reference like "المادة 15 من القانون رقم 30.09"
+            # as a LAW entity.  Extract article and law numbers from the same span
+            # and attach a popup for it.
+            digit_trans = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+            for ent in entities:
+                if ent.get("type") == "LAW":
+                    txt = ent.get("normalized") or ent.get("text") or ""
+                    if "المادة" in txt or "الفصل" in txt:
+                        nums = re.findall(r"\d+(?:[./]\d+)*", txt.translate(digit_trans))
+                        if len(nums) >= 2:
+                            art_hint, law_hint = nums[0], nums[1]
+                            _attach_article_popup_for_ent(str(ent.get("id")), law_hint, art_hint)
+
             # 1) If your NER produced explicit ARTICLE entities, resolve via law context when available
             for ent in entities:
                 if ent.get("type") == "ARTICLE":

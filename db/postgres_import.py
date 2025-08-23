@@ -13,9 +13,11 @@ import json
 import os
 from pathlib import Path
 from typing import Iterable
+import re
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.pool import QueuePool
+from highlight import canonical_num
 
 try:  # optional dependency for directory watching
     from watchdog.events import FileSystemEventHandler  # type: ignore
@@ -40,13 +42,40 @@ def init_db() -> None:
         conn.execute(text(ddl))
 
 
-def upsert_document(conn, file_name, short_title, doc_number):
-    r = conn.execute(text("""
-        INSERT INTO documents(file_name, short_title, doc_number)
-        VALUES (:f,:s,:n)
-        ON CONFLICT (file_name) DO UPDATE SET short_title=EXCLUDED.short_title, doc_number=EXCLUDED.doc_number
+LAW_RE = re.compile(r"القانون\s+رقم\s*(\d+(?:[./]\d+)*)")
+
+
+def _extract_law_number(meta: dict, file_name: str) -> str | None:
+    candidates = [meta.get("law_number"), meta.get("official_title"), meta.get("short_title"), file_name]
+    for cand in candidates:
+        if not cand:
+            continue
+        m = LAW_RE.search(cand)
+        if m:
+            num = canonical_num(m.group(1))
+            if num:
+                return num
+    for ref in meta.get("references", []):
+        typ = ref.get("type") or ""
+        if "قانون" in typ:
+            num = canonical_num(ref.get("reference_number"))
+            if num:
+                return num
+    return None
+
+
+def upsert_document(conn, file_name, short_title, doc_number, law_number):
+    r = conn.execute(
+        text(
+            """
+        INSERT INTO documents(file_name, short_title, doc_number, law_number)
+        VALUES (:f,:s,:n,:l)
+        ON CONFLICT (file_name) DO UPDATE SET short_title=EXCLUDED.short_title, doc_number=EXCLUDED.doc_number, law_number=EXCLUDED.law_number
         RETURNING id
-    """), dict(f=file_name, s=short_title, n=doc_number)).first()
+    """
+        ),
+        dict(f=file_name, s=short_title, n=doc_number, l=law_number),
+    ).first()
     return r[0]
 
 def _import_file(conn, p: str) -> None:
@@ -68,8 +97,9 @@ def _import_file(conn, p: str) -> None:
             or meta.get("official_title")
             or file_name
         )
-        docn = meta.get("document_number") or meta.get("number")
-        doc_id = upsert_document(conn, file_name, short, docn)
+        docn = canonical_num(meta.get("document_number") or meta.get("number"))
+        law_num = _extract_law_number(meta, file_name)
+        doc_id = upsert_document(conn, file_name, short, docn, law_num)
         conn.execute(
             text("DELETE FROM articles WHERE document_id=:d"),
             {"d": doc_id},
