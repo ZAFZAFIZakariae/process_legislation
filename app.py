@@ -260,6 +260,30 @@ def load_law_articles(dir_path: str = "output") -> dict[str, dict[str, str]]:
             _collect(data.get("structure", []))
             if articles:
                 mapping[law] = articles
+                added = False
+                try:
+                    with engine.connect() as conn:
+                        alt = conn.execute(
+                            text(
+                                "SELECT law_number FROM documents WHERE doc_number=:num"
+                            ),
+                            {"num": law},
+                        ).scalar()
+                except Exception:
+                    alt = None
+                if alt:
+                    alt_num = canonical_num(alt)
+                    if alt_num and alt_num not in mapping:
+                        mapping[alt_num] = articles
+                        added = True
+                if not added:
+                    official = data.get("metadata", {}).get("official_title", "")
+                    if official:
+                        official = re.sub(r"<([^,<>]+), id:[^>]+>", r" \1 ", official)
+                        for m in re.findall(r"القانون[^\d]*رقم\s*([\d\.]+)", official):
+                            alt = canonical_num(m)
+                            if alt and alt not in mapping:
+                                mapping[alt] = articles
         except Exception as exc:  # pragma: no cover - ignore bad files
             print(f"Failed to load {path}: {exc}")
     return mapping
