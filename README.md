@@ -4,20 +4,65 @@ This repository contains utilities for processing Moroccan legal documents using
 
 ## Repository layout
 ```
-├── gpt.py            # Parse legislation into a nested JSON structure
-├── ner.py            # Named‑entity extraction helper
-├── ocr.py            # Azure Form Recognizer wrapper for PDF OCR
-├── interface.py      # Streamlit interface for the NER pipeline
-├── decision_parser.py# Summarise court decisions to JSON
-├── interface.py      # Streamlit interface for entity extraction and decision parsing
-├── app.py            # Flask web app exposing the same features
-├── prompts/          # Prompt templates used by the scripts
-├── data_pdf/         # Example PDFs
-└── test_data/        # Sample text files
-Requirements
-├── data_txt/         # Example text files
-└── input_ner/        # Sample decision text
+├── app.py                # Flask web app exposing the same features
+├── annotation_editor.py  # Helper to tweak entity annotations
+├── decision_parser.py    # Summarise court decisions to JSON
+├── gpt.py                # Parse legislation into a nested JSON structure
+├── ner.py                # Named‑entity extraction helper
+├── ocr.py                # Azure Form Recognizer wrapper for PDF OCR
+├── interface.py          # Streamlit interface for entity extraction and parsing
+├── prompts/              # Prompt templates used by the scripts
+├── data_pdf/             # Example PDFs
+├── data_txt/             # Example text files
+├── input_ner/            # Sample decision text
+├── output/               # Sample structured output
+└── tests/                # Unit tests
 ```
+
+## Quick start
+
+1. **Install dependencies**
+
+   ```bash
+   pip install openai tiktoken azure-ai-formrecognizer==3.3.3 streamlit flask pandas
+   ```
+
+2. **Configure environment variables** so the scripts can reach the APIs:
+
+   ```bash
+   export OPENAI_API_KEY="sk-..."
+   export AZURE_ENDPOINT="https://<region>.api.cognitive.microsoft.com/"
+   export AZURE_KEY="<form-recognizer-key>"
+   ```
+
+3. **Process a PDF end‑to‑end** (OCR → structure → NER):
+
+   ```bash
+   python -m pipeline.run_pipeline --input path/to/document.pdf --output_dir output
+   ```
+
+4. **Inspect named entities** separately if needed:
+
+   ```bash
+   python ner.py --input output/<document>.json --output_dir ner_output
+   ```
+
+5. **Launch a web interface** to explore the results:
+
+   ```bash
+   python app.py                 # Flask app
+   # or
+   streamlit run interface.py    # Streamlit interface
+   ```
+
+6. **(Optional) Use PostgreSQL** with Docker Compose:
+
+   ```bash
+   docker-compose up -d          # start a local PostgreSQL instance
+   python db/postgres_import.py --init-db
+   python db/postgres_import.py  # import JSON files into the database
+   ```
+
 ## Requirements
 
 Install the required Python packages (OpenAI SDK, tiktoken, Azure Form Recognizer, Streamlit, Flask, pandas, etc.):
@@ -26,7 +71,7 @@ Install the required Python packages (OpenAI SDK, tiktoken, Azure Form Recognize
 pip install openai tiktoken azure-ai-formrecognizer==3.3.3 streamlit flask pandas
 ```
 
-# Environment variables
+## Environment variables
 
 Set the following variables so the scripts can access the APIs:
 ```bash
@@ -34,14 +79,14 @@ OPENAI_API_KEY – API key for OpenAI chat completions.
 AZURE_ENDPOINT – Endpoint URL for the Azure Form Recognizer service (used by ocr.py).
 AZURE_KEY – Key for the Azure Form Recognizer service.
 ```
-# OCR a PDF
+## OCR a PDF
 ```bash
 python ocr.py --input path/to/document.pdf --output_dir data_txt
 ```
 The script saves the extracted Arabic text as `<document>.txt` inside the chosen
 directory (`data_txt` by default).
 
-# Parse legislation with GPT
+## Parse legislation with GPT
 ```bash
 python gpt.py --input path/to/document.pdf --output_dir output
 ```
@@ -69,7 +114,7 @@ the extracted text and writes two extra files alongside the structured JSON:
 * `<document>_ner.html` – HTML with clickable entities highlighting references
   and relationships
 
-# Named‑entity extraction
+## Named‑entity extraction
 ```bash
 python ner.py --input path/to/file.json --output_dir ner_out
 ```
@@ -81,7 +126,7 @@ Pass `--annotate_text` to also save a copy of the input text where entity spans
 are wrapped in `[[ENT …]]` markers. The Streamlit and Flask interfaces accept
 such marked files and will highlight the entities without re-running the model.
 
-# Annotation editor
+## Annotation editor
 ```bash
 python annotation_editor.py annotated.txt --add 100 110 PERSON --norm "محمد"
 python annotation_editor.py annotated.txt --delete PERSON_1
@@ -90,19 +135,19 @@ python annotation_editor.py annotated.txt --replace-text 50 60 "نص جديد" -
 ```
 Use this helper to modify entity markers in a text annotated with `--annotate_text`.
 
-# Court decision parser
+## Court decision parser
 ```bash
 python decision_parser.py --input path/to/decision.pdf --output decision.json
 ```
 The script summarises the major sections of a court decision into JSON.
 
-# Flask web app
+## Flask web app
 ```bash
 python app.py
 ```
 Open the browser at http://localhost:5000 to access entity extraction, relationship graph visualisation and decision parsing.
 
-# Import results into SQLite
+## Import results into SQLite
 To collect data from many processed documents run:
 ```bash
 python import_db.py --init-db legislation.db
